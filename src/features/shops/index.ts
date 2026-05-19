@@ -1,8 +1,10 @@
 export { ShopProvider, useShop } from './context/ShopContext';
 export type { ShopDoc, UserRole, SubscriptionStatus } from './context/ShopContext';
 export { useShopServices } from './hooks/useShopServices';
-export { joinShop } from './services/joinShop.service';
 export { updateShopName } from './services/shop.service';
+export { discoverNearbyShops } from './services/discoverShops.service';
+export type { NearbyShop } from './services/discoverShops.service';
+export type { ShopLocation } from './domain/shopLocation.types';
 export {
   DEFAULT_SHOP_SERVICES,
   deleteShopService,

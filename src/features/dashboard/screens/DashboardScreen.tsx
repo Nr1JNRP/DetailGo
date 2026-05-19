@@ -4,12 +4,10 @@ import {
   Alert,
   Animated,
   Image,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
   StatusBar,
@@ -29,8 +27,8 @@ import {
   CircleUserRound,
   History,
   Home,
-  Link as LinkIcon,
   LogOut,
+  MapPin,
   Menu,
   User,
 } from 'lucide-react-native';
@@ -38,7 +36,7 @@ import {
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
 import { useAuth } from '@features/auth';
-import { useShop, useShopServices, joinShop, getShopServiceIcon } from '@features/shops';
+import { useShop, useShopServices, getShopServiceIcon } from '@features/shops';
 import { useDashboardAppointments } from '@features/appointments';
 import type { RootStackParamList } from '@app/types';
 import type { UserAppointment } from '@features/appointments';
@@ -77,10 +75,6 @@ export default function DashboardScreen() {
   const [saving, setSaving] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-UI.MENU_WIDTH)).current;
-
-  const [joinModalVisible, setJoinModalVisible] = useState(false);
-  const [joinCode, setJoinCode] = useState('');
-  const [joiningShop, setJoiningShop] = useState(false);
 
   const { loading: loadingAppointments, items: appointments } = useDashboardAppointments({
     uid,
@@ -173,27 +167,9 @@ export default function DashboardScreen() {
     await signOut();
   };
 
-  const handleJoinShop = async () => {
-    if (joinCode.trim().length !== 6) {
-      Alert.alert('Atenção', 'O código deve ter 6 caracteres.');
-      return;
-    }
-    setJoiningShop(true);
-    try {
-      await joinShop(uid, joinCode);
-      setJoinModalVisible(false);
-      setJoinCode('');
-      Alert.alert('Vinculado!', 'Agora você pode agendar serviços!');
-    } catch (e: any) {
-      Alert.alert('Erro', e?.message ?? 'Código inválido.');
-    } finally {
-      setJoiningShop(false);
-    }
-  };
-
   const goToAppointment = () => {
     if (!shopId) {
-      setJoinModalVisible(true);
+      navigation.navigate('Map');
       return;
     }
     navigation.navigate('Appointment');
@@ -263,21 +239,20 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {!shopId && (
-            <TouchableOpacity
-              style={styles.joinCard}
-              onPress={() => setJoinModalVisible(true)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.joinIconWrap}>
-                <LinkIcon size={18} color={D.primary} />
-              </View>
-              <View style={styles.joinCardText}>
-                <Text style={styles.joinCardTitle}>Vincule-se a uma estética</Text>
-                <Text style={styles.joinCardDesc}>Insira o código de convite para agendar</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.joinCard}
+            onPress={() => navigation.navigate('Map')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.joinIconWrap}>
+              <MapPin size={18} color={D.primary} />
+            </View>
+            <View style={styles.joinCardText}>
+              <Text style={styles.joinCardTitle}>Explorar estéticas parceiras</Text>
+              <Text style={styles.joinCardDesc}>Veja no mapa quem está próximo de você</Text>
+            </View>
+            <ArrowRight size={16} color={D.primary} />
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.scheduleCard}
@@ -384,6 +359,11 @@ export default function DashboardScreen() {
         <View style={styles.bottomNav}>
           <BottomNavItem active icon={<Home size={24} color={D.primary} />} label="Início" />
           <BottomNavItem
+            icon={<MapPin size={24} color={D.ink3} />}
+            label="Explorar"
+            onPress={() => navigation.navigate('Map')}
+          />
+          <BottomNavItem
             icon={<History size={24} color={D.ink3} />}
             label="Histórico"
             onPress={() => navigation.navigate('History')}
@@ -432,16 +412,14 @@ export default function DashboardScreen() {
                     navigation.navigate('Profile');
                   }}
                 />
-                {!shopId && (
-                  <DrawerItem
-                    icon={<LinkIcon size={18} color={D.primary} />}
-                    label="Vincular estética"
-                    onPress={() => {
-                      toggleMenu();
-                      setJoinModalVisible(true);
-                    }}
-                  />
-                )}
+                <DrawerItem
+                  icon={<MapPin size={18} color={D.primary} />}
+                  label="Explorar estéticas"
+                  onPress={() => {
+                    toggleMenu();
+                    navigation.navigate('Map');
+                  }}
+                />
               </View>
 
               <View style={styles.drawerDivider} />
@@ -455,54 +433,6 @@ export default function DashboardScreen() {
             </Animated.View>
           </>
         )}
-
-        <Modal
-          visible={joinModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setJoinModalVisible(false)}
-        >
-          <Pressable style={styles.modalOverlay} onPress={() => setJoinModalVisible(false)}>
-            <Pressable style={styles.modalBox} onPress={() => {}}>
-              <Text style={styles.modalTitle}>Código de convite</Text>
-              <Text style={styles.modalDesc}>
-                Peça o código de 6 letras para a estética e insira abaixo.
-              </Text>
-              <TextInput
-                style={styles.modalInput}
-                value={joinCode}
-                onChangeText={t => setJoinCode(t.toUpperCase())}
-                placeholder="Ex: AB34CD"
-                placeholderTextColor={D.ink3}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={6}
-                editable={!joiningShop}
-              />
-              <TouchableOpacity
-                style={[
-                  styles.modalBtn,
-                  (joinCode.trim().length !== 6 || joiningShop) && styles.modalBtnDisabled,
-                ]}
-                onPress={handleJoinShop}
-                disabled={joinCode.trim().length !== 6 || joiningShop}
-                activeOpacity={0.8}
-              >
-                {joiningShop ? (
-                  <ActivityIndicator color={D.onPrimary} />
-                ) : (
-                  <Text style={styles.modalBtnText}>Vincular minha conta</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setJoinModalVisible(false)}
-                style={styles.modalCancel}
-              >
-                <Text style={styles.modalCancelText}>Cancelar</Text>
-              </TouchableOpacity>
-            </Pressable>
-          </Pressable>
-        </Modal>
       </SafeAreaView>
     </>
   );

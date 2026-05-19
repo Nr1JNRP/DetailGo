@@ -32,7 +32,9 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Precisamos da sua localização para mostrar as estéticas parceiras mais próximas de você.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Precisamos da sua localização para mostrar as estéticas parceiras mais próximas de você.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>BootSplash</string>
 	<key>UIRequiredDeviceCapabilities</key>

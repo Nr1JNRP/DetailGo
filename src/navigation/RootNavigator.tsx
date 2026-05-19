@@ -5,6 +5,7 @@ import { View, ActivityIndicator } from 'react-native';
 import type { RootStackParamList } from '@app/types';
 
 import { useAuth, LoginScreen, RegisterScreen } from '@features/auth';
+import { MapScreen } from '@features/map';
 import { DashboardScreen } from '@features/dashboard';
 import { AppointmentScreen, MyAppointmentsScreen, HistoryScreen } from '@features/appointments';
 import { AdminDashboardScreen, AdminManageScreen, AdminHistoryScreen } from '@features/admin';
@@ -38,6 +39,7 @@ export default function RootNavigator() {
               <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
               <Stack.Screen name="AdminManage" component={AdminManageScreen} />
               <Stack.Screen name="AdminHistory" component={AdminHistoryScreen} />
+              <Stack.Screen name="AdminProfile" component={ProfileScreen} />
             </Stack.Group>
           ) : (
             // Owner sem assinatura → tela de pagamento
@@ -46,13 +48,14 @@ export default function RootNavigator() {
             </Stack.Group>
           )
         ) : (
-          // Cliente → painel de agendamentos
+          // Cliente → sempre acessa o Dashboard + todas as telas
           <Stack.Group>
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
             <Stack.Screen name="Appointment" component={AppointmentScreen} />
             <Stack.Screen name="MyAppointments" component={MyAppointmentsScreen} />
             <Stack.Screen name="History" component={HistoryScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="Map" component={MapScreen} />
           </Stack.Group>
         )
       ) : (

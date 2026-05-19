@@ -2,16 +2,17 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   StatusBar,
 } from 'react-native';
+import { launchImageLibrary, type ImageLibraryOptions } from 'react-native-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getAuth } from '@react-native-firebase/auth';
 import {
   collection,
@@ -24,10 +25,11 @@ import {
   where,
   type FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
-import { History, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react-native';
+import { Bell, ChevronLeft, ChevronRight, Menu } from 'lucide-react-native';
+import AdminDrawer from '../components/AdminDrawer';
 
-import type { RootStackParamList } from '@app/types';
 import { darkColors, spacing, radii } from '@shared/theme';
+import { UI } from '@shared/constants/app.constants';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
@@ -39,7 +41,6 @@ import type { AppointmentStatus } from '@features/appointments';
 import type { AdminAppointment } from '../domain/adminAppointment.types';
 import { normalizeAdminAppointmentFromGlobal } from '../data/adminAppointment.normalizers';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
 type QDoc = FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.DocumentData>;
 
 const WEEK_DAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
@@ -76,11 +77,10 @@ function AppointmentSeparator() {
 }
 
 export default function AdminDashboardScreen() {
-  const navigation = useNavigation<Nav>();
   const auth = getAuth();
   const user = auth.currentUser;
   const db = getFirestore();
-  const { shopId, shop } = useShop();
+  const { shopId } = useShop();
 
   const [appointmentsWeek, setAppointmentsWeek] = useState<AdminAppointment[]>([]);
   const [doneThisWeek, setDoneThisWeek] = useState<AdminAppointment[]>([]);
@@ -92,11 +92,83 @@ export default function AdminDashboardScreen() {
   const [weekAnchor, setWeekAnchor] = useState<Date>(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
 
+  // ── Perfil do proprietário ──
+  const [ownerPhotoB64, setOwnerPhotoB64] = useState<string | null>(null);
+  const ownerName = user?.displayName ?? 'Proprietário';
+  const ownerInitials = ownerName
+    .split(' ')
+    .map(w => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'BOM DIA';
+    if (h < 18) return 'BOA TARDE';
+    return 'BOA NOITE';
+  })();
+
+  // ── Drawer ──
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(-UI.MENU_WIDTH)).current;
+
+  const toggleDrawer = () => {
+    if (drawerVisible) {
+      Animated.timing(slideAnim, {
+        toValue: -UI.MENU_WIDTH,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => setDrawerVisible(false));
+    } else {
+      setDrawerVisible(true);
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
   const weekStartMs = useMemo(() => weekStartSun(weekAnchor), [weekAnchor]);
   const weekEndMs = useMemo(() => weekEndSun(weekAnchor), [weekAnchor]);
   const isCurrentWeek = useMemo(() => isSameWeekSun(weekAnchor, new Date()), [weekAnchor]);
 
   const { fetchCustomerName } = useCustomerName();
+
+  // Carrega foto do proprietário em tempo real
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = onSnapshot(doc(db, 'users', user.uid), snap => {
+      const data = snap.data() as { photoB64?: string } | undefined;
+      setOwnerPhotoB64(data?.photoB64 ?? null);
+    });
+    return () => unsub();
+  }, [user?.uid, db]);
+
+  const saveAvatar = async () => {
+    try {
+      const res = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1,
+        includeBase64: true,
+        quality: 0.7,
+        maxWidth: 500,
+        maxHeight: 500,
+      } as ImageLibraryOptions);
+      if (res.didCancel) return;
+      const asset = res.assets?.[0];
+      if (!asset?.base64 || !user?.uid) return;
+      const b64 = `data:${asset.type?.startsWith('image/') ? asset.type : 'image/jpeg'};base64,${
+        asset.base64
+      }`;
+      const { setDoc } = await import('@react-native-firebase/firestore');
+      await setDoc(doc(db, 'users', user.uid), { photoB64: b64 }, { merge: true });
+      setOwnerPhotoB64(b64);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível atualizar a foto');
+    }
+  };
 
   useEffect(() => {
     if (isCurrentWeek) {
@@ -269,13 +341,6 @@ export default function AdminDashboardScreen() {
     );
   }
 
-  const shopName = shop?.name?.toUpperCase() ?? '';
-  const today = new Date();
-  const isSelectedToday = isSameDay(selectedDay, today);
-  const headerTitle = isSelectedToday
-    ? `Hoje, ${WEEK_DAYS[selectedDay.getDay()]} ${selectedDay.getDate()}`
-    : `${WEEK_DAYS[selectedDay.getDay()]}, ${selectedDay.getDate()}`;
-
   const weekStart = new Date(weekStartMs);
   const weekEnd = new Date(weekEndMs);
   const mStart = weekStart
@@ -363,28 +428,38 @@ export default function AdminDashboardScreen() {
 
   const ListHeader = (
     <>
-      {/* ── Header ─────────────────────────────── */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerMeta}>ADMIN{shopName ? ` · ${shopName}` : ''}</Text>
-          <Text style={styles.headerTitle}>{headerTitle}</Text>
+      {/* ── Topbar ─────────────────────────────── */}
+      <View style={styles.topbar}>
+        <TouchableOpacity style={styles.headerBtn} onPress={toggleDrawer} activeOpacity={0.7}>
+          <Menu size={20} color={darkColors.ink2} />
+        </TouchableOpacity>
+        <Text style={styles.topbarBrand}>DETAILGO</Text>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => Alert.alert('Notificações', 'Em breve!')}
+          activeOpacity={0.7}
+        >
+          <Bell size={20} color={darkColors.ink2} />
+          <View style={styles.bellDot} />
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Perfil — igual ao cliente ───────────── */}
+      <View style={styles.profileRow}>
+        <TouchableOpacity onPress={saveAvatar} activeOpacity={0.85}>
+          {ownerPhotoB64 ? (
+            <Image source={{ uri: ownerPhotoB64 }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{ownerInitials}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <View style={styles.profileInfo}>
+          <Text style={styles.greetingText}>{greeting}</Text>
+          <Text style={styles.ownerName}>{ownerName}</Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.headerBtn}
-            onPress={() => navigation.navigate('AdminHistory')}
-            activeOpacity={0.7}
-          >
-            <History size={20} color={darkColors.ink2} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerBtn}
-            onPress={() => navigation.navigate('AdminManage')}
-            activeOpacity={0.7}
-          >
-            <SlidersHorizontal size={20} color={darkColors.ink2} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.profileRole}>Proprietário</Text>
       </View>
 
       {/* ── KPI Cards ──────────────────────────── */}
@@ -500,6 +575,9 @@ export default function AdminDashboardScreen() {
           }
         />
       </SafeAreaView>
+
+      {/* ── Drawer lateral — igual ao cliente ── */}
+      <AdminDrawer visible={drawerVisible} slideAnim={slideAnim} onClose={toggleDrawer} />
     </>
   );
 }
@@ -775,6 +853,93 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
+    color: darkColors.ink3,
+  },
+
+  // ── Topbar padronizado ──────────────────────────
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  topbarBrand: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: darkColors.ink,
+    letterSpacing: 2,
+  },
+  bellDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: darkColors.primary,
+    borderWidth: 1.5,
+    borderColor: darkColors.card,
+  },
+
+  // ── Perfil — igual ao cliente ───────────────────
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: darkColors.border,
+    marginBottom: spacing.lg,
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: darkColors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0B0D0E',
+  },
+  profileInfo: { flex: 1 },
+  greetingText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: darkColors.ink3,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  ownerName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: darkColors.ink,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  shopBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: darkColors.primaryLight,
+    borderWidth: 1,
+    borderColor: 'rgba(212,255,61,0.2)',
+  },
+  shopBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: darkColors.primary,
+  },
+  profileRole: {
+    fontSize: 11,
+    fontWeight: '600',
     color: darkColors.ink3,
   },
 });

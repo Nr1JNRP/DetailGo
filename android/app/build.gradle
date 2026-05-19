@@ -18,6 +18,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [
+            GOOGLE_MAPS_API_KEY: project.findProperty("GOOGLE_MAPS_API_KEY") ?: ""
+        ]
     }
     signingConfigs {
         debug {
@@ -58,9 +61,10 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:34.3.0')
     implementation 'com.google.firebase:firebase-analytics'
 
-       implementation "androidx.browser:browser:1.5.0"    
+    implementation "androidx.browser:browser:1.5.0"
     // ✅ PLAY INTEGRITY (OBRIGATÓRIO PARA PHONE AUTH)
     implementation 'com.google.android.play:integrity:1.4.0'
+
 }
 
 // Certifique-se de que o arquivo android/app/google-services.json exista

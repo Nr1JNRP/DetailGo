@@ -3,37 +3,44 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  PermissionsAndroid,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  ArrowRight,
   ArrowLeft,
-  User,
-  Mail,
-  Phone,
-  Lock,
-  Store,
+  ArrowRight,
+  CheckCircle2,
   Eye,
   EyeOff,
-  CheckCircle2,
+  Lock,
+  Mail,
+  MapPin,
+  Navigation,
+  Phone,
+  Store,
+  User,
 } from 'lucide-react-native';
+import Geolocation from '@react-native-community/geolocation';
 
 import type { RootStackParamList } from '@app/types';
 import { useAuth } from '@features/auth';
 import type { RegisterInput, UserRole } from '../services/auth.service';
+import type { ShopLocation } from '@features/shops/domain/shopLocation.types';
 import { useForm } from '@shared/hooks/useForm';
 import { validationUtils, validationMessages } from '@shared/utils/validation.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useAppTheme, type AppColors } from '@shared/theme';
+import { generateGeohash, geocodeAddress } from '@shared/utils/geo.utils';
+import { cepMask, cepOnlyDigits, fetchCep, formatCepAddress } from '@shared/utils/cep.utils';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -45,7 +52,10 @@ type RegisterForm = {
   password: string;
   confirmPassword: string;
   shopName: string;
-  inviteCode: string;
+  shopCep: string;
+  shopAddress: string;
+  shopNumber: string;
+  shopCity: string;
 };
 
 const ACCOUNT_TYPES = [
@@ -75,6 +85,11 @@ export default function RegisterScreen() {
   const [displayPhone, setDisplayPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [shopLocation, setShopLocation] = useState<ShopLocation | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [locationStep, setLocationStep] = useState(false); // step 3 para owner
+  const [displayCep, setDisplayCep] = useState('');
+  const [loadingCep, setLoadingCep] = useState(false);
 
   const validationRules = {
     firstName: [
@@ -113,7 +128,10 @@ export default function RegisterScreen() {
     ],
     confirmPassword: [] as { validate: (v: string) => boolean; message: string }[],
     shopName: [],
-    inviteCode: [],
+    shopCep: [],
+    shopAddress: [],
+    shopNumber: [],
+    shopCity: [],
   };
 
   const {
@@ -135,7 +153,10 @@ export default function RegisterScreen() {
       password: '',
       confirmPassword: '',
       shopName: '',
-      inviteCode: '',
+      shopCep: '',
+      shopAddress: '',
+      shopNumber: '',
+      shopCity: '',
     },
     validationRules,
   );
@@ -169,8 +190,171 @@ export default function RegisterScreen() {
     handleChange('phone', formatUtils.phoneDigits(text));
   };
 
+  const handleCepChange = async (text: string) => {
+    const masked = cepMask(text);
+    setDisplayCep(masked);
+    const digits = cepOnlyDigits(text);
+    handleChange('shopCep', digits);
+
+    if (digits.length === 8) {
+      setLoadingCep(true);
+      const result = await fetchCep(digits);
+      setLoadingCep(false);
+
+      if (result) {
+        const { address, city } = formatCepAddress(result);
+        handleChange('shopAddress', address);
+        handleChange('shopCity', city);
+      } else {
+        Alert.alert('CEP não encontrado', 'Verifique o CEP e preencha o endereço manualmente.');
+      }
+    }
+  };
+
+  /**
+   * Pede permissão de localização no Android.
+   * No iOS o @react-native-community/geolocation pede automaticamente.
+   */
+  const ensureLocationPermission = async (): Promise<boolean> => {
+    if (Platform.OS !== 'android') return true;
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          title: 'Permissão de localização',
+          message: 'Precisamos da sua localização para registrar o endereço da estética.',
+          buttonNeutral: 'Perguntar depois',
+          buttonNegative: 'Não permitir',
+          buttonPositive: 'Permitir',
+        },
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch {
+      return false;
+    }
+  };
+
+  /**
+   * Usa o GPS para definir a localização da estética.
+   * O texto exibido vem dos campos preenchidos pelo CEP (ou "Localização atual").
+   */
+  const handleUseCurrentLocation = async () => {
+    setLoadingLocation(true);
+
+    const hasPermission = await ensureLocationPermission();
+    if (!hasPermission) {
+      setLoadingLocation(false);
+      Alert.alert('Permissão negada', 'Não foi possível acessar sua localização.');
+      return;
+    }
+
+    Geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        const address = values.shopAddress.trim();
+        const number = values.shopNumber.trim();
+        const addressWithNumber = number ? `${address}, ${number}` : address || 'Localização atual';
+        setShopLocation({
+          lat: latitude,
+          lng: longitude,
+          address: addressWithNumber,
+          city: values.shopCity.trim() || '',
+          geohash: generateGeohash(latitude, longitude),
+        });
+        setLoadingLocation(false);
+        Alert.alert('Localização obtida!', 'Sua posição atual foi salva.');
+      },
+      err => {
+        setLoadingLocation(false);
+        Alert.alert(
+          'GPS indisponível',
+          `${err?.message ?? 'Erro desconhecido'}\n\nVerifique se o GPS está ativado.`,
+        );
+      },
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 },
+    );
+  };
+
+  /**
+   * Confirma o endereço. Usa GPS para coordenadas precisas e mantém o texto
+   * preenchido pelo CEP. Se o GPS falhar, tenta Nominatim como fallback.
+   */
+  const handleGeocodeAddress = async () => {
+    const address = values.shopAddress.trim();
+    const number = values.shopNumber.trim();
+    const city = values.shopCity.trim();
+
+    if (!address && !city) {
+      Alert.alert('Atenção', 'Preencha o CEP ou o endereço da estética.');
+      return;
+    }
+
+    setLoadingLocation(true);
+
+    const hasPermission = await ensureLocationPermission();
+    if (!hasPermission) {
+      setLoadingLocation(false);
+      Alert.alert(
+        'Permissão necessária',
+        'Para confirmar o endereço, permita o acesso à localização nas configurações.',
+      );
+      return;
+    }
+
+    Geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        const addressWithNumber = number ? `${address}, ${number}` : address;
+        setShopLocation({
+          lat: latitude,
+          lng: longitude,
+          address: addressWithNumber,
+          city,
+          geohash: generateGeohash(latitude, longitude),
+        });
+        setLoadingLocation(false);
+        Alert.alert('✅ Localização confirmada!', `${addressWithNumber}\n${city}`);
+      },
+      async err => {
+        // Fallback: tenta geocodificar via Nominatim
+        const fullAddress = [address, number, city, 'Brasil'].filter(Boolean).join(', ');
+        const coords = await geocodeAddress(fullAddress);
+
+        if (coords) {
+          const addressWithNumber = number ? `${address}, ${number}` : address;
+          setShopLocation({
+            lat: coords.lat,
+            lng: coords.lng,
+            address: addressWithNumber,
+            city,
+            geohash: generateGeohash(coords.lat, coords.lng),
+          });
+          setLoadingLocation(false);
+          Alert.alert('✅ Localização confirmada!', `${addressWithNumber}\n${city}`);
+          return;
+        }
+
+        setLoadingLocation(false);
+        Alert.alert(
+          'Não foi possível obter a localização',
+          `GPS: ${err?.message ?? 'falhou'}\n\nVerifique se o GPS está ativado.`,
+        );
+      },
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 },
+    );
+  };
+
   const handleSubmit = async () => {
     if (!accountType || !validateForm()) return;
+
+    // Owner precisa de localização
+    if (accountType === 'owner' && !shopLocation) {
+      Alert.alert(
+        'Localização necessária',
+        'Informe onde fica sua estética para aparecer no mapa.',
+      );
+      return;
+    }
 
     setIsSubmitting(true);
     const data: RegisterInput = {
@@ -181,6 +365,7 @@ export default function RegisterScreen() {
       password: values.password,
       role: accountType,
       shopName: accountType === 'owner' ? values.shopName.trim() || 'Minha Estética' : undefined,
+      shopLocation: accountType === 'owner' ? shopLocation ?? undefined : undefined,
     };
 
     const res = await register(data);
@@ -193,19 +378,21 @@ export default function RegisterScreen() {
 
     reset();
     setDisplayPhone('');
+    setShopLocation(null);
+    setLocationStep(false);
     setAccountType(null);
 
-    if (accountType === 'owner' && res.inviteCode) {
+    if (accountType === 'owner') {
       Alert.alert(
-        'Estética criada!',
-        `Seu código de convite é:\n\n${res.inviteCode}\n\nCompartilhe com seus clientes. Também disponível em Gerenciar Loja.`,
+        '🎉 Estética criada!',
+        'Sua estética foi cadastrada com sucesso!\n\nAtive sua assinatura para aparecer no mapa e receber clientes.',
         [{ text: 'Entendido!' }],
       );
     } else {
       Alert.alert(
-        'Conta criada!',
-        'Peça o código de convite da estética no seu dashboard para agendar serviços.',
-        [{ text: 'OK' }],
+        '🎉 Conta criada!',
+        'Bem-vindo ao DetailGo!\n\nExplore as estéticas parceiras no mapa e agende seu serviço.',
+        [{ text: 'Vamos lá!' }],
       );
     }
   };
@@ -264,9 +451,9 @@ export default function RegisterScreen() {
 
           {/* Trial notice */}
           <View style={styles.trialBox}>
-            <Text style={styles.trialLabel}>TRIAL 14 DIAS</Text>
+            <Text style={styles.trialLabel}>TRIAL 7 DIAS</Text>
             <Text style={styles.trialDesc}>
-              Donos começam com 14 dias grátis. Cancele quando quiser.
+              Donos começam com 7 dias grátis no mapa. Após isso, assine para continuar visível.
             </Text>
           </View>
 
@@ -283,6 +470,167 @@ export default function RegisterScreen() {
   }
 
   const isOwner = accountType === 'owner';
+
+  // ── Step 3: Localização da estética (owner) ────────────────
+  if (isOwner && locationStep) {
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <StatusBar barStyle={isLight ? 'dark-content' : 'light-content'} backgroundColor={D.bg} />
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <View style={styles.step2Header}>
+            <Text style={styles.stepIndicator}>03 / 03 · LOCALIZAÇÃO</Text>
+            <Text style={styles.step2Title}>{'Onde fica\nsua estética?'}</Text>
+            <TouchableOpacity style={styles.typePill} onPress={() => setLocationStep(false)}>
+              <ArrowLeft size={12} color={D.primary} />
+              <Text style={styles.typePillText}>Voltar</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.fields}>
+            {/* CEP com busca automática */}
+            <View style={styles.cepRow}>
+              <DField
+                label="CEP"
+                icon={
+                  loadingCep ? (
+                    <ActivityIndicator size="small" color={D.primary} />
+                  ) : (
+                    <MapPin size={18} color={D.ink3} />
+                  )
+                }
+                value={displayCep}
+                onChangeText={handleCepChange}
+                onBlur={() => handleBlur('shopCep')}
+                placeholder="00000-000"
+                keyboardType="numeric"
+                maxLength={9}
+                containerStyle={styles.cepField}
+                error={undefined}
+              />
+              {loadingCep && (
+                <View style={styles.cepBadge}>
+                  <Text style={styles.cepBadgeText}>Buscando...</Text>
+                </View>
+              )}
+            </View>
+
+            <DField
+              label="ENDEREÇO"
+              icon={<MapPin size={18} color={D.ink3} />}
+              value={values.shopAddress}
+              onChangeText={v => handleChange('shopAddress', v)}
+              onBlur={() => handleBlur('shopAddress')}
+              placeholder="Rua, bairro (preenchido pelo CEP)"
+              error={touched.shopAddress ? errors.shopAddress : undefined}
+            />
+
+            <DField
+              label="NÚMERO"
+              icon={<MapPin size={18} color={D.ink3} />}
+              value={values.shopNumber}
+              onChangeText={v => handleChange('shopNumber', v)}
+              onBlur={() => handleBlur('shopNumber')}
+              placeholder="Ex: 123, S/N"
+              keyboardType="default"
+              error={touched.shopNumber ? errors.shopNumber : undefined}
+            />
+            <DField
+              label="CIDADE"
+              icon={<MapPin size={18} color={D.ink3} />}
+              value={values.shopCity}
+              onChangeText={v => handleChange('shopCity', v)}
+              onBlur={() => handleBlur('shopCity')}
+              placeholder="Cidade - UF (preenchido pelo CEP)"
+              error={touched.shopCity ? errors.shopCity : undefined}
+            />
+
+            {/* Botão confirmar com GPS */}
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: D.surface }]}
+              onPress={handleGeocodeAddress}
+              disabled={loadingLocation}
+              activeOpacity={0.85}
+            >
+              {loadingLocation ? (
+                <ActivityIndicator color={D.primary} />
+              ) : (
+                <>
+                  <Navigation size={16} color={D.primary} />
+                  <Text style={[styles.btnText, { color: D.primary }]}>Confirmar com GPS</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>ou</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Botão GPS */}
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: D.primaryLight }]}
+              onPress={handleUseCurrentLocation}
+              disabled={loadingLocation}
+              activeOpacity={0.85}
+            >
+              {loadingLocation ? (
+                <ActivityIndicator color={D.primary} />
+              ) : (
+                <>
+                  <Navigation size={18} color={D.primary} />
+                  <Text style={[styles.btnText, { color: D.primary }]}>
+                    Usar minha localização atual
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Confirmação */}
+            {shopLocation && (
+              <View style={styles.locationConfirmed}>
+                <CheckCircle2 size={16} color={D.primary} />
+                <Text style={styles.locationConfirmedText}>
+                  Localização definida · {shopLocation.address || shopLocation.city}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.cta}>
+            <TouchableOpacity
+              style={[styles.btn, (!shopLocation || isSubmitting) && styles.btnDisabled]}
+              onPress={handleSubmit}
+              disabled={!shopLocation || isSubmitting}
+              activeOpacity={0.85}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color={D.onPrimary} />
+              ) : (
+                <>
+                  <Text style={styles.btnText}>Criar estética e conta</Text>
+                  <View style={styles.btnArrow}>
+                    <ArrowRight size={18} color={D.onPrimary} />
+                  </View>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ height: 24 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   // ── Step 2: Formulário ─────────────────────────────────────
   return (
@@ -417,7 +765,13 @@ export default function RegisterScreen() {
         <View style={styles.cta}>
           <TouchableOpacity
             style={[styles.btn, (!canSubmit || isSubmitting) && styles.btnDisabled]}
-            onPress={handleSubmit}
+            onPress={
+              isOwner
+                ? () => {
+                    if (validateForm()) setLocationStep(true);
+                  }
+                : handleSubmit
+            }
             disabled={!canSubmit || isSubmitting}
             activeOpacity={0.85}
           >
@@ -426,7 +780,7 @@ export default function RegisterScreen() {
             ) : (
               <>
                 <Text style={styles.btnText}>
-                  {isOwner ? 'Criar estética e conta' : 'Criar conta'}
+                  {isOwner ? 'Próximo · Localização' : 'Criar conta'}
                 </Text>
                 <View style={styles.btnArrow}>
                   <ArrowRight size={18} color={D.onPrimary} />
@@ -713,6 +1067,60 @@ function createStyles(D: AppColors) {
       fontSize: 11,
       color: D.accent,
       marginTop: 2,
+    },
+
+    // ── CEP
+    cepRow: {
+      position: 'relative',
+    },
+    cepField: {
+      flex: 1,
+    },
+    cepBadge: {
+      position: 'absolute',
+      right: 12,
+      top: 28,
+      height: 50,
+      justifyContent: 'center',
+    },
+    cepBadgeText: {
+      fontSize: 11,
+      color: D.primary,
+      fontWeight: '600',
+    },
+
+    // ── Location confirmed
+    locationConfirmed: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      padding: 12,
+      backgroundColor: D.primaryLight,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: D.borderFocus,
+    },
+    locationConfirmedText: {
+      flex: 1,
+      fontSize: 13,
+      color: D.primary,
+      fontWeight: '500',
+    },
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginVertical: 4,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: D.border,
+    },
+    dividerText: {
+      fontSize: 12,
+      color: D.ink3,
+      fontWeight: '500',
     },
 
     // ── CTA
