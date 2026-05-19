@@ -17,7 +17,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const { user, initializing } = useAuth();
-  const { shopId, userRole, loading: loadingShop, isSubscriptionActive } = useShop();
+  const { userRole, loading: loadingShop, isSubscriptionActive } = useShop();
 
   if (initializing || (user && loadingShop)) {
     return (
