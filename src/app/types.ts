@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Subscription: undefined;
 
   // USER
+  Map: undefined;
   Dashboard: undefined;
   Appointment:
     | {

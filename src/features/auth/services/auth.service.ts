@@ -17,6 +17,8 @@ import {
 } from '@react-native-firebase/firestore';
 import { mapFirebaseAuthError } from '@shared/utils/firebase.utils';
 import { stringUtils } from '@shared/utils/string.utils';
+import { generateGeohash } from '@shared/utils/geo.utils';
+import type { ShopLocation } from '@features/shops/domain/shopLocation.types';
 
 export type UserRole = 'owner' | 'customer';
 
@@ -28,7 +30,7 @@ export type RegisterInput = {
   password: string;
   role: UserRole;
   shopName?: string; // obrigatório para owner
-  inviteCode?: string; // obrigatório para customer
+  shopLocation?: ShopLocation; // obrigatório para owner
 };
 
 export type AuthResult =
@@ -36,29 +38,45 @@ export type AuthResult =
       ok: true;
       user: FirebaseAuthTypes.User;
       cred?: FirebaseAuthTypes.UserCredential;
-      inviteCode?: string;
     }
   | { ok: false; message: string; code?: string };
 
-async function registerAsOwner(uid: string, data: RegisterInput): Promise<string> {
+const TRIAL_DAYS = 7;
+
+async function registerAsOwner(uid: string, data: RegisterInput): Promise<void> {
   const db = getFirestore();
   const shopRef = doc(collection(db, 'shops'));
   const shopId = shopRef.id;
-  const code = stringUtils.generateRandomCode();
   const shopName = data.shopName?.trim() || 'Minha Estética';
 
-  const trialEndsAt = Timestamp.fromMillis(Date.now() + 14 * 24 * 60 * 60 * 1000);
+  const trialEndsAt = Timestamp.fromMillis(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 
+  const location = data.shopLocation ?? null;
+  const geohash = location ? generateGeohash(location.lat, location.lng) : null;
+
+  // Documento principal do shop
   await setDoc(shopRef, {
     name: shopName,
-    code,
+    code: stringUtils.generateRandomCode(), // código interno para referências futuras
     ownerId: uid,
     createdAt: serverTimestamp(),
     subscriptionStatus: 'trial',
     trialEndsAt,
     activeUntil: null,
+    location: location
+      ? {
+          lat: location.lat,
+          lng: location.lng,
+          address: location.address,
+          city: location.city,
+          geohash,
+        }
+      : null,
+    geohash,
+    isVisibleOnMap: true, // visível no mapa durante o trial; Cloud Function oculta após expirar
   });
 
+  // Configurações padrão do shop
   await setDoc(doc(db, 'shops', shopId, 'settings', 'config'), {
     openHour: 8,
     closeHour: 18,
@@ -68,6 +86,7 @@ async function registerAsOwner(uid: string, data: RegisterInput): Promise<string
     updatedAt: serverTimestamp(),
   });
 
+  // Vincula o usuário ao shop como owner
   await setDoc(
     doc(db, 'users', uid),
     {
@@ -82,8 +101,6 @@ async function registerAsOwner(uid: string, data: RegisterInput): Promise<string
     },
     { merge: true },
   );
-
-  return code;
 }
 
 async function registerAsCustomer(uid: string, data: RegisterInput): Promise<void> {
@@ -127,8 +144,8 @@ export async function register(data: RegisterInput): Promise<AuthResult> {
     if (displayName) await updateProfile(cred.user, { displayName });
 
     if (data.role === 'owner') {
-      const inviteCode = await registerAsOwner(cred.user.uid, data);
-      return { ok: true, user: cred.user, cred, inviteCode };
+      await registerAsOwner(cred.user.uid, data);
+      return { ok: true, user: cred.user, cred };
     } else {
       await registerAsCustomer(cred.user.uid, data);
       return { ok: true, user: cred.user, cred };

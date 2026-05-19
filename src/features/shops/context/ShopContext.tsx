@@ -14,6 +14,15 @@ export type ShopDoc = {
   subscriptionStatus: SubscriptionStatus;
   trialEndsAt?: any; // Firestore Timestamp
   activeUntil?: any; // Firestore Timestamp
+  location?: {
+    lat: number;
+    lng: number;
+    address: string;
+    city: string;
+    geohash: string;
+  } | null;
+  geohash?: string | null;
+  isVisibleOnMap?: boolean;
 };
 
 type UserDoc = {

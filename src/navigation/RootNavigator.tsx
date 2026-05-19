@@ -5,6 +5,7 @@ import { View, ActivityIndicator } from 'react-native';
 import type { RootStackParamList } from '@app/types';
 
 import { useAuth, LoginScreen, RegisterScreen } from '@features/auth';
+import { MapScreen } from '@features/map';
 import { DashboardScreen } from '@features/dashboard';
 import { AppointmentScreen, MyAppointmentsScreen, HistoryScreen } from '@features/appointments';
 import { AdminDashboardScreen, AdminManageScreen, AdminHistoryScreen } from '@features/admin';
@@ -16,7 +17,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const { user, initializing } = useAuth();
-  const { userRole, loading: loadingShop, isSubscriptionActive } = useShop();
+  const { shopId, userRole, loading: loadingShop, isSubscriptionActive } = useShop();
 
   if (initializing || (user && loadingShop)) {
     return (
@@ -47,13 +48,14 @@ export default function RootNavigator() {
             </Stack.Group>
           )
         ) : (
-          // Cliente → painel de agendamentos
+          // Cliente → sempre acessa o Dashboard + todas as telas
           <Stack.Group>
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
             <Stack.Screen name="Appointment" component={AppointmentScreen} />
             <Stack.Screen name="MyAppointments" component={MyAppointmentsScreen} />
             <Stack.Screen name="History" component={HistoryScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="Map" component={MapScreen} />
           </Stack.Group>
         )
       ) : (

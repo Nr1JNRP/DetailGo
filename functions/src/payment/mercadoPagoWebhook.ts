@@ -61,15 +61,21 @@ export const mercadoPagoWebhook = onRequest(
         const activeUntil = new Date();
         activeUntil.setDate(activeUntil.getDate() + 30);
 
+        const shopSnap = await db.doc(`shops/${shopId}`).get();
+        const shopData = shopSnap.data();
+        const hasLocation = shopData?.location?.lat != null;
+
         await db.doc(`shops/${shopId}`).update({
           subscriptionStatus: 'active',
           activeUntil: admin.firestore.Timestamp.fromDate(activeUntil),
           lastPaymentId: paymentId,
           lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+          // aparece no mapa somente se tem localização cadastrada
+          isVisibleOnMap: hasLocation,
         });
 
         logger.info(
-          `✅ Assinatura ativada: shop=${shopId} até ${activeUntil.toISOString()}`,
+          `✅ Assinatura ativada: shop=${shopId} até ${activeUntil.toISOString()} | visível no mapa: ${hasLocation}`,
         );
       }
 
