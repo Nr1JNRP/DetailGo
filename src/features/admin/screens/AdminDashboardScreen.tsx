@@ -25,7 +25,15 @@ import {
   where,
   type FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
-import { Bell, ChevronLeft, ChevronRight, Menu } from 'lucide-react-native';
+import {
+  AlertTriangle,
+  Bell,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  PlayCircle,
+} from 'lucide-react-native';
 import AdminDrawer from '../components/AdminDrawer';
 
 import { darkColors, spacing, radii } from '@shared/theme';
@@ -379,19 +387,56 @@ export default function AdminDashboardScreen() {
 
     const expired = dateUtils.isExpired(item.startAtMs, NO_SHOW_GRACE_MS);
     const isInProgress = item.status === 'in_progress';
-    const isActive = isInProgress && !expired;
+    const isExpiredScheduled = item.status === 'scheduled' && expired;
+    const isUpdating = updatingId === item.id;
     const durationMin = item.endAtMs ? Math.round((item.endAtMs - item.startAtMs) / 60000) : null;
+    const statusLabel = isExpiredScheduled
+      ? 'Aguardando baixa'
+      : isInProgress
+      ? 'Em atendimento'
+      : 'Agendado';
+    const actionLabel = isExpiredScheduled
+      ? 'Não realizado'
+      : isInProgress
+      ? 'Concluir serviço'
+      : 'Iniciar atendimento';
 
-    const onPress = () => {
-      if (expired && item.status === 'scheduled') {
+    const onActionPress = () => {
+      if (isExpiredScheduled) {
         Alert.alert(
-          'Serviço não realizado',
-          'Já passaram 15 minutos do horário. Agendamento considerado NÃO REALIZADO.',
+          'Marcar não realizado',
+          'Esse horário já passou. Deseja dar baixa como serviço não realizado?',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            {
+              text: 'Marcar',
+              style: 'destructive',
+              onPress: () => {
+                doUpdate(item, 'no_show');
+              },
+            },
+          ],
         );
         return;
       }
-      if (item.status === 'scheduled') doUpdate(item, 'in_progress');
-      else if (item.status === 'in_progress') doUpdate(item, 'done');
+
+      if (item.status === 'scheduled') {
+        doUpdate(item, 'in_progress');
+        return;
+      }
+
+      if (item.status === 'in_progress') {
+        Alert.alert('Concluir serviço', `Finalizar ${item.serviceLabel ?? 'este serviço'}?`, [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Concluir',
+            onPress: () => {
+              doUpdate(item, 'done');
+            },
+          },
+        ]);
+        return;
+      }
     };
 
     return (
@@ -401,11 +446,12 @@ export default function AdminDashboardScreen() {
           {durationMin !== null && <Text style={styles.agendaDuration}>{durationMin}m</Text>}
         </View>
 
-        <TouchableOpacity
-          style={[styles.agendaCard, isActive && styles.agendaCardActive]}
-          onPress={onPress}
-          activeOpacity={0.75}
-          disabled={!!updatingId}
+        <View
+          style={[
+            styles.agendaCard,
+            isInProgress && styles.agendaCardActive,
+            isExpiredScheduled && styles.agendaCardExpired,
+          ]}
         >
           <View style={styles.agendaCardContent}>
             <Text style={styles.agendaService} numberOfLines={1}>
@@ -414,14 +460,72 @@ export default function AdminDashboardScreen() {
             <Text style={styles.agendaClient} numberOfLines={1}>
               {item.customerName} · {vehicle}
             </Text>
+            <View style={styles.agendaStatusRow}>
+              <View
+                style={[
+                  styles.agendaStatusPill,
+                  isInProgress && styles.agendaStatusPillActive,
+                  isExpiredScheduled && styles.agendaStatusPillExpired,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.agendaStatusDot,
+                    isInProgress && styles.agendaStatusDotActive,
+                    isExpiredScheduled && styles.agendaStatusDotExpired,
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.agendaStatusText,
+                    isInProgress && styles.agendaStatusTextActive,
+                    isExpiredScheduled && styles.agendaStatusTextExpired,
+                  ]}
+                >
+                  {statusLabel}
+                </Text>
+              </View>
+            </View>
           </View>
 
-          {updatingId === item.id ? (
-            <ActivityIndicator size="small" color={darkColors.primary} />
-          ) : (
-            isActive && <View style={styles.agendaDot} />
-          )}
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.agendaActionButton,
+              isInProgress && styles.agendaActionButtonDone,
+              isExpiredScheduled && styles.agendaActionButtonExpired,
+            ]}
+            onPress={onActionPress}
+            activeOpacity={0.78}
+            disabled={!!updatingId}
+          >
+            {isUpdating ? (
+              <ActivityIndicator
+                size="small"
+                color={isInProgress ? darkColors.onPrimary : darkColors.primary}
+              />
+            ) : (
+              <>
+                {isExpiredScheduled ? (
+                  <AlertTriangle size={16} color={darkColors.status.error} />
+                ) : isInProgress ? (
+                  <CheckCircle2 size={16} color={darkColors.onPrimary} />
+                ) : (
+                  <PlayCircle size={16} color={darkColors.primary} />
+                )}
+                <Text
+                  style={[
+                    styles.agendaActionText,
+                    isInProgress && styles.agendaActionTextDone,
+                    isExpiredScheduled && styles.agendaActionTextExpired,
+                  ]}
+                  numberOfLines={2}
+                >
+                  {actionLabel}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -798,6 +902,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     backgroundColor: darkColors.card,
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -808,6 +913,9 @@ const styles = StyleSheet.create({
   },
   agendaCardActive: {
     borderColor: darkColors.primary,
+  },
+  agendaCardExpired: {
+    borderColor: darkColors.status.error,
   },
   agendaCardContent: {
     flex: 1,
@@ -823,12 +931,85 @@ const styles = StyleSheet.create({
     color: darkColors.ink3,
     fontWeight: '400',
   },
-  agendaDot: {
-    width: 8,
-    height: 8,
+  agendaStatusRow: {
+    flexDirection: 'row',
+    marginTop: spacing.sm,
+  },
+  agendaStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: darkColors.border,
+  },
+  agendaStatusPillActive: {
+    backgroundColor: darkColors.primaryLight,
+    borderColor: darkColors.primary,
+  },
+  agendaStatusPillExpired: {
+    backgroundColor: 'rgba(255,92,57,0.12)',
+    borderColor: darkColors.status.error,
+  },
+  agendaStatusDot: {
+    width: 7,
+    height: 7,
     borderRadius: 4,
+    backgroundColor: darkColors.ink3,
+  },
+  agendaStatusDotActive: {
     backgroundColor: darkColors.primary,
-    marginLeft: spacing.sm,
+  },
+  agendaStatusDotExpired: {
+    backgroundColor: darkColors.status.error,
+  },
+  agendaStatusText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: darkColors.ink2,
+  },
+  agendaStatusTextActive: {
+    color: darkColors.primary,
+  },
+  agendaStatusTextExpired: {
+    color: darkColors.status.error,
+  },
+  agendaActionButton: {
+    width: 118,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: darkColors.primary,
+    backgroundColor: 'transparent',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  agendaActionButtonDone: {
+    backgroundColor: darkColors.primary,
+  },
+  agendaActionButtonExpired: {
+    borderColor: darkColors.status.error,
+  },
+  agendaActionText: {
+    flexShrink: 1,
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: '800',
+    color: darkColors.primary,
+    textAlign: 'center',
+  },
+  agendaActionTextDone: {
+    color: darkColors.onPrimary,
+  },
+  agendaActionTextExpired: {
+    color: darkColors.status.error,
   },
 
   // ── Loading / Empty ──────────────────────────────
