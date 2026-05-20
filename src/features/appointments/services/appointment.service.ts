@@ -1,12 +1,18 @@
 import {
-  getFirestore,
+  collection,
   doc,
   getDoc,
-  writeBatch,
+  getDocs,
+  getFirestore,
+  query,
   serverTimestamp,
+  setDoc,
+  where,
+  writeBatch,
 } from '@react-native-firebase/firestore';
 import { getAuth } from '@react-native-firebase/auth';
 import type { AppointmentStatus } from '../domain/appointment.types';
+import { ACTIVE_APPOINTMENT_SET } from '../domain/appointment.constants';
 import { mapFirestoreError } from '@shared/utils/firebase.utils';
 
 export type CancelAppointmentResult =
@@ -131,9 +137,70 @@ export async function cancelAppointment(
 
     await batch.commit();
 
+    // Se o cliente não tem mais agendamentos ativos no shop, desvincula a estética
+    // favorita (users/{uid}.shopId = null) para voltar ao empty state no Dashboard.
+    await clearShopFavoriteIfNoActive(customerUid, shopId);
+
     return { ok: true, message: 'Agendamento cancelado com sucesso!' };
   } catch (error: any) {
     console.error('Erro ao cancelar agendamento:', error);
     return { ok: false, message: mapFirestoreError(error) };
+  }
+}
+
+/**
+ * Verifica se o cliente ainda tem agendamentos ativos no shop. Se não tem,
+ * limpa users/{uid}.shopId para o Dashboard voltar ao empty state.
+ *
+ * Estratégia: busca todos os agendamentos do user no shop e filtra status
+ * no cliente. Evita where('status', 'in', [...]) que exigiria índice composto.
+ */
+export async function clearShopFavoriteIfNoActive(
+  customerUid: string,
+  shopId: string,
+): Promise<void> {
+  try {
+    const db = getFirestore();
+
+    console.log('[clearShopFavorite] iniciando', { customerUid, shopId });
+
+    const userSnap = await getDoc(doc(db, 'users', customerUid));
+    if (!userSnap.exists()) {
+      console.log('[clearShopFavorite] user não existe, abortando');
+      return;
+    }
+    const userData = userSnap.data() as { shopId?: string | null };
+    console.log('[clearShopFavorite] user.shopId atual:', userData.shopId);
+
+    if (userData.shopId !== shopId) {
+      console.log('[clearShopFavorite] shopId do user não bate, abortando');
+      return;
+    }
+
+    const userAppointmentsQuery = query(
+      collection(db, 'shops', shopId, 'appointments'),
+      where('customerUid', '==', customerUid),
+    );
+
+    const snap = await getDocs(userAppointmentsQuery);
+    const activeStatuses = new Set<AppointmentStatus>(ACTIVE_APPOINTMENT_SET);
+
+    const statuses: string[] = [];
+    const hasActive = snap.docs.some((d: { data: () => unknown }) => {
+      const data = d.data() as { status?: AppointmentStatus };
+      if (data.status) statuses.push(data.status);
+      return data.status ? activeStatuses.has(data.status) : false;
+    });
+
+    console.log(`[clearShopFavorite] total agendamentos no shop: ${snap.docs.length}`);
+    console.log(`[clearShopFavorite] status encontrados: [${statuses.join(', ')}]`);
+    console.log(`[clearShopFavorite] tem ativo? ${hasActive}`);
+
+    if (hasActive) return;
+
+    await setDoc(doc(db, 'users', customerUid), { shopId: null }, { merge: true });
+    console.log('[clearShopFavorite] ✅ shopId limpo');
+  } catch (err: any) {
+    console.warn('[clearShopFavorite] erro:', err?.message ?? err);
   }
 }

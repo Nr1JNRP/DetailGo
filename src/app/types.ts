@@ -8,9 +8,11 @@ export type RootStackParamList = {
 
   // USER
   Map: undefined;
+  ShopProfile: { shopId: string };
   Dashboard: undefined;
   Appointment:
     | {
+        shopId?: string; // opcional — quando vem de ShopProfile, agenda nesse shop
         mode?: 'reschedule';
         originalAppointmentId?: string;
         vehicleType?: 'Carro' | 'Moto';
