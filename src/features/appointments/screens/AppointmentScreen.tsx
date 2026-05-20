@@ -19,7 +19,8 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAuth } from '@react-native-firebase/auth';
-import { useNavigation } from '@react-navigation/native';
+import { doc, getFirestore, setDoc } from '@react-native-firebase/firestore';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ArrowLeft,
@@ -295,8 +296,13 @@ function SelectModal<T extends string>({
 export default function AppointmentScreen() {
   const auth = getAuth();
   const navigation = useNavigation<NavProp>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Appointment'>>();
   const uid = auth.currentUser?.uid;
-  const { shopId } = useShop();
+
+  // shopId pode vir por param (vindo de ShopProfile) ou do shop padrão do user
+  const { shopId: defaultShopId } = useShop();
+  const shopId = route.params?.shopId ?? defaultShopId;
+
   const { loading: loadingServices, items: services } = useShopServices({
     shopId,
     activeOnly: true,
@@ -403,6 +409,13 @@ export default function AppointmentScreen() {
         startAtMs: selectedSlot.startAtMs,
         endAtMs: selectedSlot.endAtMs,
       });
+
+      // Salva o shopId no user como "última estética usada"
+      if (uid && shopId) {
+        await setDoc(doc(getFirestore(), 'users', uid), { shopId }, { merge: true }).catch(() => {
+          // se falhar, não interrompe o fluxo do agendamento
+        });
+      }
 
       Alert.alert('Sucesso!', 'Seu agendamento foi confirmado.', [
         {

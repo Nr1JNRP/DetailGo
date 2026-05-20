@@ -1,12 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { doc, getFirestore, updateDoc } from '@react-native-firebase/firestore';
-import { getAuth } from '@react-native-firebase/auth';
+import React, { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MapPin, X, ArrowRight } from 'lucide-react-native';
 
+import type { RootStackParamList } from '@app/types';
 import { useAppTheme, type AppColors } from '@shared/theme';
 import { formatDistance } from '@shared/utils/geo.utils';
 import type { NearbyShop } from '@features/shops/services/discoverShops.service';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type Props = {
   shop: NearbyShop;
@@ -16,20 +19,11 @@ type Props = {
 export default function ShopDetailSheet({ shop, onClose }: Props) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
-  const [loading, setLoading] = useState(false);
+  const navigation = useNavigation<Nav>();
 
-  const handleSelectShop = async () => {
-    const uid = getAuth().currentUser?.uid;
-    if (!uid) return;
-
-    setLoading(true);
-    try {
-      await updateDoc(doc(getFirestore(), 'users', uid), { shopId: shop.id });
-      // ShopContext detecta a mudança via onSnapshot e redireciona para Dashboard
-    } catch {
-      Alert.alert('Erro', 'Não foi possível selecionar esta estética. Tente novamente.');
-      setLoading(false);
-    }
+  const handleOpenProfile = () => {
+    onClose();
+    navigation.navigate('ShopProfile', { shopId: shop.id });
   };
 
   return (
@@ -53,20 +47,10 @@ export default function ShopDetailSheet({ shop, onClose }: Props) {
         </View>
       </View>
 
-      {/* CTA */}
-      <Pressable
-        style={[styles.cta, loading && styles.ctaDisabled]}
-        onPress={handleSelectShop}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <>
-            <Text style={styles.ctaText}>Agendar nesta estética</Text>
-            <ArrowRight size={18} color="#fff" />
-          </>
-        )}
+      {/* CTA — leva para a tela de perfil completo do shop */}
+      <Pressable style={styles.cta} onPress={handleOpenProfile}>
+        <Text style={styles.ctaText}>Ver detalhes da estética</Text>
+        <ArrowRight size={18} color="#fff" />
       </Pressable>
     </View>
   );
@@ -143,7 +127,6 @@ function createStyles(D: AppColors) {
       justifyContent: 'space-between',
       paddingHorizontal: 20,
     },
-    ctaDisabled: { opacity: 0.5 },
     ctaText: {
       fontSize: 15,
       fontWeight: '700',

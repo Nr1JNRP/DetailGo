@@ -37,7 +37,11 @@ import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
 import { useAuth } from '@features/auth';
 import { useShop, useShopServices, getShopServiceIcon } from '@features/shops';
-import { useDashboardAppointments } from '@features/appointments';
+import {
+  ACTIVE_APPOINTMENT_SET,
+  clearShopFavoriteIfNoActive,
+  useDashboardAppointments,
+} from '@features/appointments';
 import type { RootStackParamList } from '@app/types';
 import type { UserAppointment } from '@features/appointments';
 import { dateUtils } from '@shared/utils/date.utils';
@@ -67,7 +71,7 @@ export default function DashboardScreen() {
   const user = auth.currentUser!;
   const uid = user.uid;
   const { signOut } = useAuth();
-  const { shopId } = useShop();
+  const { shopId, shop } = useShop();
 
   const [profile, setProfile] = useState<UserProfile>({
     photoURL: user.photoURL ?? undefined,
@@ -86,9 +90,41 @@ export default function DashboardScreen() {
     activeOnly: true,
   });
 
-  const nextAppointment = appointments[0] ?? null;
-  const upcomingAppointments = appointments.slice(0, 3);
+  const activeAppointments = useMemo(
+    () =>
+      appointments.filter(a =>
+        (ACTIVE_APPOINTMENT_SET as readonly string[]).includes(a.status as string),
+      ),
+    [appointments],
+  );
+  const nextAppointment = activeAppointments[0] ?? null;
+  const upcomingAppointments = activeAppointments.slice(0, 3);
   const homeServices = shopServices;
+
+  // Debug — entender o estado atual do dashboard
+  useEffect(() => {
+    if (loadingAppointments) return;
+    console.log('═══════ [Dashboard] estado atual ═══════');
+    console.log('shopId:', shopId);
+    console.log('shop.name:', shop?.name);
+    console.log('total appointments carregados:', appointments.length);
+    console.log(
+      'status dos appointments:',
+      appointments.map(a => a.status),
+    );
+    console.log('ativos (scheduled/in_progress):', activeAppointments.length);
+    console.log('═════════════════════════════════════════');
+  }, [loadingAppointments, shopId, shop?.name, appointments, activeAppointments]);
+
+  // Garbage collection: se tem shopId mas zero ativos, desvincula
+  useEffect(() => {
+    if (loadingAppointments) return;
+    if (!shopId || !uid) return;
+    if (activeAppointments.length > 0) return;
+
+    console.log('[Dashboard] shopId presente sem ativos → disparando limpeza');
+    clearShopFavoriteIfNoActive(uid, shopId);
+  }, [loadingAppointments, shopId, uid, activeAppointments.length]);
 
   useEffect(() => {
     const db = getFirestore();
@@ -239,118 +275,150 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.joinCard}
-            onPress={() => navigation.navigate('Map')}
-            activeOpacity={0.85}
-          >
-            <View style={styles.joinIconWrap}>
-              <MapPin size={18} color={D.primary} />
-            </View>
-            <View style={styles.joinCardText}>
-              <Text style={styles.joinCardTitle}>Explorar estéticas parceiras</Text>
-              <Text style={styles.joinCardDesc}>Veja no mapa quem está próximo de você</Text>
-            </View>
-            <ArrowRight size={16} color={D.primary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.scheduleCard}
-            onPress={goToAppointment}
-            activeOpacity={0.88}
-          >
-            <View style={styles.scheduleIcon}>
-              <Calendar size={24} color={D.primary} strokeWidth={2.1} />
-            </View>
-            <View style={styles.scheduleTextWrap}>
-              <Text style={styles.scheduleTitle}>Agendar serviço</Text>
-              <Text style={styles.scheduleSubtitle}>30s · sem ligar</Text>
-            </View>
-            <View style={styles.scheduleArrow}>
-              <ArrowRight size={22} color={D.primary} strokeWidth={2.1} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionKicker}>Serviços</Text>
-          </View>
-
-          {loadingServices ? (
-            <View style={styles.servicesLoading}>
-              <ActivityIndicator color={D.primary} size="small" />
-            </View>
-          ) : homeServices.length > 0 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.servicesRail}
-            >
-              {homeServices.map((svc, index) => {
-                const Icon = getShopServiceIcon(svc);
-                const isActive = index === 0;
-                return (
-                  <TouchableOpacity
-                    key={svc.id}
-                    style={styles.serviceCard}
-                    onPress={goToAppointment}
-                    activeOpacity={0.82}
-                  >
-                    <View style={[styles.serviceIconWrap, isActive && styles.serviceIconActive]}>
-                      <Icon size={22} color={isActive ? D.primary : D.ink2} strokeWidth={2} />
-                    </View>
-                    <Text style={styles.serviceLabel} numberOfLines={1}>
-                      {svc.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          ) : (
-            <View style={styles.servicesEmpty}>
-              <Text style={styles.servicesEmptyText}>Nenhum serviço disponível</Text>
-            </View>
-          )}
-
-          <View style={styles.upcomingHeader}>
-            <Text style={styles.upcomingTitle}>Próximos serviços</Text>
-            <Text style={styles.upcomingCount}>{upcomingAppointments.length} ativos</Text>
-          </View>
-
-          {loadingAppointments ? (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator color={D.primary} size="small" />
-            </View>
-          ) : nextAppointment ? (
-            <View style={styles.appointmentsCard}>
-              {upcomingAppointments.map((appt, i) => (
-                <AppointmentRow
-                  key={appt.id}
-                  appt={appt}
-                  last={i === upcomingAppointments.length - 1}
-                  onPress={() => navigation.navigate('MyAppointments')}
-                />
-              ))}
-            </View>
-          ) : (
+          {!shopId ? (
+            // Cliente novo — direciona para o mapa em vez de mostrar agendamento vazio
             <View style={styles.emptyCard}>
               <View style={styles.emptyIconWrap}>
-                <Calendar size={32} color={D.primary} strokeWidth={2.1} />
-                <View style={styles.emptyPlus}>
-                  <Text style={styles.emptyPlusText}>+</Text>
-                </View>
+                <MapPin size={32} color={D.primary} strokeWidth={2.1} />
               </View>
-              <Text style={styles.emptyTitle}>Sem agendamentos</Text>
-              <Text style={styles.emptyText}>Que tal cuidar do seu carro hoje?</Text>
-              <Text style={styles.emptyText}>Em 30 segundos você marca o primeiro.</Text>
+              <Text style={styles.emptyTitle}>Encontre uma estética</Text>
+              <Text style={styles.emptyText}>Veja no mapa quem está próximo de você</Text>
+              <Text style={styles.emptyText}>e agende seu primeiro serviço.</Text>
               <TouchableOpacity
                 style={styles.emptyButton}
-                onPress={goToAppointment}
+                onPress={() => navigation.navigate('Map')}
                 activeOpacity={0.82}
               >
-                <Text style={styles.emptyButtonText}>Começar</Text>
+                <Text style={styles.emptyButtonText}>Explorar mapa</Text>
                 <ArrowRight size={19} color={D.primary} strokeWidth={2.4} />
               </TouchableOpacity>
             </View>
+          ) : (
+            <>
+              {shop && (
+                <View style={styles.currentShopCard}>
+                  <View style={styles.currentShopIcon}>
+                    <MapPin size={16} color={D.primary} />
+                  </View>
+                  <View style={styles.currentShopText}>
+                    <Text style={styles.currentShopLabel}>Sua estética</Text>
+                    <Text style={styles.currentShopName} numberOfLines={1}>
+                      {shop.name}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.currentShopSwap}
+                    onPress={() => navigation.navigate('Map')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.currentShopSwapText}>Trocar</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={styles.scheduleCard}
+                onPress={goToAppointment}
+                activeOpacity={0.88}
+              >
+                <View style={styles.scheduleIcon}>
+                  <Calendar size={24} color={D.primary} strokeWidth={2.1} />
+                </View>
+                <View style={styles.scheduleTextWrap}>
+                  <Text style={styles.scheduleTitle}>Agendar serviço</Text>
+                  <Text style={styles.scheduleSubtitle}>
+                    {shop ? `em ${shop.name}` : '30s · sem ligar'}
+                  </Text>
+                </View>
+                <View style={styles.scheduleArrow}>
+                  <ArrowRight size={22} color={D.primary} strokeWidth={2.1} />
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionKicker}>Serviços</Text>
+              </View>
+
+              {loadingServices ? (
+                <View style={styles.servicesLoading}>
+                  <ActivityIndicator color={D.primary} size="small" />
+                </View>
+              ) : homeServices.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.servicesRail}
+                >
+                  {homeServices.map((svc, index) => {
+                    const Icon = getShopServiceIcon(svc);
+                    const isActive = index === 0;
+                    return (
+                      <TouchableOpacity
+                        key={svc.id}
+                        style={styles.serviceCard}
+                        onPress={goToAppointment}
+                        activeOpacity={0.82}
+                      >
+                        <View
+                          style={[styles.serviceIconWrap, isActive && styles.serviceIconActive]}
+                        >
+                          <Icon size={22} color={isActive ? D.primary : D.ink2} strokeWidth={2} />
+                        </View>
+                        <Text style={styles.serviceLabel} numberOfLines={1}>
+                          {svc.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              ) : (
+                <View style={styles.servicesEmpty}>
+                  <Text style={styles.servicesEmptyText}>Nenhum serviço disponível</Text>
+                </View>
+              )}
+
+              <View style={styles.upcomingHeader}>
+                <Text style={styles.upcomingTitle}>Próximos serviços</Text>
+                <Text style={styles.upcomingCount}>{upcomingAppointments.length} ativos</Text>
+              </View>
+
+              {loadingAppointments ? (
+                <View style={styles.loadingWrap}>
+                  <ActivityIndicator color={D.primary} size="small" />
+                </View>
+              ) : nextAppointment ? (
+                <View style={styles.appointmentsCard}>
+                  {upcomingAppointments.map((appt, i) => (
+                    <AppointmentRow
+                      key={appt.id}
+                      appt={appt}
+                      last={i === upcomingAppointments.length - 1}
+                      onPress={() => navigation.navigate('MyAppointments')}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyCard}>
+                  <View style={styles.emptyIconWrap}>
+                    <Calendar size={32} color={D.primary} strokeWidth={2.1} />
+                    <View style={styles.emptyPlus}>
+                      <Text style={styles.emptyPlusText}>+</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.emptyTitle}>Sem agendamentos</Text>
+                  <Text style={styles.emptyText}>Que tal cuidar do seu carro hoje?</Text>
+                  <Text style={styles.emptyText}>Em 30 segundos você marca o primeiro.</Text>
+                  <TouchableOpacity
+                    style={styles.emptyButton}
+                    onPress={goToAppointment}
+                    activeOpacity={0.82}
+                  >
+                    <Text style={styles.emptyButtonText}>Começar</Text>
+                    <ArrowRight size={19} color={D.primary} strokeWidth={2.4} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
           )}
 
           <View style={{ height: 112 }} />
@@ -655,39 +723,54 @@ function createStyles(D: AppColors) {
       fontWeight: '700',
     },
 
-    joinCard: {
+    currentShopCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: D.primaryLight,
-      borderRadius: 14,
-      borderWidth: 1.5,
-      borderColor: D.borderFocus,
-      padding: 15,
       marginHorizontal: 20,
       marginTop: 14,
-      gap: 12,
-    },
-    joinIconWrap: {
-      width: 40,
-      height: 40,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
       borderRadius: 12,
-      backgroundColor: D.card,
+      backgroundColor: D.surface,
+      borderWidth: 1,
+      borderColor: D.border,
+      gap: 10,
+    },
+    currentShopIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: D.primaryLight,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    joinCardText: { flex: 1 },
-    joinCardTitle: {
+    currentShopText: { flex: 1 },
+    currentShopLabel: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.caption,
+      color: D.ink3,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+    },
+    currentShopName: {
       fontFamily: T.family.medium,
       fontSize: T.size.body,
+      color: D.ink,
       fontWeight: '700',
-      color: D.primary,
-      marginBottom: 2,
+      marginTop: 1,
     },
-    joinCardDesc: {
-      fontFamily: T.family.regular,
-      fontSize: T.size.secondary,
+    currentShopSwap: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: D.borderFocus,
+    },
+    currentShopSwapText: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.caption,
       color: D.primary,
-      opacity: 0.78,
+      fontWeight: '700',
     },
 
     scheduleCard: {

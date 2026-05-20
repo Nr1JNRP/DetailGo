@@ -11,7 +11,7 @@ import { AppointmentScreen, MyAppointmentsScreen, HistoryScreen } from '@feature
 import { AdminDashboardScreen, AdminManageScreen, AdminHistoryScreen } from '@features/admin';
 import { ProfileScreen } from '@features/profile';
 import { SubscriptionScreen } from '@features/subscription';
-import { useShop } from '@features/shops';
+import { useShop, ShopProfileScreen } from '@features/shops';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -56,6 +56,7 @@ export default function RootNavigator() {
             <Stack.Screen name="History" component={HistoryScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="Map" component={MapScreen} />
+            <Stack.Screen name="ShopProfile" component={ShopProfileScreen} />
           </Stack.Group>
         )
       ) : (

@@ -13,3 +13,4 @@ export {
 } from './services/shopServices.service';
 export { getShopServiceIcon } from './utils/shopServiceIcons';
 export type { ShopService, ShopServiceIconKey } from './domain/shopService.types';
+export { default as ShopProfileScreen } from './screens/ShopProfileScreen';
