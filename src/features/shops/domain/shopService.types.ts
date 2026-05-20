@@ -1,3 +1,5 @@
+import type { CarCategory, VehicleType } from '@features/appointments/domain/appointment.types';
+
 export type ShopServiceIconKey = 'wash' | 'polish' | 'wax' | 'express' | 'engine' | 'default';
 
 export type ShopService = {
@@ -10,6 +12,8 @@ export type ShopService = {
   recommendedFor?: string[];
   durationMin: number;
   price: number;
+  vehicleTypes: VehicleType[];
+  carCategories: CarCategory[];
   iconKey: ShopServiceIconKey;
   active: boolean;
   sortOrder: number;

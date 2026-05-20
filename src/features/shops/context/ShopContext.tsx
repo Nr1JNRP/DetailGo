@@ -8,7 +8,6 @@ export type SubscriptionStatus = 'trial' | 'active' | 'inactive';
 export type ShopDoc = {
   id: string;
   name: string;
-  code: string;
   ownerId: string;
   createdAt?: any;
   subscriptionStatus: SubscriptionStatus;

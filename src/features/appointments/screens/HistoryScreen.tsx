@@ -15,7 +15,6 @@ import { getAuth } from '@react-native-firebase/auth';
 import { ArrowLeft } from 'lucide-react-native';
 
 import type { RootStackParamList } from '@app/types';
-import { useShop } from '@features/shops';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { HISTORY_APPOINTMENT_SET } from '../domain/appointment.constants';
 import type { AppointmentStatus, UserAppointment } from '../domain/appointment.types';
@@ -117,12 +116,10 @@ export default function HistoryScreen() {
   const styles = useMemo(() => createStyles(D), [D]);
   const auth = getAuth();
   const uid = auth.currentUser?.uid;
-  const { shopId } = useShop();
   const [filter, setFilter] = useState<FilterId>('all');
 
   const { loading, items } = useUserAppointments({
     uid,
-    shopId,
     statusIn: HISTORY_APPOINTMENT_SET,
     limitN: 50,
   });

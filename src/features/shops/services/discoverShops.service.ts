@@ -23,8 +23,7 @@ export async function discoverNearbyShops(
 
   const snap = await getDocs(
     query(collection(db, 'shops'), where('isVisibleOnMap', '==', true)),
-  ).catch(err => {
-    console.warn('[discoverShops] erro Firestore:', err?.message ?? err);
+  ).catch(() => {
     return { docs: [] } as any;
   });
 

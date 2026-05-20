@@ -41,6 +41,7 @@ export function normalizeUserAppointmentFromSubcollection(d: QDoc): UserAppointm
 
   return {
     id: d.id,
+    shopId: typeof v.shopId === 'string' ? v.shopId : null,
     vehicleType: v.vehicleType ?? 'Carro',
     carCategory: v.carCategory ?? null,
     serviceLabel: v.serviceLabel ?? null,
@@ -60,6 +61,7 @@ export function normalizeUserAppointmentFromGlobal(d: QDoc): UserAppointment | n
 
   return {
     id: d.id,
+    shopId: typeof v.shopId === 'string' ? v.shopId : null,
     vehicleType: v.vehicleType ?? 'Carro',
     carCategory: v.carCategory ?? null,
     serviceLabel: v.serviceLabel ?? null,

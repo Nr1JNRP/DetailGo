@@ -25,7 +25,7 @@ export function useUserAppointments(params: Params) {
   }, []);
 
   useEffect(() => {
-    if (!uid || !shopId) {
+    if (!uid) {
       setItems([]);
       setLoading(false);
       return;
@@ -43,10 +43,12 @@ export function useUserAppointments(params: Params) {
           status: getEffectiveStatus(item.status, item.startAtMs),
         }));
 
+        const scoped = shopId
+          ? withEffectiveStatus.filter(item => !item.shopId || item.shopId === shopId)
+          : withEffectiveStatus;
+
         const filtered =
-          statusIn && statusIn.length > 0
-            ? withEffectiveStatus.filter(it => statusSet.has(it.status))
-            : withEffectiveStatus;
+          statusIn && statusIn.length > 0 ? scoped.filter(it => statusSet.has(it.status)) : scoped;
 
         const sorted = [...filtered].sort((a, b) => b.startAtMs - a.startAtMs);
 

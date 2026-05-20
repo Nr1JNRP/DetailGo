@@ -41,7 +41,7 @@ const FEATURES = [
   'Agendamentos ilimitados',
   'Dashboard completo de agendamentos',
   'Histórico detalhado',
-  'Código de convite para clientes',
+  'Visibilidade no mapa para clientes',
   'Configuração de horários e capacidade',
   'Suporte via WhatsApp',
 ];
@@ -105,7 +105,7 @@ export default function SubscriptionScreen() {
   const handleWhatsApp = async () => {
     const text = encodeURIComponent(
       `Olá! Acabei de fazer o pagamento do DetailGo Pro.\n\n` +
-        `Loja: ${shop?.name ?? ''}\nCódigo: ${shop?.code ?? ''}\n\nPode confirmar a ativação?`,
+        `Loja: ${shop?.name ?? ''}\nID: ${shop?.id ?? ''}\n\nPode confirmar a ativação?`,
     );
     const url = `whatsapp://send?phone=${WHATSAPP_NUMBER}&text=${text}`;
     const canOpen = await Linking.canOpenURL(url);

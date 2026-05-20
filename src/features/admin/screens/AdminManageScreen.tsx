@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   ScrollView,
-  Share,
   StyleSheet,
   Switch,
   Text,
@@ -17,8 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
   ArrowLeft,
-  Copy,
-  MessageCircle,
   Store,
   Clock,
   Users,
@@ -26,6 +22,7 @@ import {
   ChevronUp,
   ChevronDown,
   Pencil,
+  Plus,
   Trash2,
   LogOut,
 } from 'lucide-react-native';
@@ -36,15 +33,20 @@ import { formatUtils } from '@shared/utils/format.utils';
 import {
   useShop,
   useShopServices,
+  createShopService,
   updateShopName,
   deleteShopService,
+  getServiceVehicleSummary,
   getShopServiceIcon,
   updateShopService,
 } from '@features/shops';
-import type { ShopService } from '@features/shops';
+import type { ShopService, ShopServiceInput } from '@features/shops';
+import { CAR_CATEGORIES, VEHICLE_TYPES } from '@features/appointments/domain/appointment.constants';
+import type { CarCategory, VehicleType } from '@features/appointments/domain/appointment.types';
 import { getShopSettings, updateShopSettings, type ShopSettings } from '@features/settings';
 
 const SLOT_STEP_OPTIONS = [15, 30, 45, 60];
+const NEW_SERVICE_DRAFT = '__new_service__';
 
 type ServiceDraft = {
   name: string;
@@ -55,6 +57,8 @@ type ServiceDraft = {
   durationMin: string;
   price: string;
   recommendedFor: string;
+  vehicleTypes: VehicleType[];
+  carCategories: CarCategory[];
 };
 
 function toServiceDraft(service: ShopService): ServiceDraft {
@@ -67,6 +71,8 @@ function toServiceDraft(service: ShopService): ServiceDraft {
     durationMin: String(service.durationMin),
     price: String(service.price),
     recommendedFor: (service.recommendedFor ?? []).join('\n'),
+    vehicleTypes: service.vehicleTypes,
+    carCategories: service.carCategories,
   };
 }
 
@@ -75,6 +81,40 @@ function parseLines(value: string): string[] {
     .split('\n')
     .map(item => item.trim())
     .filter(Boolean);
+}
+
+function createEmptyServiceDraft(): ServiceDraft {
+  return {
+    name: '',
+    title: '',
+    description: '',
+    includes: '',
+    note: '',
+    durationMin: '30',
+    price: '',
+    recommendedFor: '',
+    vehicleTypes: [...VEHICLE_TYPES],
+    carCategories: [...CAR_CATEGORIES],
+  };
+}
+
+function createServiceId(name: string, existingIds: string[]): string {
+  const base =
+    name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'servico';
+
+  let candidate = base;
+  let suffix = 2;
+  while (existingIds.includes(candidate)) {
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
 }
 
 export default function AdminManageScreen() {
@@ -108,7 +148,6 @@ export default function AdminManageScreen() {
   const [savingName, setSavingName] = useState(false);
   const [savedName, setSavedName] = useState(false);
 
-  const [copied, setCopied] = useState(false);
   const { loading: loadingServices, items: services } = useShopServices({
     shopId,
     ensureDefaults: true,
@@ -117,6 +156,10 @@ export default function AdminManageScreen() {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [savingServiceId, setSavingServiceId] = useState<string | null>(null);
   const [savedServiceId, setSavedServiceId] = useState<string | null>(null);
+  const [addingService, setAddingService] = useState(false);
+  const [newServiceDraft, setNewServiceDraft] = useState<ServiceDraft>(() =>
+    createEmptyServiceDraft(),
+  );
 
   useEffect(() => {
     if (shop?.name) setShopName(shop.name);
@@ -174,38 +217,6 @@ export default function AdminManageScreen() {
     }
   };
 
-  const handleShareWhatsApp = async () => {
-    if (!shop) return;
-    const message =
-      `Olá! Use o código *${shop.code}* para agendar serviços na *${shop.name}* pelo app DetailGo.\n\n` +
-      `Baixe o app e cadastre-se como cliente usando esse código.`;
-
-    const url = `whatsapp://send?text=${encodeURIComponent(message)}`;
-    const canOpen = await Linking.canOpenURL(url);
-
-    if (canOpen) {
-      await Linking.openURL(url);
-    } else {
-      handleShare();
-    }
-  };
-
-  const handleShare = async () => {
-    if (!shop) return;
-    await Share.share({
-      message:
-        `Agende serviços na *${shop.name}*!\n\n` +
-        `Use o código *${shop.code}* ao se cadastrar no app DetailGo.`,
-    });
-  };
-
-  const handleCopyCode = async () => {
-    if (!shop) return;
-    await Share.share({ message: shop.code });
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const handleToggleService = async (serviceId: string, active: boolean) => {
     if (!shopId) return;
     try {
@@ -224,27 +235,67 @@ export default function AdminManageScreen() {
   };
 
   const updateServiceDraft = (serviceId: string, field: keyof ServiceDraft, value: string) => {
+    if (serviceId === NEW_SERVICE_DRAFT) {
+      setNewServiceDraft(prev => ({ ...prev, [field]: value }));
+      return;
+    }
+
     setServiceDrafts(prev => ({
       ...prev,
       [serviceId]: {
-        ...(prev[serviceId] ?? {
-          name: '',
-          title: '',
-          description: '',
-          includes: '',
-          note: '',
-          durationMin: '',
-          price: '',
-          recommendedFor: '',
-        }),
+        ...(prev[serviceId] ?? createEmptyServiceDraft()),
         [field]: value,
       },
     }));
   };
 
-  const handleSaveService = async (service: ShopService) => {
-    if (!shopId) return;
-    const draft = serviceDrafts[service.id] ?? toServiceDraft(service);
+  const updateServiceDraftList = (
+    serviceId: string,
+    updater: (draft: ServiceDraft) => ServiceDraft,
+  ) => {
+    if (serviceId === NEW_SERVICE_DRAFT) {
+      setNewServiceDraft(prev => updater(prev));
+      return;
+    }
+
+    setServiceDrafts(prev => {
+      const draft = prev[serviceId] ?? createEmptyServiceDraft();
+
+      return {
+        ...prev,
+        [serviceId]: updater(draft),
+      };
+    });
+  };
+
+  const toggleVehicleType = (serviceId: string, vehicleType: VehicleType) => {
+    updateServiceDraftList(serviceId, draft => {
+      const hasVehicle = draft.vehicleTypes.includes(vehicleType);
+      const vehicleTypes = hasVehicle
+        ? draft.vehicleTypes.filter(item => item !== vehicleType)
+        : [...draft.vehicleTypes, vehicleType];
+
+      return {
+        ...draft,
+        vehicleTypes,
+        carCategories: vehicleTypes.includes('Carro') ? draft.carCategories : [],
+      };
+    });
+  };
+
+  const toggleCarCategory = (serviceId: string, category: CarCategory) => {
+    updateServiceDraftList(serviceId, draft => {
+      const hasCategory = draft.carCategories.includes(category);
+      return {
+        ...draft,
+        carCategories: hasCategory
+          ? draft.carCategories.filter(item => item !== category)
+          : [...draft.carCategories, category],
+      };
+    });
+  };
+
+  const buildServiceInput = (draft: ServiceDraft, sortOrder: number): ShopServiceInput | null => {
     const name = draft.name.trim();
     const title = draft.title.trim();
     const description = draft.description.trim();
@@ -253,33 +304,96 @@ export default function AdminManageScreen() {
     const durationMin = Number(draft.durationMin.replace(',', '.'));
     const price = Number(draft.price.replace(',', '.'));
     const recommendedFor = parseLines(draft.recommendedFor);
+    const vehicleTypes = draft.vehicleTypes;
+    const carCategories = vehicleTypes.includes('Carro') ? draft.carCategories : [];
 
     if (!name) {
       Alert.alert('Atenção', 'Informe o nome do serviço.');
-      return;
+      return null;
     }
 
     if (!durationMin || durationMin < 5) {
       Alert.alert('Atenção', 'Informe uma duração válida para o serviço.');
-      return;
+      return null;
     }
 
     if (Number.isNaN(price) || price < 0) {
       Alert.alert('Atenção', 'Informe um preço válido para o serviço.');
-      return;
+      return null;
     }
+
+    if (vehicleTypes.length === 0) {
+      Alert.alert('Atenção', 'Selecione pelo menos um tipo de veículo para o serviço.');
+      return null;
+    }
+
+    if (vehicleTypes.includes('Carro') && carCategories.length === 0) {
+      Alert.alert('Atenção', 'Selecione pelo menos uma categoria de carro para o serviço.');
+      return null;
+    }
+
+    return {
+      name,
+      title: title || name,
+      description: description || null,
+      includes,
+      note: note || null,
+      durationMin,
+      price,
+      recommendedFor,
+      vehicleTypes,
+      carCategories,
+      iconKey: 'default',
+      active: true,
+      sortOrder,
+    };
+  };
+
+  const handleCreateService = async () => {
+    if (!shopId) return;
+    const nextSortOrder =
+      services.reduce((max, service) => Math.max(max, service.sortOrder), -1) + 1;
+    const input = buildServiceInput(newServiceDraft, nextSortOrder);
+    if (!input) return;
+
+    const serviceId = createServiceId(
+      input.name,
+      services.map(service => service.id),
+    );
+
+    setSavingServiceId(NEW_SERVICE_DRAFT);
+    try {
+      await createShopService(shopId, serviceId, input);
+      setNewServiceDraft(createEmptyServiceDraft());
+      setAddingService(false);
+      setSavedServiceId(serviceId);
+      setTimeout(() => setSavedServiceId(null), 2000);
+    } catch {
+      Alert.alert('Erro', 'Falha ao criar serviço.');
+    } finally {
+      setSavingServiceId(null);
+    }
+  };
+
+  const handleSaveService = async (service: ShopService) => {
+    if (!shopId) return;
+    const draft = serviceDrafts[service.id] ?? toServiceDraft(service);
+    const input = buildServiceInput(draft, service.sortOrder);
+    if (!input) return;
 
     setSavingServiceId(service.id);
     try {
       await updateShopService(shopId, service.id, {
-        name,
-        title: title || name,
-        description: description || null,
-        includes,
-        note: note || null,
-        durationMin,
-        price,
-        recommendedFor,
+        name: input.name,
+        title: input.title,
+        description: input.description,
+        includes: input.includes,
+        note: input.note,
+        durationMin: input.durationMin,
+        price: input.price,
+        recommendedFor: input.recommendedFor,
+        vehicleTypes: input.vehicleTypes,
+        carCategories: input.carCategories,
       });
       setEditingServiceId(null);
       setSavedServiceId(service.id);
@@ -352,6 +466,195 @@ export default function AdminManageScreen() {
     </View>
   );
 
+  const renderServiceForm = ({
+    draft,
+    serviceId,
+    isSaving,
+    isSaved = false,
+    saveLabel,
+    onCancel,
+    onSave,
+  }: {
+    draft: ServiceDraft;
+    serviceId: string;
+    isSaving: boolean;
+    isSaved?: boolean;
+    saveLabel: string;
+    onCancel: () => void;
+    onSave: () => void;
+  }) => (
+    <View style={styles.serviceForm}>
+      <Text style={styles.inputLabel}>Nome na home</Text>
+      <TextInput
+        style={styles.serviceInput}
+        value={draft.name}
+        onChangeText={value => updateServiceDraft(serviceId, 'name', value)}
+        placeholder="Ex: Lavagem premium"
+        placeholderTextColor={colors.text.disabled}
+        editable={!isSaving}
+        maxLength={40}
+      />
+
+      <Text style={styles.inputLabel}>Título do serviço</Text>
+      <TextInput
+        style={styles.serviceInput}
+        value={draft.title}
+        onChangeText={value => updateServiceDraft(serviceId, 'title', value)}
+        placeholder="Ex: Lavagem completa premium"
+        placeholderTextColor={colors.text.disabled}
+        editable={!isSaving}
+        maxLength={60}
+      />
+
+      <Text style={styles.inputLabel}>Descrição</Text>
+      <TextInput
+        style={[styles.serviceInput, styles.serviceTextarea]}
+        value={draft.description}
+        onChangeText={value => updateServiceDraft(serviceId, 'description', value)}
+        placeholder="Descreva o que está incluso neste serviço"
+        placeholderTextColor={colors.text.disabled}
+        editable={!isSaving}
+        multiline
+        maxLength={160}
+      />
+
+      <Text style={styles.inputLabel}>Inclui</Text>
+      <TextInput
+        style={[styles.serviceInput, styles.serviceTextarea]}
+        value={draft.includes}
+        onChangeText={value => updateServiceDraft(serviceId, 'includes', value)}
+        placeholder={'Um item por linha\nEx: Lavagem externa\nAspiração rápida'}
+        placeholderTextColor={colors.text.disabled}
+        editable={!isSaving}
+        multiline
+        maxLength={260}
+      />
+
+      <Text style={styles.inputLabel}>Recomendado para</Text>
+      <TextInput
+        style={[styles.serviceInput, styles.serviceTextareaSmall]}
+        value={draft.recommendedFor}
+        onChangeText={value => updateServiceDraft(serviceId, 'recommendedFor', value)}
+        placeholder={'Um item por linha\nEx: Uso diário\nManutenção'}
+        placeholderTextColor={colors.text.disabled}
+        editable={!isSaving}
+        multiline
+        maxLength={180}
+      />
+
+      <Text style={styles.inputLabel}>Tipos de veículo atendidos</Text>
+      <View style={styles.chipGroup}>
+        {VEHICLE_TYPES.map(type => {
+          const selected = draft.vehicleTypes.includes(type);
+          return (
+            <TouchableOpacity
+              key={type}
+              style={[styles.optionChip, selected && styles.optionChipActive]}
+              onPress={() => toggleVehicleType(serviceId, type)}
+              disabled={isSaving}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.optionChipText, selected && styles.optionChipTextActive]}>
+                {type}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {draft.vehicleTypes.includes('Carro') && (
+        <>
+          <Text style={styles.inputLabel}>Categorias de carro atendidas</Text>
+          <View style={styles.chipGroup}>
+            {CAR_CATEGORIES.map(category => {
+              const selected = draft.carCategories.includes(category);
+              return (
+                <TouchableOpacity
+                  key={category}
+                  style={[styles.optionChip, selected && styles.optionChipActive]}
+                  onPress={() => toggleCarCategory(serviceId, category)}
+                  disabled={isSaving}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.optionChipText, selected && styles.optionChipTextActive]}>
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </>
+      )}
+
+      <Text style={styles.inputLabel}>Observação</Text>
+      <TextInput
+        style={styles.serviceInput}
+        value={draft.note}
+        onChangeText={value => updateServiceDraft(serviceId, 'note', value)}
+        placeholder="Ex: Ideal para manutenção semanal"
+        placeholderTextColor={colors.text.disabled}
+        editable={!isSaving}
+        maxLength={120}
+      />
+
+      <View style={styles.serviceInlineFields}>
+        <View style={styles.inlineField}>
+          <Text style={styles.inputLabel}>Duração</Text>
+          <TextInput
+            style={styles.serviceInput}
+            value={draft.durationMin}
+            onChangeText={value => updateServiceDraft(serviceId, 'durationMin', value)}
+            placeholder="30"
+            placeholderTextColor={colors.text.disabled}
+            keyboardType="numeric"
+            editable={!isSaving}
+          />
+        </View>
+        <View style={styles.inlineField}>
+          <Text style={styles.inputLabel}>Preço</Text>
+          <TextInput
+            style={styles.serviceInput}
+            value={draft.price}
+            onChangeText={value => updateServiceDraft(serviceId, 'price', value)}
+            placeholder="80"
+            placeholderTextColor={colors.text.disabled}
+            keyboardType="numeric"
+            editable={!isSaving}
+          />
+        </View>
+      </View>
+
+      <View style={styles.serviceEditActions}>
+        <TouchableOpacity
+          style={styles.serviceCancelBtn}
+          onPress={onCancel}
+          disabled={isSaving}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.serviceCancelText}>Cancelar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.serviceSaveBtn, isSaving && styles.saveBtnDisabled]}
+          onPress={onSave}
+          disabled={isSaving}
+          activeOpacity={0.8}
+        >
+          {isSaving ? (
+            <ActivityIndicator size="small" color={colors.text.white} />
+          ) : isSaved ? (
+            <>
+              <Check size={16} color={colors.text.white} />
+              <Text style={styles.serviceSaveText}>Salvo!</Text>
+            </>
+          ) : (
+            <Text style={styles.serviceSaveText}>{saveLabel}</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.main} />
@@ -369,58 +672,6 @@ export default function AdminManageScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {/* ── Código de convite ── */}
-          <View style={styles.card}>
-            <View style={styles.cardTitleRow}>
-              <View style={[styles.cardIconWrap, { backgroundColor: '#FFF7ED' }]}>
-                <MessageCircle size={18} color="#F97316" />
-              </View>
-              <Text style={styles.cardTitle}>Código de convite</Text>
-            </View>
-            <Text style={styles.cardDesc}>
-              Compartilhe este código com seus clientes para que eles possam se cadastrar na sua
-              loja.
-            </Text>
-
-            <View style={styles.codeBox}>
-              {shop?.code ? (
-                shop.code.split('').map((char, i) => (
-                  <View key={i} style={styles.codeLetter}>
-                    <Text style={styles.codeLetterText}>{char}</Text>
-                  </View>
-                ))
-              ) : (
-                <ActivityIndicator color={colors.primary.main} />
-              )}
-            </View>
-
-            <View style={styles.codeActions}>
-              <TouchableOpacity
-                style={styles.codeActionBtn}
-                onPress={handleCopyCode}
-                activeOpacity={0.8}
-              >
-                {copied ? (
-                  <Check size={16} color={colors.status.success} />
-                ) : (
-                  <Copy size={16} color={colors.primary.main} />
-                )}
-                <Text style={[styles.codeActionText, copied && { color: colors.status.success }]}>
-                  {copied ? 'Compartilhado!' : 'Compartilhar'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.codeActionBtn, styles.whatsappBtn]}
-                onPress={handleShareWhatsApp}
-                activeOpacity={0.8}
-              >
-                <MessageCircle size={16} color="#FFFFFF" />
-                <Text style={[styles.codeActionText, { color: '#FFFFFF' }]}>WhatsApp</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
           {/* ── Nome da loja ── */}
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
@@ -564,6 +815,17 @@ export default function AdminManageScreen() {
               Escolha quais serviços aparecem para os clientes vinculados à sua estética.
             </Text>
 
+            {!addingService && (
+              <TouchableOpacity
+                style={styles.addServiceBtn}
+                onPress={() => setAddingService(true)}
+                activeOpacity={0.8}
+              >
+                <Plus size={16} color={colors.primary.main} />
+                <Text style={styles.addServiceText}>Adicionar serviço</Text>
+              </TouchableOpacity>
+            )}
+
             {loadingServices ? (
               <ActivityIndicator
                 color={colors.primary.main}
@@ -571,6 +833,34 @@ export default function AdminManageScreen() {
               />
             ) : (
               <View style={styles.servicesList}>
+                {addingService && (
+                  <View style={styles.serviceEditor}>
+                    <View style={styles.serviceEditorHeader}>
+                      <View style={styles.serviceRowLeft}>
+                        <View style={styles.serviceIconWrap}>
+                          <Plus size={18} color={colors.primary.main} />
+                        </View>
+                        <View style={styles.serviceTexts}>
+                          <Text style={styles.serviceName}>Novo serviço</Text>
+                          <Text style={styles.serviceMeta}>Preencha os dados para publicar</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {renderServiceForm({
+                      draft: newServiceDraft,
+                      serviceId: NEW_SERVICE_DRAFT,
+                      isSaving: savingServiceId === NEW_SERVICE_DRAFT,
+                      saveLabel: 'Criar serviço',
+                      onCancel: () => {
+                        setNewServiceDraft(createEmptyServiceDraft());
+                        setAddingService(false);
+                      },
+                      onSave: handleCreateService,
+                    })}
+                  </View>
+                )}
+
                 {services.map(service => {
                   const ServiceIcon = getShopServiceIcon(service);
                   const draft = serviceDrafts[service.id] ?? toServiceDraft(service);
@@ -588,6 +878,9 @@ export default function AdminManageScreen() {
                             <Text style={styles.serviceName}>{service.name}</Text>
                             <Text style={styles.serviceMeta}>
                               {service.durationMin}min · {formatUtils.currency(service.price)}
+                            </Text>
+                            <Text style={styles.serviceVehicleMeta}>
+                              {getServiceVehicleSummary(service)}
                             </Text>
                           </View>
                         </View>
@@ -609,145 +902,15 @@ export default function AdminManageScreen() {
                       </View>
 
                       {isEditingService ? (
-                        <View style={styles.serviceForm}>
-                          <Text style={styles.inputLabel}>Nome na home</Text>
-                          <TextInput
-                            style={styles.serviceInput}
-                            value={draft.name}
-                            onChangeText={value => updateServiceDraft(service.id, 'name', value)}
-                            placeholder="Ex: Lavagem premium"
-                            placeholderTextColor={colors.text.disabled}
-                            editable={!isSavingService}
-                            maxLength={40}
-                          />
-
-                          <Text style={styles.inputLabel}>Título do serviço</Text>
-                          <TextInput
-                            style={styles.serviceInput}
-                            value={draft.title}
-                            onChangeText={value => updateServiceDraft(service.id, 'title', value)}
-                            placeholder="Ex: Lavagem completa premium"
-                            placeholderTextColor={colors.text.disabled}
-                            editable={!isSavingService}
-                            maxLength={60}
-                          />
-
-                          <Text style={styles.inputLabel}>Descrição</Text>
-                          <TextInput
-                            style={[styles.serviceInput, styles.serviceTextarea]}
-                            value={draft.description}
-                            onChangeText={value =>
-                              updateServiceDraft(service.id, 'description', value)
-                            }
-                            placeholder="Descreva o que está incluso neste serviço"
-                            placeholderTextColor={colors.text.disabled}
-                            editable={!isSavingService}
-                            multiline
-                            maxLength={160}
-                          />
-
-                          <Text style={styles.inputLabel}>Inclui</Text>
-                          <TextInput
-                            style={[styles.serviceInput, styles.serviceTextarea]}
-                            value={draft.includes}
-                            onChangeText={value =>
-                              updateServiceDraft(service.id, 'includes', value)
-                            }
-                            placeholder={'Um item por linha\nEx: Lavagem externa\nAspiração rápida'}
-                            placeholderTextColor={colors.text.disabled}
-                            editable={!isSavingService}
-                            multiline
-                            maxLength={260}
-                          />
-
-                          <Text style={styles.inputLabel}>Recomendado para</Text>
-                          <TextInput
-                            style={[styles.serviceInput, styles.serviceTextareaSmall]}
-                            value={draft.recommendedFor}
-                            onChangeText={value =>
-                              updateServiceDraft(service.id, 'recommendedFor', value)
-                            }
-                            placeholder={'Um item por linha\nEx: Uso diário\nManutenção'}
-                            placeholderTextColor={colors.text.disabled}
-                            editable={!isSavingService}
-                            multiline
-                            maxLength={180}
-                          />
-
-                          <Text style={styles.inputLabel}>Observação</Text>
-                          <TextInput
-                            style={styles.serviceInput}
-                            value={draft.note}
-                            onChangeText={value => updateServiceDraft(service.id, 'note', value)}
-                            placeholder="Ex: Ideal para manutenção semanal"
-                            placeholderTextColor={colors.text.disabled}
-                            editable={!isSavingService}
-                            maxLength={120}
-                          />
-
-                          <View style={styles.serviceInlineFields}>
-                            <View style={styles.inlineField}>
-                              <Text style={styles.inputLabel}>Duração</Text>
-                              <TextInput
-                                style={styles.serviceInput}
-                                value={draft.durationMin}
-                                onChangeText={value =>
-                                  updateServiceDraft(service.id, 'durationMin', value)
-                                }
-                                placeholder="30"
-                                placeholderTextColor={colors.text.disabled}
-                                keyboardType="numeric"
-                                editable={!isSavingService}
-                              />
-                            </View>
-                            <View style={styles.inlineField}>
-                              <Text style={styles.inputLabel}>Preço</Text>
-                              <TextInput
-                                style={styles.serviceInput}
-                                value={draft.price}
-                                onChangeText={value =>
-                                  updateServiceDraft(service.id, 'price', value)
-                                }
-                                placeholder="80"
-                                placeholderTextColor={colors.text.disabled}
-                                keyboardType="numeric"
-                                editable={!isSavingService}
-                              />
-                            </View>
-                          </View>
-
-                          <View style={styles.serviceEditActions}>
-                            <TouchableOpacity
-                              style={styles.serviceCancelBtn}
-                              onPress={() => setEditingServiceId(null)}
-                              disabled={isSavingService}
-                              activeOpacity={0.8}
-                            >
-                              <Text style={styles.serviceCancelText}>Cancelar</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              style={[
-                                styles.serviceSaveBtn,
-                                isSavingService && styles.saveBtnDisabled,
-                              ]}
-                              onPress={() => handleSaveService(service)}
-                              disabled={isSavingService}
-                              activeOpacity={0.8}
-                            >
-                              {isSavingService ? (
-                                <ActivityIndicator size="small" color={colors.text.white} />
-                              ) : isSavedService ? (
-                                <>
-                                  <Check size={16} color={colors.text.white} />
-                                  <Text style={styles.serviceSaveText}>Salvo!</Text>
-                                </>
-                              ) : (
-                                <Text style={styles.serviceSaveText}>Salvar serviço</Text>
-                              )}
-                            </TouchableOpacity>
-                          </View>
-                        </View>
+                        renderServiceForm({
+                          draft,
+                          serviceId: service.id,
+                          isSaving: isSavingService,
+                          isSaved: isSavedService,
+                          saveLabel: 'Salvar serviço',
+                          onCancel: () => setEditingServiceId(null),
+                          onSave: () => handleSaveService(service),
+                        })
                       ) : (
                         <View style={styles.serviceActions}>
                           <TouchableOpacity
@@ -859,54 +1022,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: spacing.lg,
   },
-  codeBox: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  codeLetter: {
-    width: 44,
-    height: 52,
-    borderRadius: radii.md,
-    backgroundColor: colors.primary.light,
-    borderWidth: 2,
-    borderColor: colors.primary.main,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  codeLetterText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.primary.main,
-    letterSpacing: 0,
-  },
-  codeActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  codeActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1.5,
-    borderColor: colors.primary.main,
-    backgroundColor: colors.background.card,
-  },
-  whatsappBtn: {
-    backgroundColor: '#25D366',
-    borderColor: '#25D366',
-  },
-  codeActionText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary.main,
-  },
   nameInput: {
     borderWidth: 1.5,
     borderColor: colors.border.main,
@@ -943,6 +1058,23 @@ const styles = StyleSheet.create({
   },
   servicesList: {
     gap: spacing.md,
+  },
+  addServiceBtn: {
+    height: 42,
+    borderRadius: radii.sm,
+    borderWidth: 1.5,
+    borderColor: colors.primary.main,
+    backgroundColor: colors.background.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  addServiceText: {
+    color: colors.primary.main,
+    fontSize: 14,
+    fontWeight: '700',
   },
   serviceEditor: {
     borderWidth: 1,
@@ -985,6 +1117,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.tertiary,
     fontWeight: '600',
+  },
+  serviceVehicleMeta: {
+    fontSize: 11,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   serviceStatus: {
     flexDirection: 'row',
@@ -1053,6 +1190,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.primary,
     backgroundColor: colors.background.card,
+  },
+  chipGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  optionChip: {
+    borderWidth: 1,
+    borderColor: colors.border.main,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 7,
+    backgroundColor: colors.background.card,
+  },
+  optionChipActive: {
+    borderColor: colors.primary.main,
+    backgroundColor: colors.primary.light,
+  },
+  optionChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text.secondary,
+  },
+  optionChipTextActive: {
+    color: colors.primary.main,
   },
   serviceTextarea: {
     minHeight: 78,

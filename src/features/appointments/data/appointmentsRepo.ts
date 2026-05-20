@@ -21,7 +21,7 @@ type QDoc = FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.
 
 export function watchUserAppointmentsWithFallback(params: {
   uid: string;
-  shopId: string;
+  shopId?: string | null;
   limitN?: number;
   onChange: (items: UserAppointment[]) => void;
   onError?: (err: unknown) => void;
@@ -54,6 +54,11 @@ export function watchUserAppointmentsWithFallback(params: {
         return;
       }
 
+      if (!shopId) {
+        onChange([]);
+        return;
+      }
+
       fallbackDone = true;
 
       try {
@@ -76,7 +81,9 @@ export function watchUserAppointmentsWithFallback(params: {
         onChange([]);
       }
     },
-    err => onError?.(err),
+    err => {
+      onError?.(err);
+    },
   );
 
   return unsub;

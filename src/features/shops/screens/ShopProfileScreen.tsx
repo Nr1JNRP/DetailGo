@@ -18,7 +18,7 @@ import type { RootStackParamList } from '@app/types';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useShopServices, type ShopDoc } from '@features/shops';
-import { getShopServiceIcon } from '@features/shops';
+import { getServiceVehicleSummary, getShopServiceIcon } from '@features/shops';
 import type { ShopService } from '@features/shops/domain/shopService.types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ShopProfile'>;
@@ -184,6 +184,7 @@ function ServiceRow({ service, colors: D }: { service: ShopService; colors: AppC
             {service.description}
           </Text>
         ) : null}
+        <Text style={styles.serviceVehicle}>{getServiceVehicleSummary(service)}</Text>
       </View>
       {typeof service.price === 'number' && (
         <Text style={styles.servicePrice}>{formatUtils.currencyCompact(service.price)}</Text>
@@ -325,6 +326,12 @@ function createStyles(D: AppColors) {
       fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       color: D.ink3,
+    },
+    serviceVehicle: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.caption,
+      color: D.ink2,
+      marginTop: 3,
     },
     servicePrice: {
       fontFamily: T.family.medium,

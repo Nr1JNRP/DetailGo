@@ -170,8 +170,7 @@ export default function ProfileScreen() {
 
       setEditingName(false);
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
-    } catch (error) {
-      console.error(error);
+    } catch {
       Alert.alert('Erro', 'Não foi possível atualizar o perfil');
     } finally {
       setSaving(false);
@@ -196,8 +195,7 @@ export default function ProfileScreen() {
       setProfile(prev => ({ ...prev, phone: cleanPhone }));
       setEditingPhone(false);
       Alert.alert('Sucesso', 'Telefone atualizado com sucesso!');
-    } catch (error) {
-      console.error(error);
+    } catch {
       Alert.alert('Erro', 'Não foi possível atualizar o telefone');
     } finally {
       setSaving(false);
@@ -278,8 +276,6 @@ export default function ProfileScreen() {
         ],
       );
     } catch (error: any) {
-      console.error('verifyBeforeUpdateEmail error:', error);
-
       const code = error?.code;
 
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
@@ -348,8 +344,6 @@ export default function ProfileScreen() {
         );
       }
     } catch (error: any) {
-      console.error('Erro ao verificar confirmação:', error);
-
       if (error.code === 'auth/user-token-expired') {
         Alert.alert(
           'Sessão expirada',
@@ -396,8 +390,7 @@ export default function ProfileScreen() {
           try {
             await authInstance.sendPasswordResetEmail(email);
             Alert.alert('Enviado', 'Confira sua caixa de entrada para redefinir a senha.');
-          } catch (error) {
-            console.error(error);
+          } catch {
             Alert.alert('Erro', 'Não foi possível enviar o link agora.');
           }
         },
