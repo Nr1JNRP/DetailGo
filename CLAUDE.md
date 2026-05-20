@@ -17,8 +17,8 @@ Aplicativo mobile de agendamentos para estéticas/barbearias. Plataforma SaaS mu
 
 - Cada estabelecimento é um documento em `shops/{shopId}`
 - **Toda query no Firestore deve ser filtrada por `shopId`** — nunca buscar dados sem escopo de shop
-- Owner cria o shop no cadastro e recebe um `inviteCode` para compartilhar com clientes
-- Customer entra no shop usando o `inviteCode`
+- Owner cria o shop no cadastro e aparece no mapa quando a assinatura/trial permite
+- Customer encontra a estética pelo mapa e agenda diretamente no shop escolhido
 
 ### Roles
 
@@ -46,7 +46,7 @@ src/
   navigation/       → RootNavigator
   features/
     auth/           → login, registro, AuthContext, roles
-    shops/          → ShopContext, shop.service, shopServices.service, joinShop.service
+    shops/          → ShopContext, shop.service, shopServices.service, discoverShops.service
     appointments/   → agendamentos (customer)
     admin/          → painel do owner
     dashboard/      → tela inicial do customer

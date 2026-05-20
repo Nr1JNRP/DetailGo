@@ -6,11 +6,14 @@ export { discoverNearbyShops } from './services/discoverShops.service';
 export type { NearbyShop } from './services/discoverShops.service';
 export type { ShopLocation } from './domain/shopLocation.types';
 export {
+  createShopService,
   DEFAULT_SHOP_SERVICES,
   deleteShopService,
   ensureShopServices,
+  getServiceVehicleSummary,
+  serviceSupportsVehicle,
   updateShopService,
 } from './services/shopServices.service';
 export { getShopServiceIcon } from './utils/shopServiceIcons';
-export type { ShopService, ShopServiceIconKey } from './domain/shopService.types';
+export type { ShopService, ShopServiceIconKey, ShopServiceInput } from './domain/shopService.types';
 export { default as ShopProfileScreen } from './screens/ShopProfileScreen';

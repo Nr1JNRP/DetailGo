@@ -1,5 +1,5 @@
 // src/features/appointments/screens/AppointmentScreen.tsx
-import React, { useMemo, useState, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import {
   Text,
   TouchableOpacity,
@@ -35,14 +35,24 @@ import {
 } from 'lucide-react-native';
 
 import type { RootStackParamList } from '@app/types';
-import { useShop, useShopServices, getShopServiceIcon } from '@features/shops';
+import {
+  useShop,
+  useShopServices,
+  getShopServiceIcon,
+  serviceSupportsVehicle,
+} from '@features/shops';
 import type { ShopService } from '@features/shops';
 import {
   getAvailableSlotsForDay,
   createAppointmentWithCapacityCheck,
   type Slot,
 } from '@features/appointments';
-import { CAR_CATEGORIES, type VehicleType, type CarCategory } from '@features/appointments';
+import {
+  CAR_CATEGORIES,
+  VEHICLE_TYPES,
+  type VehicleType,
+  type CarCategory,
+} from '@features/appointments';
 import { colors, spacing, radii, typography as T } from '@shared/theme';
 import { formatUtils } from '@shared/utils/format.utils';
 import { dateUtils } from '@shared/utils/date.utils';
@@ -327,12 +337,71 @@ export default function AppointmentScreen() {
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const availableVehicleTypes = useMemo(
+    () =>
+      VEHICLE_TYPES.filter(type =>
+        services.some(service =>
+          type === 'Moto'
+            ? serviceSupportsVehicle(service, 'Moto', null)
+            : service.vehicleTypes.includes('Carro') && service.carCategories.length > 0,
+        ),
+      ),
+    [services],
+  );
+
+  const availableCarCategories = useMemo(
+    () =>
+      CAR_CATEGORIES.filter(category =>
+        services.some(service => serviceSupportsVehicle(service, 'Carro', category)),
+      ),
+    [services],
+  );
+
+  const compatibleServices = useMemo(
+    () =>
+      services.filter(service =>
+        serviceSupportsVehicle(service, vehicleType, vehicleType === 'Carro' ? carCategory : null),
+      ),
+    [carCategory, services, vehicleType],
+  );
+
   const selectedService = useMemo(
-    () => services.find(s => s.name === serviceLabel) ?? null,
-    [serviceLabel, services],
+    () => compatibleServices.find(s => s.name === serviceLabel) ?? null,
+    [compatibleServices, serviceLabel],
   );
 
   const finalPrice = selectedService?.price ?? 0;
+
+  useEffect(() => {
+    if (loadingServices || services.length === 0) return;
+    if (availableVehicleTypes.includes(vehicleType)) return;
+
+    const nextVehicle = availableVehicleTypes[0];
+    if (!nextVehicle) return;
+
+    setVehicleType(nextVehicle);
+    setCarCategory(nextVehicle === 'Carro' ? availableCarCategories[0] ?? null : null);
+  }, [
+    availableCarCategories,
+    availableVehicleTypes,
+    loadingServices,
+    services.length,
+    vehicleType,
+  ]);
+
+  useEffect(() => {
+    if (vehicleType !== 'Carro') return;
+    if (carCategory && availableCarCategories.includes(carCategory)) return;
+    setCarCategory(availableCarCategories[0] ?? null);
+  }, [availableCarCategories, carCategory, vehicleType]);
+
+  useEffect(() => {
+    if (!serviceLabel) return;
+    if (selectedService) return;
+    setServiceLabel(null);
+    setSlots([]);
+    setSelectedSlot(null);
+  }, [selectedService, serviceLabel]);
 
   const refreshSlots = useCallback(
     async (nextDay: Date, nextService = selectedService) => {
@@ -347,8 +416,7 @@ export default function AppointmentScreen() {
         const list = await getAvailableSlotsForDay(nextDay, nextService.durationMin, shopId ?? '');
         setSlots(list);
         setSelectedSlot(null);
-      } catch (error) {
-        console.error(error);
+      } catch {
         setSlots([]);
         setSelectedSlot(null);
         Alert.alert('Erro', 'Não foi possível carregar os horários.');
@@ -375,7 +443,7 @@ export default function AppointmentScreen() {
 
   const handleSelectService = async (serviceName: string) => {
     setServiceLabel(serviceName);
-    const svc = services.find(s => s.name === serviceName);
+    const svc = compatibleServices.find(s => s.name === serviceName);
     if (!svc) return;
     await refreshSlots(day, svc);
   };
@@ -428,7 +496,6 @@ export default function AppointmentScreen() {
         Alert.alert('Horário indisponível', 'Selecione outro horário.');
         await refreshSlots(day, selectedService);
       } else {
-        console.error(error);
         Alert.alert('Erro', 'Não foi possível realizar o agendamento.');
       }
     } finally {
@@ -461,7 +528,7 @@ export default function AppointmentScreen() {
         <SelectModal
           visible={categoryModalOpen}
           title="Categoria"
-          options={CAR_CATEGORIES}
+          options={availableCarCategories}
           selected={carCategory}
           onSelect={value => setCarCategory(value)}
           onClose={() => setCategoryModalOpen(false)}
@@ -470,7 +537,7 @@ export default function AppointmentScreen() {
         <SelectModal
           visible={serviceModalOpen}
           title="Serviço"
-          options={services.map(s => s.name)}
+          options={compatibleServices.map(s => s.name)}
           selected={serviceLabel}
           onSelect={handleSelectService}
           onClose={() => setServiceModalOpen(false)}
@@ -513,11 +580,18 @@ export default function AppointmentScreen() {
             <Text style={styles.sectionLabel}>VEÍCULO</Text>
             <View style={styles.vehicleGrid}>
               <TouchableOpacity
-                style={[styles.vehicleCard, vehicleType === 'Carro' && styles.vehicleCardSelected]}
+                style={[
+                  styles.vehicleCard,
+                  vehicleType === 'Carro' && styles.vehicleCardSelected,
+                  !availableVehicleTypes.includes('Carro') && styles.vehicleCardDisabled,
+                ]}
                 onPress={() => {
                   setVehicleType('Carro');
-                  if (!carCategory) setCarCategory('Hatch');
+                  if (!carCategory || !availableCarCategories.includes(carCategory)) {
+                    setCarCategory(availableCarCategories[0] ?? null);
+                  }
                 }}
+                disabled={!availableVehicleTypes.includes('Carro')}
               >
                 <Car
                   size={16}
@@ -534,11 +608,16 @@ export default function AppointmentScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.vehicleCard, vehicleType === 'Moto' && styles.vehicleCardSelected]}
+                style={[
+                  styles.vehicleCard,
+                  vehicleType === 'Moto' && styles.vehicleCardSelected,
+                  !availableVehicleTypes.includes('Moto') && styles.vehicleCardDisabled,
+                ]}
                 onPress={() => {
                   setVehicleType('Moto');
                   setCarCategory(null);
                 }}
+                disabled={!availableVehicleTypes.includes('Moto')}
               >
                 <Car
                   size={16}
@@ -559,7 +638,14 @@ export default function AppointmentScreen() {
           {vehicleType === 'Carro' && (
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>CATEGORIA</Text>
-              <TouchableOpacity style={styles.selector} onPress={() => setCategoryModalOpen(true)}>
+              <TouchableOpacity
+                style={[
+                  styles.selector,
+                  availableCarCategories.length === 0 && styles.selectorDisabled,
+                ]}
+                onPress={() => availableCarCategories.length > 0 && setCategoryModalOpen(true)}
+                disabled={availableCarCategories.length === 0}
+              >
                 <View style={styles.selectorContent}>
                   <Car size={16} color={colors.text.secondary} />
                   <Text style={[styles.selectorText, !carCategory && styles.selectorPlaceholder]}>
@@ -606,14 +692,19 @@ export default function AppointmentScreen() {
               </View>
             ) : (
               <TouchableOpacity
-                style={[styles.selector, services.length === 0 && styles.selectorDisabled]}
-                onPress={() => services.length > 0 && setServiceModalOpen(true)}
-                disabled={services.length === 0}
+                style={[
+                  styles.selector,
+                  compatibleServices.length === 0 && styles.selectorDisabled,
+                ]}
+                onPress={() => compatibleServices.length > 0 && setServiceModalOpen(true)}
+                disabled={compatibleServices.length === 0}
               >
                 <View style={styles.selectorContent}>
                   <Clock size={16} color={colors.text.secondary} />
                   <Text style={styles.selectorPlaceholder}>
-                    {services.length > 0 ? 'Selecione um serviço' : 'Nenhum serviço disponível'}
+                    {services.length > 0
+                      ? 'Nenhum serviço para este veículo'
+                      : 'Nenhum serviço disponível'}
                   </Text>
                 </View>
                 <ChevronRight size={16} color={colors.text.tertiary} />
@@ -807,6 +898,9 @@ const styles = StyleSheet.create({
   vehicleCardSelected: {
     backgroundColor: colors.primary.light,
     borderColor: colors.primary.main,
+  },
+  vehicleCardDisabled: {
+    opacity: 0.35,
   },
   vehicleLabel: {
     fontFamily: T.family.medium,

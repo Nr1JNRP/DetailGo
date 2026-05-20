@@ -6,6 +6,7 @@ export type CarCategory = 'Hatch' | 'Sedan' | 'SUV' | 'Picape cabine dupla';
 
 export type UserAppointment = {
   id: string;
+  shopId?: string | null;
   vehicleType: VehicleType;
   carCategory: CarCategory | null;
   serviceLabel: string | null;

@@ -84,8 +84,7 @@ export async function ensureShopSettings(shopId: string): Promise<{
     }
 
     return { created: false, settings: merged };
-  } catch (error) {
-    console.error('❌ Erro ao garantir configurações:', error);
+  } catch {
     throw new ShopSettingsError('Falha ao carregar configurações da loja');
   }
 }

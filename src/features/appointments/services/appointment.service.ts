@@ -143,7 +143,6 @@ export async function cancelAppointment(
 
     return { ok: true, message: 'Agendamento cancelado com sucesso!' };
   } catch (error: any) {
-    console.error('Erro ao cancelar agendamento:', error);
     return { ok: false, message: mapFirestoreError(error) };
   }
 }
@@ -162,20 +161,12 @@ export async function clearShopFavoriteIfNoActive(
   try {
     const db = getFirestore();
 
-    console.log('[clearShopFavorite] iniciando', { customerUid, shopId });
-
     const userSnap = await getDoc(doc(db, 'users', customerUid));
-    if (!userSnap.exists()) {
-      console.log('[clearShopFavorite] user não existe, abortando');
-      return;
-    }
-    const userData = userSnap.data() as { shopId?: string | null };
-    console.log('[clearShopFavorite] user.shopId atual:', userData.shopId);
+    if (!userSnap.exists()) return;
 
-    if (userData.shopId !== shopId) {
-      console.log('[clearShopFavorite] shopId do user não bate, abortando');
-      return;
-    }
+    const userData = userSnap.data() as { shopId?: string | null };
+
+    if (userData.shopId !== shopId) return;
 
     const userAppointmentsQuery = query(
       collection(db, 'shops', shopId, 'appointments'),
@@ -185,22 +176,15 @@ export async function clearShopFavoriteIfNoActive(
     const snap = await getDocs(userAppointmentsQuery);
     const activeStatuses = new Set<AppointmentStatus>(ACTIVE_APPOINTMENT_SET);
 
-    const statuses: string[] = [];
     const hasActive = snap.docs.some((d: { data: () => unknown }) => {
       const data = d.data() as { status?: AppointmentStatus };
-      if (data.status) statuses.push(data.status);
       return data.status ? activeStatuses.has(data.status) : false;
     });
-
-    console.log(`[clearShopFavorite] total agendamentos no shop: ${snap.docs.length}`);
-    console.log(`[clearShopFavorite] status encontrados: [${statuses.join(', ')}]`);
-    console.log(`[clearShopFavorite] tem ativo? ${hasActive}`);
 
     if (hasActive) return;
 
     await setDoc(doc(db, 'users', customerUid), { shopId: null }, { merge: true });
-    console.log('[clearShopFavorite] ✅ shopId limpo');
-  } catch (err: any) {
-    console.warn('[clearShopFavorite] erro:', err?.message ?? err);
+  } catch {
+    // Não interrompe a ação principal se a limpeza auxiliar falhar.
   }
 }

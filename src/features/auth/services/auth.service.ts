@@ -16,7 +16,6 @@ import {
   Timestamp,
 } from '@react-native-firebase/firestore';
 import { mapFirebaseAuthError } from '@shared/utils/firebase.utils';
-import { stringUtils } from '@shared/utils/string.utils';
 import { generateGeohash } from '@shared/utils/geo.utils';
 import type { ShopLocation } from '@features/shops/domain/shopLocation.types';
 
@@ -57,7 +56,6 @@ async function registerAsOwner(uid: string, data: RegisterInput): Promise<void> 
   // Documento principal do shop
   await setDoc(shopRef, {
     name: shopName,
-    code: stringUtils.generateRandomCode(), // código interno para referências futuras
     ownerId: uid,
     createdAt: serverTimestamp(),
     subscriptionStatus: 'trial',

@@ -101,28 +101,12 @@ export default function DashboardScreen() {
   const upcomingAppointments = activeAppointments.slice(0, 3);
   const homeServices = shopServices;
 
-  // Debug — entender o estado atual do dashboard
-  useEffect(() => {
-    if (loadingAppointments) return;
-    console.log('═══════ [Dashboard] estado atual ═══════');
-    console.log('shopId:', shopId);
-    console.log('shop.name:', shop?.name);
-    console.log('total appointments carregados:', appointments.length);
-    console.log(
-      'status dos appointments:',
-      appointments.map(a => a.status),
-    );
-    console.log('ativos (scheduled/in_progress):', activeAppointments.length);
-    console.log('═════════════════════════════════════════');
-  }, [loadingAppointments, shopId, shop?.name, appointments, activeAppointments]);
-
   // Garbage collection: se tem shopId mas zero ativos, desvincula
   useEffect(() => {
     if (loadingAppointments) return;
     if (!shopId || !uid) return;
     if (activeAppointments.length > 0) return;
 
-    console.log('[Dashboard] shopId presente sem ativos → disparando limpeza');
     clearShopFavoriteIfNoActive(uid, shopId);
   }, [loadingAppointments, shopId, uid, activeAppointments.length]);
 
