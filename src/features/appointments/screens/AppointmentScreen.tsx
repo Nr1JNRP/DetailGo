@@ -1,37 +1,38 @@
 // src/features/appointments/screens/AppointmentScreen.tsx
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import {
-  Text,
-  TouchableOpacity,
-  StyleSheet,
+  ActivityIndicator,
   Alert,
-  Platform,
-  FlatList,
+  Animated,
+  Dimensions,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
-  View,
   StatusBar,
-  ActivityIndicator,
-  Dimensions,
-  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAuth } from '@react-native-firebase/auth';
-import { doc, getFirestore, setDoc } from '@react-native-firebase/firestore';
+import { doc, getDoc, getFirestore, setDoc } from '@react-native-firebase/firestore';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   ArrowLeft,
+  ArrowRight,
   Calendar,
-  Clock,
   Car,
-  Info,
-  ChevronRight,
-  X,
   Check,
+  ChevronRight,
+  Clock,
+  Info,
+  MapPin,
   Sparkles,
+  X,
 } from 'lucide-react-native';
 
 import type { RootStackParamList } from '@app/types';
@@ -53,7 +54,7 @@ import {
   type VehicleType,
   type CarCategory,
 } from '@features/appointments';
-import { colors, spacing, radii, typography as T } from '@shared/theme';
+import { spacing, radii, typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { formatUtils } from '@shared/utils/format.utils';
 import { dateUtils } from '@shared/utils/date.utils';
 
@@ -100,6 +101,8 @@ function ServiceDetailsModal({
   price: number;
   onClose: () => void;
 }) {
+  const { colors: D } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
   const slideAnim = useRef(new Animated.Value(height)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -159,14 +162,14 @@ function ServiceDetailsModal({
           >
             <View style={styles.detailsHeader}>
               <View style={styles.detailsIconContainer}>
-                <Icon size={28} color={colors.primary.main} />
+                <Icon size={28} color={D.primary} />
               </View>
               <View style={styles.detailsTitleContainer}>
                 <Text style={styles.detailsTitle}>{details.title}</Text>
                 <Text style={styles.detailsSubtitle}>{details.description}</Text>
               </View>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <X size={18} color={colors.text.tertiary} />
+                <X size={18} color={D.ink3} />
               </TouchableOpacity>
             </View>
 
@@ -176,17 +179,15 @@ function ServiceDetailsModal({
                 <Text style={styles.priceBadgeValue}>{formatUtils.currency(price)}</Text>
               </View>
               <View style={styles.durationBadge}>
-                <Clock size={14} color={colors.text.secondary} />
+                <Clock size={14} color={D.ink2} />
                 <Text style={styles.durationBadgeText}>{durationText}</Text>
               </View>
             </View>
 
             <View style={styles.detailsSection}>
               <View style={styles.sectionHeader}>
-                <View
-                  style={[styles.sectionIcon, { backgroundColor: colors.status.success + '20' }]}
-                >
-                  <Check size={14} color={colors.status.success} />
+                <View style={[styles.sectionIcon, { backgroundColor: D.status.success + '20' }]}>
+                  <Check size={14} color={D.status.success} />
                 </View>
                 <Text style={styles.sectionHeaderTitle}>Inclui</Text>
               </View>
@@ -195,10 +196,8 @@ function ServiceDetailsModal({
                   const ItemIcon = item.icon;
                   return (
                     <View key={`inc-${idx}`} style={styles.includedItem}>
-                      <View
-                        style={[styles.itemIcon, { backgroundColor: colors.status.success + '10' }]}
-                      >
-                        <ItemIcon size={12} color={colors.status.success} />
+                      <View style={[styles.itemIcon, { backgroundColor: D.status.success + '10' }]}>
+                        <ItemIcon size={12} color={D.status.success} />
                       </View>
                       <Text style={styles.includedItemText}>{item.text}</Text>
                     </View>
@@ -210,10 +209,8 @@ function ServiceDetailsModal({
             {details.recommendedFor && (
               <View style={styles.detailsSection}>
                 <View style={styles.sectionHeader}>
-                  <View
-                    style={[styles.sectionIcon, { backgroundColor: colors.primary.main + '20' }]}
-                  >
-                    <Sparkles size={14} color={colors.primary.main} />
+                  <View style={[styles.sectionIcon, { backgroundColor: D.primary + '20' }]}>
+                    <Sparkles size={14} color={D.primary} />
                   </View>
                   <Text style={styles.sectionHeaderTitle}>Recomendado</Text>
                 </View>
@@ -228,7 +225,7 @@ function ServiceDetailsModal({
             )}
 
             <View style={styles.noteContainer}>
-              <Info size={14} color={colors.text.tertiary} />
+              <Info size={14} color={D.ink3} />
               <Text style={styles.noteText}>{details.note}</Text>
             </View>
 
@@ -261,6 +258,9 @@ function SelectModal<T extends string>({
   onSelect: (value: T) => void;
   onClose: () => void;
 }) {
+  const { colors: D } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
@@ -268,7 +268,7 @@ function SelectModal<T extends string>({
           <View style={styles.modalCardHeader}>
             <Text style={styles.modalTitle}>{title}</Text>
             <TouchableOpacity onPress={onClose}>
-              <X size={18} color={colors.text.tertiary} />
+              <X size={18} color={D.ink3} />
             </TouchableOpacity>
           </View>
 
@@ -290,7 +290,7 @@ function SelectModal<T extends string>({
                   </Text>
                   {isSelected && (
                     <View style={styles.modalItemCheck}>
-                      <Check size={14} color={colors.primary.main} />
+                      <Check size={14} color={D.primary} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -304,6 +304,8 @@ function SelectModal<T extends string>({
 }
 
 export default function AppointmentScreen() {
+  const { colors: D, isLight } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
   const auth = getAuth();
   const navigation = useNavigation<NavProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'Appointment'>>();
@@ -317,6 +319,38 @@ export default function AppointmentScreen() {
     shopId,
     activeOnly: true,
   });
+
+  // Hero: info do shop para o cliente sempre saber em qual estética está agendando
+  const [shopInfo, setShopInfo] = useState<{
+    name: string;
+    address?: string;
+    city?: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (!shopId) {
+      setShopInfo(null);
+      return;
+    }
+    let mounted = true;
+    getDoc(doc(getFirestore(), 'shops', shopId))
+      .then(snap => {
+        if (!mounted || !snap.exists()) return;
+        const data = snap.data() as {
+          name?: string;
+          location?: { address?: string; city?: string };
+        };
+        setShopInfo({
+          name: data.name ?? 'Estética',
+          address: data.location?.address,
+          city: data.location?.city,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [shopId]);
 
   const [vehicleType, setVehicleType] = useState<VehicleType>('Carro');
   const [carCategory, setCarCategory] = useState<CarCategory | null>('Hatch');
@@ -512,12 +546,12 @@ export default function AppointmentScreen() {
 
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background.main} />
+      <StatusBar barStyle={isLight ? 'dark-content' : 'light-content'} backgroundColor={D.bg} />
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         {/* Header sem ícone de calendário */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <ArrowLeft size={18} color={colors.text.primary} />
+            <ArrowLeft size={18} color={D.ink} />
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>Agendar</Text>
@@ -555,14 +589,32 @@ export default function AppointmentScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {shopInfo && (
+            <View style={styles.heroCard}>
+              <Text style={styles.heroShopName} numberOfLines={1}>
+                {shopInfo.name}
+              </Text>
+              {(shopInfo.address || shopInfo.city) && (
+                <View style={styles.heroMetaRow}>
+                  <MapPin size={13} color={D.ink3} />
+                  <Text style={styles.heroMetaText} numberOfLines={2}>
+                    {[shopInfo.address, shopInfo.city].filter(Boolean).join(' · ')}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>DATA</Text>
+            <Text style={styles.sectionLabel}>
+              <Text style={styles.sectionNumber}>01 </Text>· QUANDO
+            </Text>
             <TouchableOpacity style={styles.dateSelector} onPress={() => setShowDayPicker(true)}>
               <View style={styles.dateSelectorContent}>
-                <Calendar size={18} color={colors.primary.main} />
+                <Calendar size={18} color={D.primary} />
                 <Text style={styles.dateSelectorText}>{dateUtils.formatDate(day.getTime())}</Text>
               </View>
-              <ChevronRight size={16} color={colors.text.tertiary} />
+              <ChevronRight size={16} color={D.ink3} />
             </TouchableOpacity>
           </View>
 
@@ -577,7 +629,9 @@ export default function AppointmentScreen() {
           )}
 
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>VEÍCULO</Text>
+            <Text style={styles.sectionLabel}>
+              <Text style={styles.sectionNumber}>02 </Text>· VEÍCULO
+            </Text>
             <View style={styles.vehicleGrid}>
               <TouchableOpacity
                 style={[
@@ -593,10 +647,7 @@ export default function AppointmentScreen() {
                 }}
                 disabled={!availableVehicleTypes.includes('Carro')}
               >
-                <Car
-                  size={16}
-                  color={vehicleType === 'Carro' ? colors.primary.main : colors.text.tertiary}
-                />
+                <Car size={16} color={vehicleType === 'Carro' ? D.primary : D.ink3} />
                 <Text
                   style={[
                     styles.vehicleLabel,
@@ -619,10 +670,7 @@ export default function AppointmentScreen() {
                 }}
                 disabled={!availableVehicleTypes.includes('Moto')}
               >
-                <Car
-                  size={16}
-                  color={vehicleType === 'Moto' ? colors.primary.main : colors.text.tertiary}
-                />
+                <Car size={16} color={vehicleType === 'Moto' ? D.primary : D.ink3} />
                 <Text
                   style={[
                     styles.vehicleLabel,
@@ -635,30 +683,10 @@ export default function AppointmentScreen() {
             </View>
           </View>
 
-          {vehicleType === 'Carro' && (
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>CATEGORIA</Text>
-              <TouchableOpacity
-                style={[
-                  styles.selector,
-                  availableCarCategories.length === 0 && styles.selectorDisabled,
-                ]}
-                onPress={() => availableCarCategories.length > 0 && setCategoryModalOpen(true)}
-                disabled={availableCarCategories.length === 0}
-              >
-                <View style={styles.selectorContent}>
-                  <Car size={16} color={colors.text.secondary} />
-                  <Text style={[styles.selectorText, !carCategory && styles.selectorPlaceholder]}>
-                    {carCategory ?? 'Selecione'}
-                  </Text>
-                </View>
-                <ChevronRight size={16} color={colors.text.tertiary} />
-              </TouchableOpacity>
-            </View>
-          )}
-
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>SERVIÇO</Text>
+            <Text style={styles.sectionLabel}>
+              <Text style={styles.sectionNumber}>03 </Text>· SERVIÇO
+            </Text>
 
             {selectedService ? (
               <TouchableOpacity
@@ -667,11 +695,13 @@ export default function AppointmentScreen() {
               >
                 <View style={styles.serviceCardLeft}>
                   <View style={styles.serviceIconContainer}>
-                    <SelectedServiceIcon size={18} color={colors.primary.main} />
+                    <SelectedServiceIcon size={18} color={D.primary} />
                   </View>
                   <View style={styles.serviceInfo}>
-                    <Text style={styles.serviceName}>{selectedService.name}</Text>
-                    <Text style={styles.serviceDuration}>
+                    <Text style={styles.serviceName} numberOfLines={1}>
+                      {selectedService.name}
+                    </Text>
+                    <Text style={styles.serviceDuration} numberOfLines={1}>
                       {selectedService?.durationMin}min • {formatUtils.currency(finalPrice)}
                     </Text>
                   </View>
@@ -680,14 +710,15 @@ export default function AppointmentScreen() {
                 <TouchableOpacity
                   style={styles.detailsBadge}
                   onPress={() => setServiceDetailsOpen(true)}
+                  hitSlop={8}
                 >
-                  <Info size={11} color={colors.primary.main} />
+                  <Info size={11} color={D.primary} />
                   <Text style={styles.detailsBadgeText}>Detalhes</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ) : loadingServices ? (
               <View style={styles.loadingState}>
-                <ActivityIndicator size="small" color={colors.primary.main} />
+                <ActivityIndicator size="small" color={D.primary} />
                 <Text style={styles.loadingText}>Carregando serviços...</Text>
               </View>
             ) : (
@@ -700,55 +731,78 @@ export default function AppointmentScreen() {
                 disabled={compatibleServices.length === 0}
               >
                 <View style={styles.selectorContent}>
-                  <Clock size={16} color={colors.text.secondary} />
+                  <Clock size={16} color={D.ink2} />
                   <Text style={styles.selectorPlaceholder}>
                     {services.length > 0
                       ? 'Nenhum serviço para este veículo'
                       : 'Nenhum serviço disponível'}
                   </Text>
                 </View>
-                <ChevronRight size={16} color={colors.text.tertiary} />
+                <ChevronRight size={16} color={D.ink3} />
               </TouchableOpacity>
             )}
           </View>
 
+          {vehicleType === 'Carro' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>CATEGORIA</Text>
+              {/* sub-seção condicional — depende do veículo selecionado */}
+              <TouchableOpacity
+                style={[
+                  styles.selector,
+                  availableCarCategories.length === 0 && styles.selectorDisabled,
+                ]}
+                onPress={() => availableCarCategories.length > 0 && setCategoryModalOpen(true)}
+                disabled={availableCarCategories.length === 0}
+              >
+                <View style={styles.selectorContent}>
+                  <Car size={16} color={D.ink2} />
+                  <Text style={[styles.selectorText, !carCategory && styles.selectorPlaceholder]}>
+                    {carCategory ?? 'Selecione'}
+                  </Text>
+                </View>
+                <ChevronRight size={16} color={D.ink3} />
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionLabel}>HORÁRIOS</Text>
+              <Text style={styles.sectionLabel}>
+                <Text style={styles.sectionNumber}>04 </Text>· HORÁRIO
+              </Text>
               {selectedService && slots.length > 0 && (
-                <View style={styles.slotCountBadge}>
-                  <Text style={styles.slotCountText}>{slots.length}</Text>
-                </View>
+                <Text style={styles.slotCountInline}>{slots.length} disponíveis</Text>
               )}
             </View>
 
             {!selectedService ? (
               <View style={styles.emptyState}>
-                <Clock size={20} color={colors.text.disabled} />
+                <Clock size={20} color={D.ink3} />
                 <Text style={styles.emptyStateTitle}>Selecione um serviço</Text>
               </View>
             ) : loadingSlots ? (
               <View style={styles.loadingState}>
-                <ActivityIndicator size="small" color={colors.primary.main} />
+                <ActivityIndicator size="small" color={D.primary} />
                 <Text style={styles.loadingText}>Carregando...</Text>
               </View>
             ) : slots.length === 0 ? (
               <View style={styles.emptyState}>
-                <Calendar size={20} color={colors.text.disabled} />
+                <Calendar size={20} color={D.ink3} />
                 <Text style={styles.emptyStateTitle}>Nenhum horário</Text>
               </View>
             ) : (
-              <FlatList
+              <ScrollView
                 horizontal
-                data={slots}
-                keyExtractor={item => String(item.startAtMs)}
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.slotsList}
-                renderItem={({ item }) => {
+                contentContainerStyle={styles.slotsRow}
+              >
+                {slots.map(item => {
                   const isSelected = selectedSlot?.startAtMs === item.startAtMs;
                   return (
                     <TouchableOpacity
-                      style={[styles.slotCard, isSelected && styles.slotCardSelected]}
+                      key={String(item.startAtMs)}
+                      style={[styles.slotChip, isSelected && styles.slotChipSelected]}
                       onPress={() => setSelectedSlot(item)}
                     >
                       <Text style={[styles.slotTime, isSelected && styles.slotTimeSelected]}>
@@ -756,655 +810,684 @@ export default function AppointmentScreen() {
                       </Text>
                     </TouchableOpacity>
                   );
-                }}
-              />
+                })}
+              </ScrollView>
             )}
           </View>
 
-          {canConfirm && (
-            <View style={styles.totalCard}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>{formatUtils.currency(finalPrice)}</Text>
-            </View>
-          )}
+          <View style={{ height: 96 }} />
+        </ScrollView>
 
+        {/* CTA sticky no rodapé com total embutido */}
+        <View style={styles.ctaWrap}>
           <TouchableOpacity
             style={[styles.confirmButton, !canConfirm && styles.confirmButtonDisabled]}
             onPress={handleSave}
             disabled={!canConfirm || submitting}
           >
             {submitting ? (
-              <ActivityIndicator size="small" color={colors.text.white} />
+              <ActivityIndicator size="small" color={D.onPrimary} />
+            ) : canConfirm ? (
+              <>
+                <Text style={styles.confirmButtonText}>
+                  Confirmar · {formatUtils.currency(finalPrice)}
+                </Text>
+                <ArrowRight size={18} color={D.onPrimary} />
+              </>
             ) : (
-              <Text style={styles.confirmButtonText}>
-                {canConfirm ? 'Confirmar agendamento' : 'Selecione os dados'}
-              </Text>
+              <Text style={styles.confirmButtonText}>Selecione os dados</Text>
             )}
           </TouchableOpacity>
-
-          <View style={{ height: spacing.lg }} />
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background.main,
-  },
+function createStyles(D: AppColors) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: D.bg,
+    },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.background.main,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.main,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background.surface,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-  },
-  headerTitle: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.title,
-    lineHeight: T.lineHeight.title,
-    fontWeight: '700',
-    color: colors.text.primary,
-    textAlign: 'center',
-    flex: 1,
-  },
-  headerRight: {
-    width: 36,
-  },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      backgroundColor: D.bg,
+      borderBottomWidth: 1,
+      borderBottomColor: D.border,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      borderRadius: radii.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: D.surface,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    headerTitle: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.title,
+      lineHeight: T.lineHeight.title,
+      fontWeight: '700',
+      color: D.ink,
+      textAlign: 'center',
+      flex: 1,
+    },
+    headerRight: {
+      width: 36,
+    },
 
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  sectionLabel: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.caption,
-    lineHeight: T.lineHeight.caption,
-    fontWeight: '700',
-    color: colors.text.tertiary,
-    marginBottom: spacing.xs,
-    letterSpacing: 0.8,
-  },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+    },
 
-  dateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 44,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    paddingHorizontal: spacing.md,
-  },
-  dateSelectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  dateSelectorText: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    fontWeight: '500',
-    color: colors.text.primary,
-  },
+    heroCard: {
+      backgroundColor: D.surface,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: D.border,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 2,
+      gap: 4,
+      marginBottom: spacing.md,
+    },
+    heroShopName: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.titleLarge,
+      lineHeight: T.lineHeight.titleLarge,
+      fontWeight: '800',
+      color: D.ink,
+    },
+    heroMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 2,
+    },
+    heroMetaText: {
+      flex: 1,
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      color: D.ink3,
+    },
 
-  vehicleGrid: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  vehicleCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    height: 44,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    paddingHorizontal: spacing.md,
-  },
-  vehicleCardSelected: {
-    backgroundColor: colors.primary.light,
-    borderColor: colors.primary.main,
-  },
-  vehicleCardDisabled: {
-    opacity: 0.35,
-  },
-  vehicleLabel: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  vehicleLabelSelected: {
-    color: colors.primary.main,
-  },
+    section: {
+      marginBottom: spacing.md,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.xs,
+    },
+    sectionLabel: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.caption,
+      lineHeight: T.lineHeight.caption,
+      fontWeight: '700',
+      color: D.ink3,
+      marginBottom: spacing.xs,
+      letterSpacing: 0.8,
+    },
+    sectionNumber: {
+      color: D.primary,
+      fontWeight: '800',
+    },
 
-  selector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 44,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    paddingHorizontal: spacing.md,
-  },
-  selectorDisabled: {
-    opacity: 0.6,
-  },
-  selectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  selectorText: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    color: colors.text.primary,
-    fontWeight: '500',
-  },
-  selectorPlaceholder: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    color: colors.text.disabled,
-  },
+    dateSelector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      height: 42,
+      backgroundColor: D.surface,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+      paddingHorizontal: spacing.md,
+    },
+    dateSelectorContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    dateSelectorText: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      fontWeight: '500',
+      color: D.ink,
+    },
 
-  serviceCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    padding: spacing.md,
-  },
-  serviceCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    flex: 1,
-  },
-  serviceIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.sm,
-    backgroundColor: colors.primary.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  serviceInfo: {
-    flex: 1,
-  },
-  serviceName: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 2,
-  },
-  serviceDuration: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    color: colors.text.tertiary,
-  },
-  detailsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: colors.primary.light,
-    borderRadius: 16,
-  },
-  detailsBadgeText: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.caption,
-    lineHeight: T.lineHeight.caption,
-    fontWeight: '600',
-    color: colors.primary.main,
-  },
+    vehicleGrid: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    vehicleCard: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      height: 42,
+      backgroundColor: D.surface,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+      paddingHorizontal: spacing.md,
+    },
+    vehicleCardSelected: {
+      backgroundColor: D.primaryLight,
+      borderColor: D.primary,
+    },
+    vehicleCardDisabled: {
+      opacity: 0.35,
+    },
+    vehicleLabel: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      fontWeight: '600',
+      color: D.ink2,
+    },
+    vehicleLabelSelected: {
+      color: D.primary,
+    },
 
-  slotsList: {
-    gap: spacing.xs,
-    paddingVertical: 4,
-  },
-  slotCard: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-  },
-  slotCardSelected: {
-    backgroundColor: colors.primary.main,
-    borderColor: colors.primary.main,
-  },
-  slotTime: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  slotTimeSelected: {
-    color: colors.text.white,
-  },
-  slotCountBadge: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    backgroundColor: colors.primary.light,
-    borderRadius: 12,
-  },
-  slotCountText: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.caption,
-    lineHeight: T.lineHeight.caption,
-    fontWeight: '600',
-    color: colors.primary.main,
-  },
+    selector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      height: 42,
+      backgroundColor: D.surface,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+      paddingHorizontal: spacing.md,
+    },
+    selectorDisabled: {
+      opacity: 0.6,
+    },
+    selectorContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    selectorText: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      color: D.ink,
+      fontWeight: '500',
+    },
+    selectorPlaceholder: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      color: D.ink3,
+    },
 
-  emptyState: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.lg,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-  },
-  emptyStateTitle: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    color: colors.text.tertiary,
-    fontWeight: '500',
-  },
-  loadingState: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.lg,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-  },
-  loadingText: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    color: colors.text.secondary,
-  },
+    serviceCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: D.surface,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    serviceCardLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flex: 1,
+      flexShrink: 1,
+      minWidth: 0,
+    },
+    serviceIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: radii.sm,
+      backgroundColor: D.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    serviceInfo: {
+      flex: 1,
+    },
+    serviceName: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      fontWeight: '600',
+      color: D.ink,
+      marginBottom: 2,
+    },
+    serviceDuration: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      color: D.ink3,
+    },
+    detailsBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      backgroundColor: D.primaryLight,
+      borderRadius: 999,
+      flexShrink: 0,
+    },
+    detailsBadgeText: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.caption,
+      lineHeight: T.lineHeight.caption,
+      fontWeight: '600',
+      color: D.primary,
+    },
 
-  totalCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.primary.light,
-    borderRadius: radii.sm,
-    padding: spacing.lg,
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  totalLabel: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    fontWeight: '600',
-    color: colors.primary.main,
-  },
-  totalValue: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.title,
-    lineHeight: T.lineHeight.title,
-    fontWeight: '800',
-    color: colors.primary.main,
-  },
+    slotsRow: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      paddingVertical: 4,
+      paddingRight: spacing.sm,
+    },
+    slotChip: {
+      width: 76,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: D.surface,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    slotChipSelected: {
+      backgroundColor: D.primary,
+      borderColor: D.primary,
+    },
+    slotTime: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      fontWeight: '700',
+      color: D.ink2,
+    },
+    slotTimeSelected: {
+      color: D.onPrimary,
+    },
+    slotCountInline: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.caption,
+      fontWeight: '700',
+      color: D.primary,
+      letterSpacing: 0.3,
+    },
 
-  confirmButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary.main,
-    borderRadius: radii.md,
-    paddingVertical: spacing.lg,
-    shadowColor: colors.primary.main,
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  confirmButtonDisabled: {
-    backgroundColor: colors.text.disabled,
-    shadowOpacity: 0,
-  },
-  confirmButtonText: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    fontWeight: '700',
-    color: colors.text.white,
-  },
+    emptyState: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingVertical: spacing.lg,
+      backgroundColor: D.surface,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    emptyStateTitle: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      color: D.ink3,
+      fontWeight: '500',
+    },
+    loadingState: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingVertical: spacing.lg,
+      backgroundColor: D.surface,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    loadingText: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      color: D.ink2,
+    },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: colors.background.main,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: Platform.OS === 'ios' ? 32 : spacing.lg,
-    maxHeight: '70%',
-  },
-  modalCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.main,
-  },
-  modalTitle: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  modalItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    marginHorizontal: spacing.lg,
-    marginVertical: 2,
-    borderRadius: radii.sm,
-  },
-  modalItemSelected: {
-    backgroundColor: colors.primary.light,
-  },
-  modalItemText: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    fontWeight: '500',
-    color: colors.text.primary,
-  },
-  modalItemTextSelected: {
-    color: colors.primary.main,
-    fontWeight: '600',
-  },
-  modalItemCheck: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.primary.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    ctaWrap: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+      backgroundColor: D.bg,
+      borderTopWidth: 1,
+      borderTopColor: D.border,
+    },
+    confirmButton: {
+      height: 52,
+      borderRadius: radii.md,
+      backgroundColor: D.primary,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      shadowColor: D.primary,
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 6,
+    },
+    confirmButtonDisabled: {
+      backgroundColor: D.ink3,
+      shadowOpacity: 0,
+    },
+    confirmButtonText: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      fontWeight: '800',
+      color: D.onPrimary,
+    },
 
-  detailsModal: {
-    backgroundColor: colors.background.main,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    paddingTop: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    maxHeight: '85%',
-  },
-  modalHandle: {
-    width: 36,
-    height: 4,
-    backgroundColor: colors.border.main,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: spacing.lg,
-  },
-  modalScrollContent: {
-    paddingBottom: spacing.xl,
-  },
-  detailsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  detailsIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: radii.lg,
-    backgroundColor: colors.primary.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  detailsTitleContainer: {
-    flex: 1,
-  },
-  detailsTitle: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.bodyLarge,
-    lineHeight: T.lineHeight.bodyLarge,
-    fontWeight: '700',
-    color: colors.text.primary,
-    marginBottom: 2,
-  },
-  detailsSubtitle: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    color: colors.text.tertiary,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.background.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  priceDurationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
-  },
-  priceBadge: {
-    flex: 1,
-    backgroundColor: colors.primary.light,
-    borderRadius: radii.md,
-    padding: spacing.md,
-  },
-  priceBadgeLabel: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.caption,
-    lineHeight: T.lineHeight.caption,
-    fontWeight: '600',
-    color: colors.primary.main,
-    marginBottom: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  priceBadgeValue: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.titleLarge,
-    lineHeight: T.lineHeight.titleLarge,
-    fontWeight: '800',
-    color: colors.primary.main,
-  },
-  durationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-  },
-  durationBadgeText: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  detailsSection: {
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  sectionHeaderTitle: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  sectionIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  includedItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    width: '48%',
-  },
-  excludedItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    width: '48%',
-  },
-  itemIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  includedItemText: {
-    flex: 1,
-    fontFamily: T.family.regular,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    color: colors.text.primary,
-    fontWeight: '500',
-  },
-  excludedItemText: {
-    flex: 1,
-    fontFamily: T.family.regular,
-    fontSize: T.size.secondary,
-    lineHeight: T.lineHeight.secondary,
-    color: colors.text.tertiary,
-  },
-  recommendedTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  recommendedTag: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.background.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-  },
-  recommendedTagText: {
-    fontFamily: T.family.regular,
-    fontSize: T.size.caption,
-    lineHeight: T.lineHeight.caption,
-    fontWeight: '500',
-    color: colors.text.secondary,
-  },
-  noteContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  noteText: {
-    flex: 1,
-    fontFamily: T.family.regular,
-    fontSize: T.size.secondary,
-    color: colors.text.tertiary,
-    lineHeight: T.lineHeight.secondary,
-  },
-  detailsActionButton: {
-    backgroundColor: colors.primary.main,
-    borderRadius: radii.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  detailsActionButtonText: {
-    fontFamily: T.family.medium,
-    fontSize: T.size.body,
-    lineHeight: T.lineHeight.body,
-    fontWeight: '700',
-    color: colors.text.white,
-  },
-});
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: D.overlay,
+      justifyContent: 'flex-end',
+    },
+    modalCard: {
+      backgroundColor: D.bg,
+      borderTopLeftRadius: radii.lg,
+      borderTopRightRadius: radii.lg,
+      paddingTop: spacing.lg,
+      paddingBottom: Platform.OS === 'ios' ? 32 : spacing.lg,
+      maxHeight: '70%',
+    },
+    modalCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: D.border,
+    },
+    modalTitle: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      fontWeight: '700',
+      color: D.ink,
+    },
+    modalItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      marginHorizontal: spacing.lg,
+      marginVertical: 2,
+      borderRadius: radii.sm,
+    },
+    modalItemSelected: {
+      backgroundColor: D.primaryLight,
+    },
+    modalItemText: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      fontWeight: '500',
+      color: D.ink,
+    },
+    modalItemTextSelected: {
+      color: D.primary,
+      fontWeight: '600',
+    },
+    modalItemCheck: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: D.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    detailsModal: {
+      backgroundColor: D.bg,
+      borderTopLeftRadius: radii.xl,
+      borderTopRightRadius: radii.xl,
+      paddingTop: spacing.xs,
+      paddingHorizontal: spacing.lg,
+      maxHeight: '85%',
+    },
+    modalHandle: {
+      width: 36,
+      height: 4,
+      backgroundColor: D.border,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginBottom: spacing.lg,
+    },
+    modalScrollContent: {
+      paddingBottom: spacing.xl,
+    },
+    detailsHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.lg,
+    },
+    detailsIconContainer: {
+      width: 52,
+      height: 52,
+      borderRadius: radii.lg,
+      backgroundColor: D.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+    },
+    detailsTitleContainer: {
+      flex: 1,
+    },
+    detailsTitle: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.bodyLarge,
+      lineHeight: T.lineHeight.bodyLarge,
+      fontWeight: '700',
+      color: D.ink,
+      marginBottom: 2,
+    },
+    detailsSubtitle: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      color: D.ink3,
+    },
+    closeButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: D.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    priceDurationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.xl,
+    },
+    priceBadge: {
+      flex: 1,
+      backgroundColor: D.primaryLight,
+      borderRadius: radii.md,
+      padding: spacing.md,
+    },
+    priceBadgeLabel: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.caption,
+      lineHeight: T.lineHeight.caption,
+      fontWeight: '600',
+      color: D.primary,
+      marginBottom: 2,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    priceBadgeValue: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.titleLarge,
+      lineHeight: T.lineHeight.titleLarge,
+      fontWeight: '800',
+      color: D.primary,
+    },
+    durationBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: D.surface,
+      borderRadius: radii.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    durationBadgeText: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      fontWeight: '600',
+      color: D.ink2,
+    },
+    detailsSection: {
+      marginBottom: spacing.lg,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    sectionHeaderTitle: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      fontWeight: '700',
+      color: D.ink,
+    },
+    sectionIcon: {
+      width: 24,
+      height: 24,
+      borderRadius: radii.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    itemsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    includedItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      width: '48%',
+    },
+    excludedItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      width: '48%',
+    },
+    itemIcon: {
+      width: 24,
+      height: 24,
+      borderRadius: radii.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    includedItemText: {
+      flex: 1,
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      color: D.ink,
+      fontWeight: '500',
+    },
+    excludedItemText: {
+      flex: 1,
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      color: D.ink3,
+    },
+    recommendedTags: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+    },
+    recommendedTag: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      backgroundColor: D.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    recommendedTagText: {
+      fontFamily: T.family.regular,
+      fontSize: T.size.caption,
+      lineHeight: T.lineHeight.caption,
+      fontWeight: '500',
+      color: D.ink2,
+    },
+    noteContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+      backgroundColor: D.surface,
+      borderRadius: radii.md,
+      padding: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    noteText: {
+      flex: 1,
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      color: D.ink3,
+      lineHeight: T.lineHeight.secondary,
+    },
+    detailsActionButton: {
+      backgroundColor: D.primary,
+      borderRadius: radii.md,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+    },
+    detailsActionButtonText: {
+      fontFamily: T.family.medium,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      fontWeight: '700',
+      color: D.onPrimary,
+    },
+  });
+}
