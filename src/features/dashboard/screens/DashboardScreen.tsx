@@ -40,6 +40,7 @@ import { useShop, useShopServices, getShopServiceIcon } from '@features/shops';
 import {
   ACTIVE_APPOINTMENT_SET,
   clearShopFavoriteIfNoActive,
+  getAppointmentStatusConfig,
   useDashboardAppointments,
 } from '@features/appointments';
 import type { RootStackParamList } from '@app/types';
@@ -501,6 +502,7 @@ function AppointmentRow({
 }) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
+  const statusConfig = getAppointmentStatusConfig(appt.status);
 
   return (
     <TouchableOpacity
@@ -519,6 +521,17 @@ function AppointmentRow({
           {dateUtils.formatDate(appt.startAtMs)} · {dateUtils.formatHour(appt.startAtMs)} ·{' '}
           {appt.carCategory ?? appt.vehicleType}
         </Text>
+        <View
+          style={[
+            styles.appointmentStatusBadge,
+            { backgroundColor: statusConfig.color + '20', borderColor: statusConfig.color },
+          ]}
+        >
+          <View style={[styles.appointmentStatusDot, { backgroundColor: statusConfig.color }]} />
+          <Text style={[styles.appointmentStatusText, { color: statusConfig.color }]}>
+            {statusConfig.label}
+          </Text>
+        </View>
       </View>
       <Text style={styles.appointmentPrice}>{formatUtils.currencyCompact(appt.price)}</Text>
     </TouchableOpacity>
@@ -932,6 +945,28 @@ function createStyles(D: AppColors) {
       justifyContent: 'center',
     },
     appointmentInfo: { flex: 1 },
+    appointmentStatusBadge: {
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    appointmentStatusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    appointmentStatusText: {
+      fontFamily: T.family.medium,
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+    },
     appointmentTitle: {
       color: D.ink,
       fontFamily: T.family.medium,
