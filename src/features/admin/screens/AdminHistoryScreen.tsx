@@ -27,7 +27,7 @@ import {
   type FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
 
-import { darkColors as D, typography as T } from '@shared/theme';
+import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
 import { useShop } from '@features/shops';
 import { getAuth } from '@react-native-firebase/auth';
@@ -91,6 +91,8 @@ function formatRevenue(value: number): string {
 }
 
 export default function AdminHistoryScreen() {
+  const { colors: D, isLight } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
   const navigation = useNavigation();
   const auth = getAuth();
   const user = auth.currentUser;
@@ -209,7 +211,7 @@ export default function AdminHistoryScreen() {
 
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor={D.bg} />
+      <StatusBar barStyle={isLight ? 'dark-content' : 'light-content'} backgroundColor={D.bg} />
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         {/* ── Header ── */}
         <View style={styles.header}>
@@ -292,6 +294,8 @@ export default function AdminHistoryScreen() {
 
 // ── Row component ────────────────────────────────────────────
 function HistoryRow({ item, isLast }: { item: AdminAppointment; isLast: boolean }) {
+  const { colors: D } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
   const d = new Date(item.startAtMs);
   const day = String(d.getDate()).padStart(2, '0');
   const hour = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(
@@ -349,165 +353,167 @@ function HistoryRow({ item, isLast }: { item: AdminAppointment; isLast: boolean 
 }
 
 // ── Styles ───────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: D.bg },
+function createStyles(D: AppColors) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: D.bg },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 14,
-    gap: 14,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: D.card,
-    borderWidth: 1,
-    borderColor: D.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  headerText: { flex: 1 },
-  headerTitle: {
-    fontSize: 26,
-    fontFamily: T.family.extraBold,
-    color: D.ink,
-    letterSpacing: -0.5,
-  },
-  headerSub: {
-    fontSize: 13,
-    color: D.ink3,
-    marginTop: 2,
-    fontFamily: T.family.medium,
-  },
+    // Header
+    header: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 14,
+      gap: 14,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: D.card,
+      borderWidth: 1,
+      borderColor: D.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 2,
+    },
+    headerText: { flex: 1 },
+    headerTitle: {
+      fontSize: 26,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+      letterSpacing: -0.5,
+    },
+    headerSub: {
+      fontSize: 13,
+      color: D.ink3,
+      marginTop: 2,
+      fontFamily: T.family.medium,
+    },
 
-  // Filters
-  filtersScroll: { maxHeight: 44, marginBottom: 16 },
-  filtersRow: {
-    paddingHorizontal: 20,
-    gap: 8,
-    alignItems: 'center',
-  },
-  pill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1.5,
-    borderColor: D.border,
-    backgroundColor: 'transparent',
-  },
-  pillActive: {
-    backgroundColor: D.primary,
-    borderColor: D.primary,
-  },
-  pillText: {
-    fontSize: 11,
-    fontFamily: T.family.bold,
-    color: D.ink3,
-    letterSpacing: 0.5,
-  },
-  pillTextActive: {
-    color: '#0B0D0E',
-  },
+    // Filters
+    filtersScroll: { maxHeight: 44, marginBottom: 16 },
+    filtersRow: {
+      paddingHorizontal: 20,
+      gap: 8,
+      alignItems: 'center',
+    },
+    pill: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: 1.5,
+      borderColor: D.border,
+      backgroundColor: 'transparent',
+    },
+    pillActive: {
+      backgroundColor: D.primary,
+      borderColor: D.primary,
+    },
+    pillText: {
+      fontSize: 11,
+      fontFamily: T.family.bold,
+      color: D.ink3,
+      letterSpacing: 0.5,
+    },
+    pillTextActive: {
+      color: '#0B0D0E',
+    },
 
-  // List
-  listContent: { paddingHorizontal: 20, paddingBottom: 32 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontSize: 14, fontFamily: T.family.regular, color: D.ink3 },
-  loadingMore: { paddingVertical: 20, alignItems: 'center' },
+    // List
+    listContent: { paddingHorizontal: 20, paddingBottom: 32 },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    emptyText: { fontSize: 14, fontFamily: T.family.regular, color: D.ink3 },
+    loadingMore: { paddingVertical: 20, alignItems: 'center' },
 
-  // Month group header
-  monthLabel: {
-    fontSize: 11,
-    fontFamily: T.family.bold,
-    color: D.ink3,
-    letterSpacing: 0.8,
-    marginTop: 24,
-    marginBottom: 8,
-  },
+    // Month group header
+    monthLabel: {
+      fontSize: 11,
+      fontFamily: T.family.bold,
+      color: D.ink3,
+      letterSpacing: 0.8,
+      marginTop: 24,
+      marginBottom: 8,
+    },
 
-  // Row
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 14,
-    gap: 16,
-  },
-  rowDate: {
-    width: 42,
-    alignItems: 'flex-start',
-  },
-  rowDay: {
-    fontSize: 26,
-    fontFamily: T.family.extraBold,
-    color: D.ink,
-    letterSpacing: -1,
-    lineHeight: 28,
-  },
-  rowHour: {
-    fontSize: 11,
-    fontFamily: T.family.medium,
-    color: D.ink3,
-    marginTop: 2,
-    fontVariant: ['tabular-nums'],
-  },
-  rowInfo: {
-    flex: 1,
-    paddingTop: 2,
-  },
-  rowService: {
-    fontSize: 15,
-    fontFamily: T.family.bold,
-    color: D.ink,
-    marginBottom: 3,
-  },
-  rowCustomer: {
-    fontSize: 12,
-    color: D.ink3,
-    fontFamily: T.family.medium,
-  },
-  rowRight: {
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
-    paddingTop: 4,
-    minWidth: 80,
-  },
-  rowPrice: {
-    fontSize: 15,
-    fontFamily: T.family.extraBold,
-    color: D.primary,
-    letterSpacing: -0.3,
-  },
-  rowNoShowDash: {
-    fontSize: 15,
-    fontFamily: T.family.extraBold,
-    color: D.accent,
-  },
-  rowNoShowLabel: {
-    fontSize: 9,
-    fontFamily: T.family.bold,
-    color: D.accent,
-    letterSpacing: 0.3,
-    marginTop: 2,
-  },
-  rowCancelled: {
-    fontSize: 9,
-    fontFamily: T.family.bold,
-    color: D.ink3,
-    letterSpacing: 0.3,
-    marginTop: 6,
-  },
+    // Row
+    row: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingVertical: 14,
+      gap: 16,
+    },
+    rowDate: {
+      width: 42,
+      alignItems: 'flex-start',
+    },
+    rowDay: {
+      fontSize: 26,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+      letterSpacing: -1,
+      lineHeight: 28,
+    },
+    rowHour: {
+      fontSize: 11,
+      fontFamily: T.family.medium,
+      color: D.ink3,
+      marginTop: 2,
+      fontVariant: ['tabular-nums'],
+    },
+    rowInfo: {
+      flex: 1,
+      paddingTop: 2,
+    },
+    rowService: {
+      fontSize: 15,
+      fontFamily: T.family.bold,
+      color: D.ink,
+      marginBottom: 3,
+    },
+    rowCustomer: {
+      fontSize: 12,
+      color: D.ink3,
+      fontFamily: T.family.medium,
+    },
+    rowRight: {
+      alignItems: 'flex-end',
+      justifyContent: 'flex-start',
+      paddingTop: 4,
+      minWidth: 80,
+    },
+    rowPrice: {
+      fontSize: 15,
+      fontFamily: T.family.extraBold,
+      color: D.primary,
+      letterSpacing: -0.3,
+    },
+    rowNoShowDash: {
+      fontSize: 15,
+      fontFamily: T.family.extraBold,
+      color: D.accent,
+    },
+    rowNoShowLabel: {
+      fontSize: 9,
+      fontFamily: T.family.bold,
+      color: D.accent,
+      letterSpacing: 0.3,
+      marginTop: 2,
+    },
+    rowCancelled: {
+      fontSize: 9,
+      fontFamily: T.family.bold,
+      color: D.ink3,
+      letterSpacing: 0.3,
+      marginTop: 6,
+    },
 
-  // Dashed separator
-  separator: {
-    height: 1,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-});
+    // Dashed separator
+    separator: {
+      height: 1,
+      borderStyle: 'dashed',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.08)',
+    },
+  });
+}
