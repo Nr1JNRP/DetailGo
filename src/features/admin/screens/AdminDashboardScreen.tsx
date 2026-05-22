@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
     backgroundColor: darkColors.bg,
   },
   listContent: {
-    paddingBottom: 40,
+    paddingBottom: spacing.lg,
   },
 
   // ── Header ──────────────────────────────────────
@@ -701,8 +701,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   headerMeta: {
     fontSize: 11,
@@ -738,12 +738,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   kpiCard: {
     backgroundColor: darkColors.card,
     borderRadius: radii.lg,
-    padding: spacing.md,
+    padding: spacing.sm + 2,
     borderWidth: 1,
     borderColor: darkColors.border,
   },
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
   // ── Week Strip ───────────────────────────────────
   weekStrip: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   weekNav: {
     flexDirection: 'row',
@@ -1014,12 +1014,12 @@ const styles = StyleSheet.create({
 
   // ── Loading / Empty ──────────────────────────────
   loadingBox: {
-    paddingVertical: 48,
+    paddingVertical: spacing.xl,
     alignItems: 'center',
   },
   emptyState: {
     marginHorizontal: spacing.lg,
-    paddingVertical: 40,
+    paddingVertical: spacing.xl,
     alignItems: 'center',
     backgroundColor: darkColors.card,
     borderRadius: radii.lg,

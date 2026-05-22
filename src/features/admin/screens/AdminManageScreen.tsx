@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   Store,
   Clock,
-  Users,
   Check,
   ChevronUp,
   ChevronDown,
@@ -28,7 +27,7 @@ import {
 } from 'lucide-react-native';
 
 import { getAuth } from '@react-native-firebase/auth';
-import { colors, spacing, radii } from '@shared/theme';
+import { spacing, radii, useAppTheme, type AppColors } from '@shared/theme';
 import { formatUtils } from '@shared/utils/format.utils';
 import {
   useShop,
@@ -43,9 +42,13 @@ import {
 import type { ShopService, ShopServiceInput } from '@features/shops';
 import { CAR_CATEGORIES, VEHICLE_TYPES } from '@features/appointments/domain/appointment.constants';
 import type { CarCategory, VehicleType } from '@features/appointments/domain/appointment.types';
-import { getShopSettings, updateShopSettings, type ShopSettings } from '@features/settings';
-
-const SLOT_STEP_OPTIONS = [15, 30, 45, 60];
+import {
+  getShopSettings,
+  updateShopSettings,
+  type ShopSettings,
+  ALL_WEEK_DAYS,
+  WEEK_DAY_LABELS,
+} from '@features/settings';
 const NEW_SERVICE_DRAFT = '__new_service__';
 
 type ServiceDraft = {
@@ -118,6 +121,8 @@ function createServiceId(name: string, existingIds: string[]): string {
 }
 
 export default function AdminManageScreen() {
+  const { colors: D, isLight } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
   const navigation = useNavigation();
   const { shopId, shop } = useShop();
   const auth = getAuth();
@@ -436,13 +441,6 @@ export default function AdminManageScreen() {
     setSettings(prev => (prev ? { ...prev, [field]: val } : prev));
   };
 
-  const stepCapacity = (dir: 1 | -1) => {
-    if (!settings) return;
-    const val = settings.parallelCapacity + dir;
-    if (val < 1 || val > 10) return;
-    setSettings(prev => (prev ? { ...prev, parallelCapacity: val } : prev));
-  };
-
   const renderHourStepper = (label: string, field: 'openHour' | 'closeHour') => (
     <View style={styles.stepperRow}>
       <Text style={styles.stepperLabel}>{label}</Text>
@@ -452,7 +450,7 @@ export default function AdminManageScreen() {
           onPress={() => stepHour(field, -1)}
           activeOpacity={0.7}
         >
-          <ChevronDown size={18} color={colors.primary.main} />
+          <ChevronDown size={18} color={D.primary} />
         </TouchableOpacity>
         <Text style={styles.stepperValue}>{formatUtils.padZero(settings?.[field] ?? 0)}:00</Text>
         <TouchableOpacity
@@ -460,7 +458,7 @@ export default function AdminManageScreen() {
           onPress={() => stepHour(field, 1)}
           activeOpacity={0.7}
         >
-          <ChevronUp size={18} color={colors.primary.main} />
+          <ChevronUp size={18} color={D.primary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -490,7 +488,7 @@ export default function AdminManageScreen() {
         value={draft.name}
         onChangeText={value => updateServiceDraft(serviceId, 'name', value)}
         placeholder="Ex: Lavagem premium"
-        placeholderTextColor={colors.text.disabled}
+        placeholderTextColor={D.ink3}
         editable={!isSaving}
         maxLength={40}
       />
@@ -501,7 +499,7 @@ export default function AdminManageScreen() {
         value={draft.title}
         onChangeText={value => updateServiceDraft(serviceId, 'title', value)}
         placeholder="Ex: Lavagem completa premium"
-        placeholderTextColor={colors.text.disabled}
+        placeholderTextColor={D.ink3}
         editable={!isSaving}
         maxLength={60}
       />
@@ -512,7 +510,7 @@ export default function AdminManageScreen() {
         value={draft.description}
         onChangeText={value => updateServiceDraft(serviceId, 'description', value)}
         placeholder="Descreva o que está incluso neste serviço"
-        placeholderTextColor={colors.text.disabled}
+        placeholderTextColor={D.ink3}
         editable={!isSaving}
         multiline
         maxLength={160}
@@ -524,7 +522,7 @@ export default function AdminManageScreen() {
         value={draft.includes}
         onChangeText={value => updateServiceDraft(serviceId, 'includes', value)}
         placeholder={'Um item por linha\nEx: Lavagem externa\nAspiração rápida'}
-        placeholderTextColor={colors.text.disabled}
+        placeholderTextColor={D.ink3}
         editable={!isSaving}
         multiline
         maxLength={260}
@@ -536,7 +534,7 @@ export default function AdminManageScreen() {
         value={draft.recommendedFor}
         onChangeText={value => updateServiceDraft(serviceId, 'recommendedFor', value)}
         placeholder={'Um item por linha\nEx: Uso diário\nManutenção'}
-        placeholderTextColor={colors.text.disabled}
+        placeholderTextColor={D.ink3}
         editable={!isSaving}
         multiline
         maxLength={180}
@@ -592,7 +590,7 @@ export default function AdminManageScreen() {
         value={draft.note}
         onChangeText={value => updateServiceDraft(serviceId, 'note', value)}
         placeholder="Ex: Ideal para manutenção semanal"
-        placeholderTextColor={colors.text.disabled}
+        placeholderTextColor={D.ink3}
         editable={!isSaving}
         maxLength={120}
       />
@@ -605,7 +603,7 @@ export default function AdminManageScreen() {
             value={draft.durationMin}
             onChangeText={value => updateServiceDraft(serviceId, 'durationMin', value)}
             placeholder="30"
-            placeholderTextColor={colors.text.disabled}
+            placeholderTextColor={D.ink3}
             keyboardType="numeric"
             editable={!isSaving}
           />
@@ -617,7 +615,7 @@ export default function AdminManageScreen() {
             value={draft.price}
             onChangeText={value => updateServiceDraft(serviceId, 'price', value)}
             placeholder="80"
-            placeholderTextColor={colors.text.disabled}
+            placeholderTextColor={D.ink3}
             keyboardType="numeric"
             editable={!isSaving}
           />
@@ -641,10 +639,10 @@ export default function AdminManageScreen() {
           activeOpacity={0.8}
         >
           {isSaving ? (
-            <ActivityIndicator size="small" color={colors.text.white} />
+            <ActivityIndicator size="small" color={D.onPrimary} />
           ) : isSaved ? (
             <>
-              <Check size={16} color={colors.text.white} />
+              <Check size={16} color={D.onPrimary} />
               <Text style={styles.serviceSaveText}>Salvo!</Text>
             </>
           ) : (
@@ -657,7 +655,7 @@ export default function AdminManageScreen() {
 
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background.main} />
+      <StatusBar barStyle={isLight ? 'dark-content' : 'light-content'} backgroundColor={D.bg} />
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity
@@ -665,7 +663,7 @@ export default function AdminManageScreen() {
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <ArrowLeft size={22} color={colors.text.primary} />
+            <ArrowLeft size={22} color={D.ink} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Gerenciar Loja</Text>
           <View style={{ width: 40 }} />
@@ -675,8 +673,8 @@ export default function AdminManageScreen() {
           {/* ── Nome da loja ── */}
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
-              <View style={[styles.cardIconWrap, { backgroundColor: colors.primary.light }]}>
-                <Store size={18} color={colors.primary.main} />
+              <View style={[styles.cardIconWrap, { backgroundColor: D.primaryLight }]}>
+                <Store size={18} color={D.primary} />
               </View>
               <Text style={styles.cardTitle}>Nome da loja</Text>
             </View>
@@ -686,7 +684,7 @@ export default function AdminManageScreen() {
               value={shopName}
               onChangeText={setShopName}
               placeholder="Ex: Auto Detailing São Paulo"
-              placeholderTextColor={colors.text.disabled}
+              placeholderTextColor={D.ink3}
               editable={!savingName}
               maxLength={60}
             />
@@ -698,10 +696,10 @@ export default function AdminManageScreen() {
               activeOpacity={0.8}
             >
               {savingName ? (
-                <ActivityIndicator size="small" color={colors.text.white} />
+                <ActivityIndicator size="small" color={D.onPrimary} />
               ) : savedName ? (
                 <>
-                  <Check size={16} color={colors.text.white} />
+                  <Check size={16} color={D.onPrimary} />
                   <Text style={styles.saveBtnText}>Salvo!</Text>
                 </>
               ) : (
@@ -710,20 +708,17 @@ export default function AdminManageScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* ── Horários e capacidade ── */}
+          {/* ── Horários e dias de funcionamento ── */}
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
-              <View style={[styles.cardIconWrap, { backgroundColor: '#EFF6FF' }]}>
-                <Clock size={18} color="#2563EB" />
+              <View style={[styles.cardIconWrap, { backgroundColor: D.primaryLight }]}>
+                <Clock size={18} color={D.primary} />
               </View>
               <Text style={styles.cardTitle}>Horário de funcionamento</Text>
             </View>
 
             {loadingSettings ? (
-              <ActivityIndicator
-                color={colors.primary.main}
-                style={{ marginVertical: spacing.lg }}
-              />
+              <ActivityIndicator color={D.primary} style={{ marginVertical: spacing.lg }} />
             ) : settings ? (
               <>
                 {renderHourStepper('Abertura', 'openHour')}
@@ -732,55 +727,34 @@ export default function AdminManageScreen() {
 
                 <View style={styles.divider} />
 
+                {/* Dias da semana */}
                 <View style={styles.stepperRow}>
-                  <Text style={styles.stepperLabel}>Passo entre slots</Text>
-                  <View style={styles.pillGroup}>
-                    {SLOT_STEP_OPTIONS.map(opt => (
+                  <Text style={styles.stepperLabel}>Dias de atendimento</Text>
+                </View>
+                <View style={styles.weekDaysRow}>
+                  {ALL_WEEK_DAYS.map(day => {
+                    const active = settings.workingDays.includes(day);
+                    return (
                       <TouchableOpacity
-                        key={opt}
-                        style={[styles.pill, settings.slotStepMin === opt && styles.pillActive]}
+                        key={day}
+                        style={[styles.weekDayChip, active && styles.weekDayChipActive]}
                         onPress={() =>
-                          setSettings(prev => (prev ? { ...prev, slotStepMin: opt } : prev))
+                          setSettings(prev => {
+                            if (!prev) return prev;
+                            const days = active
+                              ? prev.workingDays.filter(d => d !== day)
+                              : [...prev.workingDays, day];
+                            return { ...prev, workingDays: days };
+                          })
                         }
                         activeOpacity={0.7}
                       >
-                        <Text
-                          style={[
-                            styles.pillText,
-                            settings.slotStepMin === opt && styles.pillTextActive,
-                          ]}
-                        >
-                          {opt}min
+                        <Text style={[styles.weekDayText, active && styles.weekDayTextActive]}>
+                          {WEEK_DAY_LABELS[day]}
                         </Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-
-                <View style={styles.divider} />
-
-                <View style={styles.stepperRow}>
-                  <View style={styles.stepperLabelWrap}>
-                    <Users size={14} color={colors.text.tertiary} />
-                    <Text style={styles.stepperLabel}>Atendimentos simultâneos</Text>
-                  </View>
-                  <View style={styles.stepper}>
-                    <TouchableOpacity
-                      style={styles.stepperBtn}
-                      onPress={() => stepCapacity(-1)}
-                      activeOpacity={0.7}
-                    >
-                      <ChevronDown size={18} color={colors.primary.main} />
-                    </TouchableOpacity>
-                    <Text style={styles.stepperValue}>{settings.parallelCapacity}</Text>
-                    <TouchableOpacity
-                      style={styles.stepperBtn}
-                      onPress={() => stepCapacity(1)}
-                      activeOpacity={0.7}
-                    >
-                      <ChevronUp size={18} color={colors.primary.main} />
-                    </TouchableOpacity>
-                  </View>
+                    );
+                  })}
                 </View>
 
                 <TouchableOpacity
@@ -790,10 +764,10 @@ export default function AdminManageScreen() {
                   activeOpacity={0.8}
                 >
                   {savingSettings ? (
-                    <ActivityIndicator size="small" color={colors.text.white} />
+                    <ActivityIndicator size="small" color={D.onPrimary} />
                   ) : savedSettings ? (
                     <>
-                      <Check size={16} color={colors.text.white} />
+                      <Check size={16} color={D.onPrimary} />
                       <Text style={styles.saveBtnText}>Salvo!</Text>
                     </>
                   ) : (
@@ -806,8 +780,8 @@ export default function AdminManageScreen() {
 
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
-              <View style={[styles.cardIconWrap, { backgroundColor: colors.primary.light }]}>
-                <Store size={18} color={colors.primary.main} />
+              <View style={[styles.cardIconWrap, { backgroundColor: D.primaryLight }]}>
+                <Store size={18} color={D.primary} />
               </View>
               <Text style={styles.cardTitle}>Serviços disponíveis</Text>
             </View>
@@ -821,16 +795,13 @@ export default function AdminManageScreen() {
                 onPress={() => setAddingService(true)}
                 activeOpacity={0.8}
               >
-                <Plus size={16} color={colors.primary.main} />
+                <Plus size={16} color={D.primary} />
                 <Text style={styles.addServiceText}>Adicionar serviço</Text>
               </TouchableOpacity>
             )}
 
             {loadingServices ? (
-              <ActivityIndicator
-                color={colors.primary.main}
-                style={{ marginVertical: spacing.lg }}
-              />
+              <ActivityIndicator color={D.primary} style={{ marginVertical: spacing.lg }} />
             ) : (
               <View style={styles.servicesList}>
                 {addingService && (
@@ -838,7 +809,7 @@ export default function AdminManageScreen() {
                     <View style={styles.serviceEditorHeader}>
                       <View style={styles.serviceRowLeft}>
                         <View style={styles.serviceIconWrap}>
-                          <Plus size={18} color={colors.primary.main} />
+                          <Plus size={18} color={D.primary} />
                         </View>
                         <View style={styles.serviceTexts}>
                           <Text style={styles.serviceName}>Novo serviço</Text>
@@ -872,7 +843,7 @@ export default function AdminManageScreen() {
                       <View style={styles.serviceEditorHeader}>
                         <View style={styles.serviceRowLeft}>
                           <View style={styles.serviceIconWrap}>
-                            <ServiceIcon size={18} color={colors.primary.main} />
+                            <ServiceIcon size={18} color={D.primary} />
                           </View>
                           <View style={styles.serviceTexts}>
                             <Text style={styles.serviceName}>{service.name}</Text>
@@ -892,10 +863,10 @@ export default function AdminManageScreen() {
                           <Switch
                             value={service.active}
                             onValueChange={active => handleToggleService(service.id, active)}
-                            thumbColor={service.active ? colors.primary.main : colors.text.disabled}
+                            thumbColor={service.active ? D.primary : D.ink3}
                             trackColor={{
-                              false: colors.border.main,
-                              true: colors.primary.light,
+                              false: D.border,
+                              true: D.primaryLight,
                             }}
                           />
                         </View>
@@ -918,7 +889,7 @@ export default function AdminManageScreen() {
                             onPress={() => handleEditService(service)}
                             activeOpacity={0.8}
                           >
-                            <Pencil size={14} color={colors.primary.main} />
+                            <Pencil size={14} color={D.primary} />
                             <Text style={styles.serviceEditText}>Editar serviço</Text>
                           </TouchableOpacity>
 
@@ -927,7 +898,7 @@ export default function AdminManageScreen() {
                             onPress={() => handleDeleteService(service)}
                             activeOpacity={0.8}
                           >
-                            <Trash2 size={14} color={colors.status.error} />
+                            <Trash2 size={14} color={D.status.error} />
                             <Text style={styles.serviceDeleteText}>Excluir</Text>
                           </TouchableOpacity>
                         </View>
@@ -941,7 +912,7 @@ export default function AdminManageScreen() {
 
           {/* ── Sair ── */}
           <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} activeOpacity={0.8}>
-            <LogOut size={18} color={colors.status.error} />
+            <LogOut size={18} color={D.status.error} />
             <Text style={styles.signOutText}>Sair da conta</Text>
           </TouchableOpacity>
 
@@ -952,398 +923,430 @@ export default function AdminManageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background.main,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.background.main,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.main,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background.surface,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.text.primary,
-  },
-  content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.background.card,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    shadowColor: colors.text.primary,
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  cardIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  cardDesc: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    lineHeight: 20,
-    marginBottom: spacing.lg,
-  },
-  nameInput: {
-    borderWidth: 1.5,
-    borderColor: colors.border.main,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: 15,
-    color: colors.text.primary,
-    backgroundColor: colors.background.surface,
-    marginBottom: spacing.md,
-  },
-  saveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    height: 48,
-    backgroundColor: colors.primary.main,
-    borderRadius: radii.md,
-    marginTop: spacing.md,
-  },
-  saveBtnDisabled: {
-    backgroundColor: colors.text.disabled,
-  },
-  saveBtnText: {
-    color: colors.text.white,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border.main,
-    marginVertical: spacing.md,
-  },
-  servicesList: {
-    gap: spacing.md,
-  },
-  addServiceBtn: {
-    height: 42,
-    borderRadius: radii.sm,
-    borderWidth: 1.5,
-    borderColor: colors.primary.main,
-    backgroundColor: colors.background.card,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  addServiceText: {
-    color: colors.primary.main,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  serviceEditor: {
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    backgroundColor: colors.background.surface,
-  },
-  serviceEditorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  serviceRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    flex: 1,
-  },
-  serviceIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.sm,
-    backgroundColor: colors.primary.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  serviceTexts: {
-    flex: 1,
-  },
-  serviceName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text.primary,
-    marginBottom: 2,
-  },
-  serviceMeta: {
-    fontSize: 12,
-    color: colors.text.tertiary,
-    fontWeight: '600',
-  },
-  serviceVehicleMeta: {
-    fontSize: 11,
-    color: colors.text.secondary,
-    marginTop: 2,
-  },
-  serviceStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  serviceStatusText: {
-    fontSize: 12,
-    color: colors.text.tertiary,
-    fontWeight: '700',
-  },
-  serviceForm: {
-    gap: spacing.xs,
-  },
-  serviceActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  serviceEditBtn: {
-    flex: 1,
-    height: 40,
-    borderRadius: radii.sm,
-    borderWidth: 1.5,
-    borderColor: colors.primary.main,
-    backgroundColor: colors.background.card,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  serviceEditText: {
-    color: colors.primary.main,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  serviceDeleteBtn: {
-    height: 40,
-    borderRadius: radii.sm,
-    borderWidth: 1.5,
-    borderColor: colors.status.error,
-    backgroundColor: colors.background.card,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-  },
-  serviceDeleteText: {
-    color: colors.status.error,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text.tertiary,
-    marginTop: spacing.xs,
-  },
-  serviceInput: {
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: 14,
-    color: colors.text.primary,
-    backgroundColor: colors.background.card,
-  },
-  chipGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  optionChip: {
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 7,
-    backgroundColor: colors.background.card,
-  },
-  optionChipActive: {
-    borderColor: colors.primary.main,
-    backgroundColor: colors.primary.light,
-  },
-  optionChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text.secondary,
-  },
-  optionChipTextActive: {
-    color: colors.primary.main,
-  },
-  serviceTextarea: {
-    minHeight: 78,
-    textAlignVertical: 'top',
-  },
-  serviceTextareaSmall: {
-    minHeight: 62,
-    textAlignVertical: 'top',
-  },
-  serviceInlineFields: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  inlineField: {
-    flex: 1,
-  },
-  serviceSaveBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    height: 42,
-    backgroundColor: colors.primary.main,
-    borderRadius: radii.sm,
-    marginTop: spacing.sm,
-  },
-  serviceEditActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  serviceCancelBtn: {
-    flex: 1,
-    height: 42,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    backgroundColor: colors.background.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  serviceCancelText: {
-    color: colors.text.secondary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  serviceSaveText: {
-    color: colors.text.white,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  stepperLabelWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    flex: 1,
-  },
-  stepperLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.secondary,
-    flex: 1,
-  },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.background.surface,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 4,
-  },
-  stepperBtn: {
-    padding: 4,
-  },
-  stepperValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text.primary,
-    minWidth: 52,
-    textAlign: 'center',
-  },
-  pillGroup: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  pill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: radii.sm,
-    borderWidth: 1.5,
-    borderColor: colors.border.main,
-    backgroundColor: colors.background.surface,
-  },
-  pillActive: {
-    backgroundColor: colors.primary.main,
-    borderColor: colors.primary.main,
-  },
-  pillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  pillTextActive: {
-    color: colors.text.white,
-  },
-  signOutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    height: 52,
-    borderRadius: radii.md,
-    borderWidth: 1.5,
-    borderColor: colors.status.error,
-    backgroundColor: colors.background.card,
-  },
-  signOutText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.status.error,
-  },
-});
+function createStyles(D: AppColors) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: D.bg,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      backgroundColor: D.bg,
+      borderBottomWidth: 1,
+      borderBottomColor: D.border,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: radii.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: D.surface,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: D.ink,
+    },
+    content: {
+      padding: spacing.lg,
+      gap: spacing.lg,
+    },
+    card: {
+      backgroundColor: D.card,
+      borderRadius: radii.lg,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: D.border,
+      shadowColor: D.ink,
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    cardTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    cardIconWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: radii.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: D.ink,
+    },
+    cardDesc: {
+      fontSize: 13,
+      color: D.ink2,
+      lineHeight: 20,
+      marginBottom: spacing.lg,
+    },
+    nameInput: {
+      borderWidth: 1.5,
+      borderColor: D.border,
+      borderRadius: radii.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      fontSize: 15,
+      color: D.ink,
+      backgroundColor: D.surface,
+      marginBottom: spacing.md,
+    },
+    saveBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      height: 48,
+      backgroundColor: D.primary,
+      borderRadius: radii.md,
+      marginTop: spacing.md,
+    },
+    saveBtnDisabled: {
+      backgroundColor: D.ink3,
+    },
+    saveBtnText: {
+      color: D.onPrimary,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: D.border,
+      marginVertical: spacing.md,
+    },
+    servicesList: {
+      gap: spacing.md,
+    },
+    addServiceBtn: {
+      height: 42,
+      borderRadius: radii.sm,
+      borderWidth: 1.5,
+      borderColor: D.primary,
+      backgroundColor: D.card,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    addServiceText: {
+      color: D.primary,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    serviceEditor: {
+      borderWidth: 1,
+      borderColor: D.border,
+      borderRadius: radii.md,
+      padding: spacing.md,
+      backgroundColor: D.surface,
+    },
+    serviceEditorHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    serviceRowLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flex: 1,
+    },
+    serviceIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: radii.sm,
+      backgroundColor: D.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    serviceTexts: {
+      flex: 1,
+    },
+    serviceName: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: D.ink,
+      marginBottom: 2,
+    },
+    serviceMeta: {
+      fontSize: 12,
+      color: D.ink3,
+      fontWeight: '600',
+    },
+    serviceVehicleMeta: {
+      fontSize: 11,
+      color: D.ink2,
+      marginTop: 2,
+    },
+    serviceStatus: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    serviceStatusText: {
+      fontSize: 12,
+      color: D.ink3,
+      fontWeight: '700',
+    },
+    serviceForm: {
+      gap: spacing.xs,
+    },
+    serviceActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    serviceEditBtn: {
+      flex: 1,
+      height: 40,
+      borderRadius: radii.sm,
+      borderWidth: 1.5,
+      borderColor: D.primary,
+      backgroundColor: D.card,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+    },
+    serviceEditText: {
+      color: D.primary,
+      fontSize: 13,
+      fontWeight: '700',
+    },
+    serviceDeleteBtn: {
+      height: 40,
+      borderRadius: radii.sm,
+      borderWidth: 1.5,
+      borderColor: D.status.error,
+      backgroundColor: D.card,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+    },
+    serviceDeleteText: {
+      color: D.status.error,
+      fontSize: 13,
+      fontWeight: '700',
+    },
+    inputLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: D.ink3,
+      marginTop: spacing.xs,
+    },
+    serviceInput: {
+      borderWidth: 1,
+      borderColor: D.border,
+      borderRadius: radii.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      fontSize: 14,
+      color: D.ink,
+      backgroundColor: D.card,
+    },
+    chipGroup: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      marginBottom: spacing.xs,
+    },
+    optionChip: {
+      borderWidth: 1,
+      borderColor: D.border,
+      borderRadius: radii.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 7,
+      backgroundColor: D.card,
+    },
+    optionChipActive: {
+      borderColor: D.primary,
+      backgroundColor: D.primaryLight,
+    },
+    optionChipText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: D.ink2,
+    },
+    optionChipTextActive: {
+      color: D.primary,
+    },
+    serviceTextarea: {
+      minHeight: 78,
+      textAlignVertical: 'top',
+    },
+    serviceTextareaSmall: {
+      minHeight: 62,
+      textAlignVertical: 'top',
+    },
+    serviceInlineFields: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    inlineField: {
+      flex: 1,
+    },
+    serviceSaveBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      height: 42,
+      backgroundColor: D.primary,
+      borderRadius: radii.sm,
+      marginTop: spacing.sm,
+    },
+    serviceEditActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    serviceCancelBtn: {
+      flex: 1,
+      height: 42,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      borderColor: D.border,
+      backgroundColor: D.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    serviceCancelText: {
+      color: D.ink2,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    serviceSaveText: {
+      color: D.onPrimary,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    stepperRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    stepperLabelWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      flex: 1,
+    },
+    stepperLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: D.ink2,
+      flex: 1,
+    },
+    stepper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: D.surface,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: D.border,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 4,
+    },
+    stepperBtn: {
+      padding: 4,
+    },
+    stepperValue: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: D.ink,
+      minWidth: 52,
+      textAlign: 'center',
+    },
+    pillGroup: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+    },
+    pill: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+      borderRadius: radii.sm,
+      borderWidth: 1.5,
+      borderColor: D.border,
+      backgroundColor: D.surface,
+    },
+    pillActive: {
+      backgroundColor: D.primary,
+      borderColor: D.primary,
+    },
+    pillText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: D.ink2,
+    },
+    pillTextActive: {
+      color: D.onPrimary,
+    },
+
+    weekDaysRow: {
+      flexDirection: 'row',
+      gap: 5,
+      marginTop: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    weekDayChip: {
+      flex: 1,
+      height: 40,
+      borderRadius: radii.sm,
+      borderWidth: 1.5,
+      borderColor: D.border,
+      backgroundColor: D.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    weekDayChipActive: {
+      backgroundColor: D.primary,
+      borderColor: D.primary,
+    },
+    weekDayText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: D.ink3,
+    },
+    weekDayTextActive: {
+      color: D.onPrimary,
+    },
+
+    signOutBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      height: 52,
+      borderRadius: radii.md,
+      borderWidth: 1.5,
+      borderColor: D.status.error,
+      backgroundColor: D.card,
+    },
+    signOutText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: D.status.error,
+    },
+  });
+}
