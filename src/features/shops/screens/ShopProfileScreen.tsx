@@ -96,7 +96,7 @@ export default function ShopProfileScreen() {
           <Text style={styles.headerTitle} numberOfLines={1}>
             Detalhes da estética
           </Text>
-          <View style={styles.backBtn} />
+          <View style={styles.headerSpacer} />
         </View>
 
         <ScrollView
@@ -214,6 +214,10 @@ function createStyles(D: AppColors) {
       backgroundColor: D.surface,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    headerSpacer: {
+      width: 36,
+      height: 36,
     },
     headerTitle: {
       flex: 1,

@@ -53,7 +53,6 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
 
   const shopName = shop?.name ?? 'Minha estética';
   const ownerName = user?.displayName ?? 'Proprietário';
-  const email = user?.email ?? '';
 
   const initials = ownerName
     .split(' ')
@@ -100,14 +99,15 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
               <Text style={styles.drawerAvatarText}>{initials}</Text>
             </View>
           )}
-          <Text style={styles.drawerName}>{ownerName}</Text>
-          <View style={styles.emailRow}>
-            <Text style={styles.drawerEmail} numberOfLines={1}>
-              {email}
+          <View style={styles.ownerRow}>
+            <Text style={styles.drawerName} numberOfLines={1}>
+              {ownerName}
             </Text>
             <View style={styles.shopBadge}>
               <Store size={10} color={D.primary} />
-              <Text style={styles.shopBadgeText}>{shopName}</Text>
+              <Text style={styles.shopBadgeText} numberOfLines={1}>
+                {shopName}
+              </Text>
             </View>
           </View>
         </View>
@@ -194,41 +194,59 @@ function createStyles(D: AppColors) {
     },
     drawerHeader: {
       paddingHorizontal: 20,
-      paddingBottom: 20,
+      paddingBottom: 24,
       borderBottomWidth: 1,
       borderBottomColor: D.border,
     },
     drawerAvatar: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
       backgroundColor: D.primary,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 10,
+      marginBottom: 14,
     },
-    drawerAvatarText: { fontSize: 18, fontFamily: T.family.bold, color: '#0B0D0E' },
-    drawerName: { fontSize: 16, fontFamily: T.family.bold, color: D.ink, marginBottom: 4 },
-    emailRow: {
+    drawerAvatarText: {
+      fontSize: T.size.titleLarge,
+      fontFamily: T.family.extraBold,
+      color: D.onPrimary,
+    },
+    ownerRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: 14,
+      width: '100%',
     },
-    drawerEmail: { fontSize: 14, fontFamily: T.family.regular, color: D.ink3, flexShrink: 1 },
+    drawerName: {
+      flex: 1,
+      minWidth: 0,
+      fontSize: T.size.bodyLarge,
+      lineHeight: T.lineHeight.bodyLarge,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+    },
     shopBadge: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
-      alignSelf: 'flex-start',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
+      maxWidth: 132,
+      flexShrink: 0,
+      paddingHorizontal: 9,
+      paddingVertical: 5,
       borderRadius: 999,
       backgroundColor: D.primaryLight,
       borderWidth: 1,
       borderColor: D.borderFocus,
     },
-    shopBadgeText: { fontSize: 11, fontFamily: T.family.bold, color: D.primary },
+    shopBadgeText: {
+      flexShrink: 1,
+      fontSize: T.size.caption,
+      lineHeight: T.lineHeight.caption,
+      fontFamily: T.family.bold,
+      color: D.primary,
+    },
     drawerMenu: { paddingTop: 8, flex: 1 },
     drawerItem: {
       flexDirection: 'row',

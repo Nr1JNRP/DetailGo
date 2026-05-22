@@ -30,6 +30,7 @@ import {
   LogOut,
   MapPin,
   Menu,
+  Plus,
   User,
 } from 'lucide-react-native';
 
@@ -387,7 +388,7 @@ export default function DashboardScreen() {
                   <View style={styles.emptyIconWrap}>
                     <Calendar size={32} color={D.primary} strokeWidth={2.1} />
                     <View style={styles.emptyPlus}>
-                      <Text style={styles.emptyPlusText}>+</Text>
+                      <Plus size={12} color={D.onPrimary} strokeWidth={3} />
                     </View>
                   </View>
                   <Text style={styles.emptyTitle}>Sem agendamentos</Text>
@@ -826,7 +827,7 @@ function createStyles(D: AppColors) {
       paddingHorizontal: 20,
       flexDirection: 'row',
       gap: 10,
-      paddingBottom: 18,
+      paddingBottom: 28,
     },
     servicesLoading: {
       height: 100,
@@ -842,7 +843,7 @@ function createStyles(D: AppColors) {
       borderColor: D.borderStrong,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 17,
+      marginBottom: 28,
     },
     servicesEmptyText: {
       color: D.ink3,
@@ -883,7 +884,7 @@ function createStyles(D: AppColors) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 10,
+      marginBottom: 14,
     },
     upcomingTitle: {
       color: D.ink,
@@ -998,12 +999,6 @@ function createStyles(D: AppColors) {
       backgroundColor: D.primary,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    emptyPlusText: {
-      color: D.onPrimary,
-      fontSize: T.size.secondary,
-      fontFamily: T.family.bold,
-      lineHeight: T.lineHeight.secondary,
     },
     emptyTitle: {
       color: D.ink,

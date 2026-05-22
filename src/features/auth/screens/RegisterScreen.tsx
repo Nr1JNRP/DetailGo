@@ -313,7 +313,7 @@ export default function RegisterScreen() {
           geohash: generateGeohash(latitude, longitude),
         });
         setLoadingLocation(false);
-        Alert.alert('✅ Localização confirmada!', `${addressWithNumber}\n${city}`);
+        Alert.alert('Localização confirmada', `${addressWithNumber}\n${city}`);
       },
       async err => {
         // Fallback: tenta geocodificar via Nominatim
@@ -330,7 +330,7 @@ export default function RegisterScreen() {
             geohash: generateGeohash(coords.lat, coords.lng),
           });
           setLoadingLocation(false);
-          Alert.alert('✅ Localização confirmada!', `${addressWithNumber}\n${city}`);
+          Alert.alert('Localização confirmada', `${addressWithNumber}\n${city}`);
           return;
         }
 

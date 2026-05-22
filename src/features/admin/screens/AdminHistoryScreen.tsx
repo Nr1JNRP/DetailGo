@@ -166,7 +166,7 @@ export default function AdminHistoryScreen() {
       },
       (error: FirebaseError) => {
         if (error.code === 'failed-precondition') {
-          Alert.alert('⚠️ Índice necessário', 'Crie um índice composto no Firebase Console.');
+          Alert.alert('Índice necessário', 'Crie um índice composto no Firebase Console.');
         } else {
           Alert.alert('Erro', 'Falha ao carregar histórico.');
         }

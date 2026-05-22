@@ -28,11 +28,15 @@ import {
 import {
   AlertTriangle,
   Bell,
+  Camera,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Menu,
   PlayCircle,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react-native';
 import AdminDrawer from '../components/AdminDrawer';
 
@@ -104,6 +108,7 @@ export default function AdminDashboardScreen() {
 
   // ── Perfil do proprietário ──
   const [ownerPhotoB64, setOwnerPhotoB64] = useState<string | null>(null);
+  const [savingOwnerPhoto, setSavingOwnerPhoto] = useState(false);
   const ownerName = user?.displayName ?? 'Proprietário';
   const ownerInitials = ownerName
     .split(' ')
@@ -169,6 +174,7 @@ export default function AdminDashboardScreen() {
       if (res.didCancel) return;
       const asset = res.assets?.[0];
       if (!asset?.base64 || !user?.uid) return;
+      setSavingOwnerPhoto(true);
       const b64 = `data:${asset.type?.startsWith('image/') ? asset.type : 'image/jpeg'};base64,${
         asset.base64
       }`;
@@ -177,6 +183,8 @@ export default function AdminDashboardScreen() {
       setOwnerPhotoB64(b64);
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar a foto');
+    } finally {
+      setSavingOwnerPhoto(false);
     }
   };
 
@@ -549,7 +557,12 @@ export default function AdminDashboardScreen() {
 
       {/* ── Perfil — igual ao cliente ───────────── */}
       <View style={styles.profileRow}>
-        <TouchableOpacity onPress={saveAvatar} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.avatarWrap}
+          onPress={saveAvatar}
+          activeOpacity={0.85}
+          disabled={savingOwnerPhoto}
+        >
           {ownerPhotoB64 ? (
             <Image source={{ uri: ownerPhotoB64 }} style={styles.avatar} />
           ) : (
@@ -557,12 +570,22 @@ export default function AdminDashboardScreen() {
               <Text style={styles.avatarText}>{ownerInitials}</Text>
             </View>
           )}
+          <View style={styles.cameraBadge}>
+            {savingOwnerPhoto ? (
+              <ActivityIndicator color={D.primary} size="small" />
+            ) : (
+              <Camera size={12} color={D.primary} strokeWidth={2.4} />
+            )}
+          </View>
         </TouchableOpacity>
         <View style={styles.profileInfo}>
           <Text style={styles.greetingText}>{greeting}</Text>
           <Text style={styles.ownerName}>{ownerName}</Text>
         </View>
-        <Text style={styles.profileRole}>Proprietário</Text>
+        <View style={styles.trialBadge}>
+          <Clock size={12} color={D.primary} strokeWidth={2.5} />
+          <Text style={styles.trialBadgeText}>Trial</Text>
+        </View>
       </View>
 
       {/* ── KPI Cards ──────────────────────────── */}
@@ -574,12 +597,19 @@ export default function AdminDashboardScreen() {
             <Text style={styles.kpiUnit}> realizados</Text>
           </View>
           {deltaVsPrev !== 0 && (
-            <Text
-              style={[styles.kpiDelta, { color: deltaVsPrev > 0 ? D.primary : D.status.error }]}
-            >
-              {deltaVsPrev > 0 ? '▲' : '▼'} {deltaVsPrev > 0 ? '+' : ''}
-              {deltaVsPrev} vs semana passada
-            </Text>
+            <View style={styles.kpiDeltaRow}>
+              {deltaVsPrev > 0 ? (
+                <TrendingUp size={13} color={D.primary} strokeWidth={2.6} />
+              ) : (
+                <TrendingDown size={13} color={D.status.error} strokeWidth={2.6} />
+              )}
+              <Text
+                style={[styles.kpiDelta, { color: deltaVsPrev > 0 ? D.primary : D.status.error }]}
+              >
+                {deltaVsPrev > 0 ? '+' : ''}
+                {deltaVsPrev} vs semana passada
+              </Text>
+            </View>
           )}
         </View>
 
@@ -735,7 +765,7 @@ function createStyles(D: AppColors) {
       flexDirection: 'row',
       gap: spacing.sm,
       paddingHorizontal: spacing.lg,
-      marginBottom: spacing.sm,
+      marginBottom: spacing.lg,
     },
     kpiCard: {
       backgroundColor: D.card,
@@ -768,10 +798,15 @@ function createStyles(D: AppColors) {
       color: D.ink2,
       marginBottom: 4,
     },
+    kpiDeltaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginTop: 4,
+    },
     kpiDelta: {
       fontSize: 12,
       fontFamily: T.family.semiBold,
-      marginTop: 4,
     },
     kpiAvg: {
       fontSize: 26,
@@ -789,7 +824,7 @@ function createStyles(D: AppColors) {
     // ── Week Strip ───────────────────────────────────
     weekStrip: {
       marginHorizontal: spacing.lg,
-      marginBottom: spacing.sm,
+      marginBottom: spacing.lg,
     },
     weekNav: {
       flexDirection: 'row',
@@ -1069,38 +1104,55 @@ function createStyles(D: AppColors) {
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.lg,
       paddingBottom: spacing.lg,
-      gap: 14,
+      gap: 16,
       borderBottomWidth: 1,
       borderBottomColor: D.border,
       marginBottom: spacing.lg,
     },
+    avatarWrap: {
+      width: 82,
+      height: 82,
+      borderRadius: 41,
+    },
     avatar: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+      width: 82,
+      height: 82,
+      borderRadius: 41,
       backgroundColor: D.primary,
       alignItems: 'center',
       justifyContent: 'center',
     },
     avatarText: {
-      fontSize: 22,
+      fontSize: T.size.display,
       fontFamily: T.family.extraBold,
-      color: '#0B0D0E',
+      color: D.onPrimary,
+    },
+    cameraBadge: {
+      position: 'absolute',
+      right: -2,
+      bottom: -2,
+      width: 29,
+      height: 29,
+      borderRadius: 15,
+      backgroundColor: D.card,
+      borderWidth: 2,
+      borderColor: D.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     profileInfo: { flex: 1 },
     greetingText: {
-      fontSize: 9,
-      fontFamily: T.family.bold,
       color: D.ink3,
-      letterSpacing: 1,
-      marginBottom: 2,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+      fontFamily: T.family.semiBold,
+      marginBottom: 3,
     },
     ownerName: {
-      fontSize: 16,
-      fontFamily: T.family.extraBold,
       color: D.ink,
-      letterSpacing: -0.3,
-      marginBottom: 4,
+      fontSize: T.size.titleLarge,
+      lineHeight: T.lineHeight.titleLarge,
+      fontFamily: T.family.extraBold,
     },
     shopBadge: {
       alignSelf: 'flex-start',
@@ -1116,10 +1168,23 @@ function createStyles(D: AppColors) {
       fontFamily: T.family.bold,
       color: D.primary,
     },
-    profileRole: {
-      fontSize: 11,
-      fontFamily: T.family.semiBold,
-      color: D.ink3,
+    trialBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      alignSelf: 'center',
+      paddingHorizontal: 9,
+      paddingVertical: 3,
+      borderRadius: 999,
+      backgroundColor: D.primaryLight,
+      borderWidth: 1,
+      borderColor: D.borderFocus,
+    },
+    trialBadgeText: {
+      color: D.primary,
+      fontSize: T.size.caption,
+      lineHeight: T.lineHeight.caption,
+      fontFamily: T.family.bold,
     },
   });
 }
