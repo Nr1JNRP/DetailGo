@@ -1,10 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Dimensions,
-  Easing,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -24,91 +22,38 @@ import { useAuth } from '@features/auth';
 import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
 
 const { height: SCREEN_H } = Dimensions.get('window');
-const HERO_H = Math.round(SCREEN_H * 0.48);
-const BADGE_LABELS = ['Agendamentos', 'Serviços', 'Gestão', 'Clientes'];
+const HERO_H = Math.round(SCREEN_H * 0.38);
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 export default function LoginScreen() {
   const navigation = useNavigation<NavProp>();
   const { colors: D, isLight } = useAppTheme();
-  const styles = useMemo(() => createStyles(D), [D]);
+  const styles = useMemo(() => createStyles(D, isLight), [D, isLight]);
   const { signIn } = useAuth();
+  const heroGradient = isLight
+    ? {
+        base: ['#F8FAFB', '#DFE0E2', '#D7EEF3', '#A2AEBB', '#EEF1F3'],
+        overlay: ['rgba(223,224,226,0)', 'rgba(223,224,226,0.68)', '#DFE0E2'],
+        warm: ['rgba(217,74,58,0.11)', 'rgba(217,74,58,0.03)', 'rgba(217,74,58,0)'],
+        cold: ['rgba(35,181,211,0.26)', 'rgba(35,181,211,0.07)', 'rgba(35,181,211,0)'],
+      }
+    : {
+        base: ['#0A0D0D', '#101916', '#31451F', '#151A12', '#0A0D0D'],
+        overlay: ['rgba(10,13,13,0)', 'rgba(10,13,13,0.68)', '#0A0D0D'],
+        warm: ['rgba(255,58,32,0.22)', 'rgba(255,58,32,0.06)', 'rgba(255,58,32,0)'],
+        cold: ['rgba(47,111,126,0.22)', 'rgba(47,111,126,0.04)', 'rgba(47,111,126,0)'],
+      };
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({ email: false, password: false });
-  const [badgeIndex, setBadgeIndex] = useState(0);
-  const badgeOpacity = useRef(new Animated.Value(1)).current;
-  const badgeTranslateY = useRef(new Animated.Value(0)).current;
-  const badgeDotScale = useRef(new Animated.Value(1)).current;
 
   const isValidEmail = email.includes('@') && email.includes('.');
   const isValidPassword = password.length >= 6;
   const isValid = isValidEmail && isValidPassword;
-
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(badgeDotScale, {
-          toValue: 1.45,
-          duration: 760,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(badgeDotScale, {
-          toValue: 1,
-          duration: 760,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    pulse.start();
-
-    const interval = setInterval(() => {
-      Animated.parallel([
-        Animated.timing(badgeOpacity, {
-          toValue: 0,
-          duration: 180,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(badgeTranslateY, {
-          toValue: -8,
-          duration: 180,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setBadgeIndex(current => (current + 1) % BADGE_LABELS.length);
-        badgeTranslateY.setValue(8);
-
-        Animated.parallel([
-          Animated.timing(badgeOpacity, {
-            toValue: 1,
-            duration: 260,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(badgeTranslateY, {
-            toValue: 0,
-            duration: 260,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    }, 1800);
-
-    return () => {
-      clearInterval(interval);
-      pulse.stop();
-    };
-  }, [badgeDotScale, badgeOpacity, badgeTranslateY]);
 
   const handleLogin = async () => {
     if (!isValid) return;
@@ -136,25 +81,25 @@ export default function LoginScreen() {
         {/* ── Hero ──────────────────────────────────────────── */}
         <View style={[styles.hero, { height: HERO_H }]}>
           <LinearGradient
-            colors={['#0A0D0D', '#101916', '#31451F', '#151A12', '#0A0D0D']}
+            colors={heroGradient.base}
             locations={[0, 0.32, 0.58, 0.76, 1]}
             start={{ x: 0, y: 0.2 }}
             end={{ x: 1, y: 0.95 }}
             style={StyleSheet.absoluteFill}
           />
           <LinearGradient
-            colors={['rgba(10,13,13,0)', 'rgba(10,13,13,0.68)', '#0A0D0D']}
+            colors={heroGradient.overlay}
             locations={[0, 0.72, 1]}
             style={StyleSheet.absoluteFill}
           />
           <LinearGradient
-            colors={['rgba(255,58,32,0.22)', 'rgba(255,58,32,0.06)', 'rgba(255,58,32,0)']}
+            colors={heroGradient.warm}
             start={{ x: 0, y: 1 }}
             end={{ x: 0.7, y: 0.45 }}
             style={styles.heroWarmGradient}
           />
           <LinearGradient
-            colors={['rgba(47,111,126,0.22)', 'rgba(47,111,126,0.04)', 'rgba(47,111,126,0)']}
+            colors={heroGradient.cold}
             start={{ x: 0, y: 0.2 }}
             end={{ x: 0.8, y: 0.65 }}
             style={styles.heroColdGradient}
@@ -162,29 +107,15 @@ export default function LoginScreen() {
           <View style={styles.heroBadgeLine} />
 
           <View style={styles.heroContent}>
-            <View style={styles.badge}>
-              <Animated.View style={[styles.badgeDot, { transform: [{ scale: badgeDotScale }] }]} />
-              <Animated.Text
-                style={[
-                  styles.badgeText,
-                  {
-                    opacity: badgeOpacity,
-                    transform: [{ translateY: badgeTranslateY }],
-                  },
-                ]}
-              >
-                {BADGE_LABELS[badgeIndex]}
-              </Animated.Text>
+            <View style={styles.brandMark}>
+              <View style={styles.brandMarkDot} />
+              <View style={styles.brandMarkLine} />
             </View>
 
             <Text style={styles.heroTitle}>
               {'DETAIL'}
               <Text style={styles.heroDot}>{'·'}</Text>
               {'\nGO.'}
-            </Text>
-
-            <Text style={styles.heroSub}>
-              Plataforma de gestão e agendamento para serviços de estética automotiva.
             </Text>
           </View>
         </View>
@@ -268,7 +199,7 @@ export default function LoginScreen() {
               <ActivityIndicator color={D.onPrimary} />
             ) : (
               <>
-                <Text style={styles.btnText}>Entrar na garagem</Text>
+                <Text style={styles.btnText}>Entrar</Text>
                 <View style={styles.btnArrow}>
                   <ArrowRight size={18} color={D.onPrimary} />
                 </View>
@@ -286,14 +217,13 @@ export default function LoginScreen() {
               <Text style={styles.registerLink}>Criar agora</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.footerText}>© 2026 DETAILGO</Text>
         </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-function createStyles(D: AppColors) {
+function createStyles(D: AppColors, isLight: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -305,7 +235,7 @@ function createStyles(D: AppColors) {
 
     // ── Hero
     hero: {
-      backgroundColor: D.bg,
+      backgroundColor: isLight ? D.surface : D.bg,
       overflow: 'hidden',
       borderBottomWidth: 1,
       borderBottomColor: D.border,
@@ -328,67 +258,53 @@ function createStyles(D: AppColors) {
       position: 'absolute',
       left: 48,
       right: 0,
-      bottom: 124,
+      bottom: 92,
       height: 1,
       backgroundColor: D.borderFocus,
-      opacity: 0.35,
+      opacity: isLight ? 0.55 : 0.35,
     },
     heroContent: {
       position: 'absolute',
-      bottom: 48,
+      bottom: 36,
       left: 24,
       right: 24,
     },
-    badge: {
+    brandMark: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      width: 176,
-      height: 34,
-      paddingHorizontal: 16,
-      borderRadius: 999,
-      backgroundColor: D.primaryLight,
+      gap: 10,
       alignSelf: 'flex-start',
-      marginBottom: 26,
-      overflow: 'hidden',
+      marginBottom: 24,
     },
-    badgeDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
+    brandMarkDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
       backgroundColor: D.primary,
     },
-    badgeText: {
-      fontSize: 14,
-      fontFamily: T.family.extraBold,
-      color: D.primary,
-      letterSpacing: 0.8,
-      lineHeight: 18,
+    brandMarkLine: {
+      width: 124,
+      height: 4,
+      borderRadius: 999,
+      backgroundColor: D.primary,
+      opacity: isLight ? 0.48 : 0.34,
     },
     heroTitle: {
-      fontSize: 70,
+      fontSize: 62,
       fontFamily: T.family.extraBold,
       color: D.ink,
-      lineHeight: 70,
-      marginBottom: 24,
+      lineHeight: 61,
     },
     heroDot: {
       color: D.primary,
-    },
-    heroSub: {
-      fontSize: 17,
-      fontFamily: T.family.regular,
-      color: D.ink2,
-      lineHeight: 25,
-      maxWidth: 320,
     },
 
     // ── Form
     form: {
       paddingHorizontal: 22,
-      paddingTop: 24,
+      paddingTop: 28,
       flex: 1,
-      gap: 18,
+      gap: 16,
     },
     fieldWrap: {
       gap: 6,
@@ -407,7 +323,7 @@ function createStyles(D: AppColors) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 10,
-      height: 62,
+      height: 58,
       borderRadius: 16,
       backgroundColor: D.card,
       borderWidth: 1,
@@ -431,17 +347,17 @@ function createStyles(D: AppColors) {
 
     // ── Button
     btn: {
-      height: 64,
+      height: 60,
       borderRadius: 18,
       backgroundColor: D.primary,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 22,
-      marginTop: 22,
+      marginTop: 18,
     },
     btnDisabled: {
-      opacity: 0.35,
+      opacity: isLight ? 0.48 : 0.35,
     },
     btnText: {
       fontSize: 16,
@@ -452,7 +368,7 @@ function createStyles(D: AppColors) {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: D.primaryLight,
+      backgroundColor: isLight ? 'rgba(255,255,255,0.28)' : D.primaryLight,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -474,14 +390,8 @@ function createStyles(D: AppColors) {
       color: D.primary,
     },
     footer: {
-      paddingBottom: 20,
-      gap: 14,
+      paddingBottom: 22,
       alignItems: 'center',
-    },
-    footerText: {
-      fontSize: 12,
-      fontFamily: T.family.regular,
-      color: D.ink3,
     },
   });
 }
