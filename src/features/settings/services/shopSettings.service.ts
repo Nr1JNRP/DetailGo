@@ -6,11 +6,29 @@ import {
   serverTimestamp,
 } from '@react-native-firebase/firestore';
 
+export type WeekDay = 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab' | 'dom';
+
+export const ALL_WEEK_DAYS: WeekDay[] = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+
+export const WEEK_DAY_LABELS: Record<WeekDay, string> = {
+  seg: 'Seg',
+  ter: 'Ter',
+  qua: 'Qua',
+  qui: 'Qui',
+  sex: 'Sex',
+  sab: 'Sáb',
+  dom: 'Dom',
+};
+
 export type ShopSettings = {
   openHour: number;
   closeHour: number;
+  /** Interno — usado pelo motor de agendamento, não exposto na UI */
   slotStepMin: number;
+  /** Interno — usado pelo motor de agendamento, não exposto na UI */
   parallelCapacity: number;
+  /** Dias da semana em que a estética atende */
+  workingDays: WeekDay[];
 };
 
 const DEFAULT_SETTINGS: ShopSettings = {
@@ -18,6 +36,7 @@ const DEFAULT_SETTINGS: ShopSettings = {
   closeHour: 18,
   slotStepMin: 30,
   parallelCapacity: 2,
+  workingDays: ['seg', 'ter', 'qua', 'qui', 'sex'],
 };
 
 export class ShopSettingsError extends Error {
@@ -39,19 +58,30 @@ function validateCapacity(capacity?: number): number | null {
   return capacity && capacity >= 1 && capacity <= 10 ? capacity : null;
 }
 
+function validateWorkingDays(days?: unknown): WeekDay[] {
+  if (!Array.isArray(days) || days.length === 0) return DEFAULT_SETTINGS.workingDays;
+  return days.filter((d): d is WeekDay => ALL_WEEK_DAYS.includes(d as WeekDay));
+}
+
 function validateAndMergeSettings(data: Partial<ShopSettings>): ShopSettings {
   return {
     openHour: validateHour(data?.openHour) ?? DEFAULT_SETTINGS.openHour,
     closeHour: validateHour(data?.closeHour) ?? DEFAULT_SETTINGS.closeHour,
     slotStepMin: validateSlotStep(data?.slotStepMin) ?? DEFAULT_SETTINGS.slotStepMin,
     parallelCapacity: validateCapacity(data?.parallelCapacity) ?? DEFAULT_SETTINGS.parallelCapacity,
+    workingDays: validateWorkingDays(data?.workingDays),
   };
 }
 
 function hasSettingsChanged(old: Partial<ShopSettings>, newSettings: ShopSettings): boolean {
-  return (Object.keys(newSettings) as Array<keyof ShopSettings>).some(
-    key => old[key] !== newSettings[key],
-  );
+  return (Object.keys(newSettings) as Array<keyof ShopSettings>).some(key => {
+    if (key === 'workingDays') {
+      const a = (old.workingDays ?? []).slice().sort().join(',');
+      const b = newSettings.workingDays.slice().sort().join(',');
+      return a !== b;
+    }
+    return old[key] !== newSettings[key];
+  });
 }
 
 function settingsRef(shopId: string) {
