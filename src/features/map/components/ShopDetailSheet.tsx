@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MapPin, X, ArrowRight } from 'lucide-react-native';
 
 import type { RootStackParamList } from '@app/types';
-import { useAppTheme, type AppColors } from '@shared/theme';
+import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
 import { formatDistance } from '@shared/utils/geo.utils';
 import type { NearbyShop } from '@features/shops/services/discoverShops.service';
 
@@ -104,18 +104,19 @@ function createStyles(D: AppColors) {
     texts: { flex: 1 },
     shopName: {
       fontSize: 17,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       marginBottom: 3,
     },
     shopAddress: {
       fontSize: 13,
+      fontFamily: T.family.regular,
       color: D.ink2,
       marginBottom: 2,
     },
     distance: {
       fontSize: 12,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.primary,
     },
     cta: {
@@ -129,7 +130,7 @@ function createStyles(D: AppColors) {
     },
     ctaText: {
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: '#fff',
     },
   });

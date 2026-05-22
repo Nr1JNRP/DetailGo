@@ -36,7 +36,7 @@ import {
 } from 'lucide-react-native';
 import AdminDrawer from '../components/AdminDrawer';
 
-import { darkColors, spacing, radii } from '@shared/theme';
+import { darkColors, spacing, radii, typography as T } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
@@ -706,14 +706,14 @@ const styles = StyleSheet.create({
   },
   headerMeta: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     color: darkColors.ink3,
     letterSpacing: 0.8,
     marginBottom: 4,
   },
   headerTitle: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: darkColors.ink,
     letterSpacing: -0.3,
   },
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
   },
   kpiLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     color: darkColors.ink3,
     letterSpacing: 0.6,
     marginBottom: spacing.xs,
@@ -761,24 +761,24 @@ const styles = StyleSheet.create({
   },
   kpiNumber: {
     fontSize: 32,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: darkColors.ink,
     lineHeight: 36,
   },
   kpiUnit: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: T.family.medium,
     color: darkColors.ink2,
     marginBottom: 4,
   },
   kpiDelta: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     marginTop: 4,
   },
   kpiAvg: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: darkColors.ink,
     lineHeight: 32,
     marginBottom: 2,
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
   kpiSub: {
     fontSize: 11,
     color: darkColors.ink3,
-    fontWeight: '500',
+    fontFamily: T.family.medium,
   },
 
   // ── Week Strip ───────────────────────────────────
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
   },
   weekPeriod: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     color: darkColors.ink2,
     letterSpacing: 0.2,
   },
@@ -839,14 +839,14 @@ const styles = StyleSheet.create({
   },
   dayName: {
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: darkColors.ink3,
     letterSpacing: 0.3,
     marginBottom: 2,
   },
   dayNumber: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: darkColors.ink,
     marginBottom: 2,
   },
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
   },
   dayCount: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     color: darkColors.primary,
   },
   dayCountSelected: {
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
   // ── Section label ────────────────────────────────
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: darkColors.ink3,
     letterSpacing: 0.8,
     marginHorizontal: spacing.lg,
@@ -888,14 +888,14 @@ const styles = StyleSheet.create({
   },
   agendaHour: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: darkColors.ink,
     lineHeight: 18,
   },
   agendaDuration: {
     fontSize: 11,
     color: darkColors.ink3,
-    fontWeight: '500',
+    fontFamily: T.family.medium,
     marginTop: 1,
   },
   agendaCard: {
@@ -922,14 +922,14 @@ const styles = StyleSheet.create({
   },
   agendaService: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: darkColors.ink,
     marginBottom: 3,
   },
   agendaClient: {
     fontSize: 13,
     color: darkColors.ink3,
-    fontWeight: '400',
+    fontFamily: T.family.regular,
   },
   agendaStatusRow: {
     flexDirection: 'row',
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
   },
   agendaStatusText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: darkColors.ink2,
   },
   agendaStatusTextActive: {
@@ -1001,7 +1001,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 11,
     lineHeight: 13,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: darkColors.primary,
     textAlign: 'center',
   },
@@ -1028,12 +1028,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     color: darkColors.ink2,
     marginBottom: 4,
   },
   emptyText: {
     fontSize: 13,
+    fontFamily: T.family.regular,
     color: darkColors.ink3,
   },
 
@@ -1048,7 +1049,7 @@ const styles = StyleSheet.create({
   },
   topbarBrand: {
     fontSize: 13,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: darkColors.ink,
     letterSpacing: 2,
   },
@@ -1086,20 +1087,20 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: '#0B0D0E',
   },
   profileInfo: { flex: 1 },
   greetingText: {
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: darkColors.ink3,
     letterSpacing: 1,
     marginBottom: 2,
   },
   ownerName: {
     fontSize: 16,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: darkColors.ink,
     letterSpacing: -0.3,
     marginBottom: 4,
@@ -1115,12 +1116,12 @@ const styles = StyleSheet.create({
   },
   shopBadgeText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: darkColors.primary,
   },
   profileRole: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     color: darkColors.ink3,
   },
 });

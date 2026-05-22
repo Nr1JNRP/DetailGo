@@ -218,9 +218,8 @@ function createStyles(D: AppColors) {
     headerTitle: {
       flex: 1,
       textAlign: 'center',
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
     },
 
@@ -237,9 +236,8 @@ function createStyles(D: AppColors) {
       marginBottom: 22,
     },
     shopName: {
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.ink,
       marginBottom: 4,
     },
@@ -258,16 +256,14 @@ function createStyles(D: AppColors) {
       marginBottom: 12,
     },
     sectionTitle: {
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.ink,
     },
     sectionCount: {
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       color: D.ink3,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
 
     servicesLoading: {
@@ -316,9 +312,8 @@ function createStyles(D: AppColors) {
     },
     serviceInfo: { flex: 1 },
     serviceName: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       marginBottom: 2,
     },
@@ -334,9 +329,8 @@ function createStyles(D: AppColors) {
       marginTop: 3,
     },
     servicePrice: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.primary,
     },
 
@@ -367,9 +361,8 @@ function createStyles(D: AppColors) {
     },
     ctaBtnPressed: { opacity: 0.85 },
     ctaText: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.onPrimary,
     },
   });

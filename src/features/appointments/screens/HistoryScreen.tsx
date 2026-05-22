@@ -298,18 +298,16 @@ function createStyles(D: AppColors) {
     },
     headerTitle: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
       lineHeight: T.lineHeight.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     headerMeta: {
       color: D.ink3,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
       marginTop: 2,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
 
     filtersWrap: {
@@ -336,9 +334,8 @@ function createStyles(D: AppColors) {
     },
     filterText: {
       color: D.ink2,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
     filterTextActive: {
       color: D.onPrimary,
@@ -354,10 +351,9 @@ function createStyles(D: AppColors) {
     },
     monthLabel: {
       color: D.ink2,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       marginBottom: 20,
     },
     row: {
@@ -374,10 +370,9 @@ function createStyles(D: AppColors) {
     day: {
       width: 44,
       color: D.ink2,
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
       lineHeight: T.lineHeight.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     rowBody: {
       flex: 1,
@@ -386,18 +381,16 @@ function createStyles(D: AppColors) {
     },
     serviceName: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
       lineHeight: T.lineHeight.bodyLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     serviceMeta: {
       color: D.ink3,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
       marginTop: 1,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     priceWrap: {
       width: 88,
@@ -406,20 +399,18 @@ function createStyles(D: AppColors) {
     },
     price: {
       color: D.primary,
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
       lineHeight: T.lineHeight.bodyLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     priceMuted: {
       color: D.ink3,
     },
     status: {
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
       marginTop: 2,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       textAlign: 'right',
     },
     statusDone: {
@@ -439,18 +430,16 @@ function createStyles(D: AppColors) {
     },
     emptyTitle: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       marginBottom: 8,
     },
     emptyText: {
       color: D.ink3,
-      fontFamily: T.family.regular,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
       textAlign: 'center',
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
   });
 }

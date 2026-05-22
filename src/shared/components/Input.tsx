@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
-import { colors, spacing, radii } from '@shared/theme';
+import { colors, spacing, radii, typography as T } from '@shared/theme';
 
 type InputProps = TextInputProps & {
   label?: string;
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
+    fontFamily: T.family.regular,
     color: colors.text.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: colors.status.error,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: T.family.medium,
     marginTop: spacing.xs,
     marginLeft: 4,
   },

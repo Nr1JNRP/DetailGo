@@ -38,7 +38,7 @@ import type { ShopLocation } from '@features/shops/domain/shopLocation.types';
 import { useForm } from '@shared/hooks/useForm';
 import { validationUtils, validationMessages } from '@shared/utils/validation.utils';
 import { formatUtils } from '@shared/utils/format.utils';
-import { useAppTheme, type AppColors } from '@shared/theme';
+import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
 import { generateGeohash, geocodeAddress } from '@shared/utils/geo.utils';
 import { cepMask, cepOnlyDigits, fetchCep, formatCepAddress } from '@shared/utils/cep.utils';
 
@@ -881,20 +881,21 @@ function createStyles(D: AppColors) {
     },
     stepIndicator: {
       fontSize: 10,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink3,
       letterSpacing: 0.5,
       marginBottom: 10,
     },
     step1Title: {
       fontSize: 26,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       letterSpacing: -0.5,
       marginBottom: 6,
     },
     step1Sub: {
       fontSize: 14,
+      fontFamily: T.family.regular,
       color: D.ink2,
       lineHeight: 20,
     },
@@ -938,7 +939,7 @@ function createStyles(D: AppColors) {
     },
     typeCardLabel: {
       fontSize: 16,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink,
     },
     typeCardLabelSel: {
@@ -946,12 +947,13 @@ function createStyles(D: AppColors) {
     },
     typeCardBadge: {
       fontSize: 9,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.primary,
       letterSpacing: 0.5,
     },
     typeCardDesc: {
       fontSize: 12,
+      fontFamily: T.family.regular,
       color: D.ink2,
       lineHeight: 18,
     },
@@ -980,13 +982,14 @@ function createStyles(D: AppColors) {
     },
     trialLabel: {
       fontSize: 10,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink3,
       letterSpacing: 0.5,
       marginBottom: 5,
     },
     trialDesc: {
       fontSize: 12,
+      fontFamily: T.family.regular,
       color: D.ink2,
       lineHeight: 18,
     },
@@ -997,7 +1000,7 @@ function createStyles(D: AppColors) {
     },
     step2Title: {
       fontSize: 30,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       letterSpacing: -0.8,
       lineHeight: 32,
@@ -1018,7 +1021,7 @@ function createStyles(D: AppColors) {
     },
     typePillText: {
       fontSize: 11,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.primary,
     },
 
@@ -1039,7 +1042,7 @@ function createStyles(D: AppColors) {
     },
     fieldLabel: {
       fontSize: 10,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink3,
       letterSpacing: 0.5,
     },
@@ -1061,10 +1064,11 @@ function createStyles(D: AppColors) {
       flex: 1,
       fontSize: 14,
       color: D.ink,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     fieldErrorText: {
       fontSize: 11,
+      fontFamily: T.family.regular,
       color: D.accent,
       marginTop: 2,
     },
@@ -1086,7 +1090,7 @@ function createStyles(D: AppColors) {
     cepBadgeText: {
       fontSize: 11,
       color: D.primary,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
 
     // ── Location confirmed
@@ -1104,7 +1108,7 @@ function createStyles(D: AppColors) {
       flex: 1,
       fontSize: 13,
       color: D.primary,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     dividerRow: {
       flexDirection: 'row',
@@ -1120,7 +1124,7 @@ function createStyles(D: AppColors) {
     dividerText: {
       fontSize: 12,
       color: D.ink3,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
 
     // ── CTA
@@ -1141,7 +1145,7 @@ function createStyles(D: AppColors) {
     },
     btnText: {
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.onPrimary,
     },
     btnArrow: {
@@ -1159,11 +1163,12 @@ function createStyles(D: AppColors) {
     },
     loginText: {
       fontSize: 14,
+      fontFamily: T.family.regular,
       color: D.ink2,
     },
     loginLink: {
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.primary,
     },
   });

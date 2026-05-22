@@ -27,7 +27,7 @@ import {
 } from 'lucide-react-native';
 
 import { getAuth } from '@react-native-firebase/auth';
-import { spacing, radii, useAppTheme, type AppColors } from '@shared/theme';
+import { spacing, radii, useAppTheme, type AppColors, typography as T } from '@shared/theme';
 import { formatUtils } from '@shared/utils/format.utils';
 import {
   useShop,
@@ -951,7 +951,7 @@ function createStyles(D: AppColors) {
     },
     headerTitle: {
       fontSize: 20,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.ink,
     },
     content: {
@@ -985,11 +985,12 @@ function createStyles(D: AppColors) {
     },
     cardTitle: {
       fontSize: 16,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
     },
     cardDesc: {
       fontSize: 13,
+      fontFamily: T.family.regular,
       color: D.ink2,
       lineHeight: 20,
       marginBottom: spacing.lg,
@@ -1001,6 +1002,7 @@ function createStyles(D: AppColors) {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       fontSize: 15,
+      fontFamily: T.family.regular,
       color: D.ink,
       backgroundColor: D.surface,
       marginBottom: spacing.md,
@@ -1021,7 +1023,7 @@ function createStyles(D: AppColors) {
     saveBtnText: {
       color: D.onPrimary,
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     divider: {
       height: 1,
@@ -1046,7 +1048,7 @@ function createStyles(D: AppColors) {
     addServiceText: {
       color: D.primary,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     serviceEditor: {
       borderWidth: 1,
@@ -1081,17 +1083,18 @@ function createStyles(D: AppColors) {
     },
     serviceName: {
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       marginBottom: 2,
     },
     serviceMeta: {
       fontSize: 12,
       color: D.ink3,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
     serviceVehicleMeta: {
       fontSize: 11,
+      fontFamily: T.family.regular,
       color: D.ink2,
       marginTop: 2,
     },
@@ -1103,7 +1106,7 @@ function createStyles(D: AppColors) {
     serviceStatusText: {
       fontSize: 12,
       color: D.ink3,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     serviceForm: {
       gap: spacing.xs,
@@ -1128,7 +1131,7 @@ function createStyles(D: AppColors) {
     serviceEditText: {
       color: D.primary,
       fontSize: 13,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     serviceDeleteBtn: {
       height: 40,
@@ -1145,11 +1148,11 @@ function createStyles(D: AppColors) {
     serviceDeleteText: {
       color: D.status.error,
       fontSize: 13,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     inputLabel: {
       fontSize: 12,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink3,
       marginTop: spacing.xs,
     },
@@ -1160,6 +1163,7 @@ function createStyles(D: AppColors) {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       fontSize: 14,
+      fontFamily: T.family.regular,
       color: D.ink,
       backgroundColor: D.card,
     },
@@ -1183,7 +1187,7 @@ function createStyles(D: AppColors) {
     },
     optionChipText: {
       fontSize: 12,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink2,
     },
     optionChipTextActive: {
@@ -1233,12 +1237,12 @@ function createStyles(D: AppColors) {
     serviceCancelText: {
       color: D.ink2,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     serviceSaveText: {
       color: D.onPrimary,
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     stepperRow: {
       flexDirection: 'row',
@@ -1253,7 +1257,7 @@ function createStyles(D: AppColors) {
     },
     stepperLabel: {
       fontSize: 14,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink2,
       flex: 1,
     },
@@ -1273,7 +1277,7 @@ function createStyles(D: AppColors) {
     },
     stepperValue: {
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       minWidth: 52,
       textAlign: 'center',
@@ -1296,7 +1300,7 @@ function createStyles(D: AppColors) {
     },
     pillText: {
       fontSize: 12,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink2,
     },
     pillTextActive: {
@@ -1325,7 +1329,7 @@ function createStyles(D: AppColors) {
     },
     weekDayText: {
       fontSize: 11,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink3,
     },
     weekDayTextActive: {
@@ -1345,7 +1349,7 @@ function createStyles(D: AppColors) {
     },
     signOutText: {
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.status.error,
     },
   });

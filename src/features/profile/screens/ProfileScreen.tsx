@@ -833,18 +833,16 @@ function createStyles(D: AppColors) {
     },
     headerKicker: {
       color: D.primary,
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       letterSpacing: 1.2,
     },
     headerTitle: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.title,
       lineHeight: T.lineHeight.title,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
 
     content: {
@@ -883,9 +881,8 @@ function createStyles(D: AppColors) {
     },
     avatarText: {
       color: D.onPrimary,
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     heroInfo: {
       flex: 1,
@@ -902,18 +899,16 @@ function createStyles(D: AppColors) {
     },
     name: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.title,
       lineHeight: T.lineHeight.title,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     email: {
       color: D.ink2,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
       marginTop: 2,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     rolePill: {
       alignSelf: 'center',
@@ -926,9 +921,8 @@ function createStyles(D: AppColors) {
     },
     rolePillText: {
       color: D.primary,
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
 
     sectionHeader: {
@@ -940,10 +934,9 @@ function createStyles(D: AppColors) {
     },
     sectionLabel: {
       color: D.ink2,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     card: {
       borderRadius: 14,
@@ -969,18 +962,16 @@ function createStyles(D: AppColors) {
     summaryLabel: {
       width: 112,
       color: D.ink2,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     summaryValue: {
       flex: 1,
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       textAlign: 'right',
     },
 
@@ -1007,10 +998,9 @@ function createStyles(D: AppColors) {
     textInput: {
       minHeight: 31,
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       padding: 0,
     },
     dataRow: {
@@ -1027,17 +1017,15 @@ function createStyles(D: AppColors) {
     },
     dataLabel: {
       color: D.ink2,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     dataValue: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       marginTop: 3,
     },
     editBlock: {
@@ -1066,15 +1054,13 @@ function createStyles(D: AppColors) {
     },
     actionText: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
     confirmText: {
       color: D.onPrimary,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
 
     pendingBox: {
@@ -1095,16 +1081,14 @@ function createStyles(D: AppColors) {
     },
     pendingTitle: {
       color: D.primary,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     pendingEmail: {
       color: D.ink,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       marginTop: 2,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     verifyButton: {
       width: 40,
@@ -1125,10 +1109,9 @@ function createStyles(D: AppColors) {
     settingsLabel: {
       flex: 1,
       color: D.ink2,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     themeRow: {
       minHeight: 54,
@@ -1181,9 +1164,8 @@ function createStyles(D: AppColors) {
     },
     saveMiniText: {
       color: D.onPrimary,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     disabled: {
       opacity: 0.6,

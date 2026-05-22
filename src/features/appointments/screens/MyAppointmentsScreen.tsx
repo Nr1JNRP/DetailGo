@@ -312,18 +312,16 @@ function createStyles(D: AppColors) {
     },
     headerTitle: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
       lineHeight: T.lineHeight.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     headerMeta: {
       color: D.ink3,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
       marginTop: 2,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
 
     content: {
@@ -380,10 +378,9 @@ function createStyles(D: AppColors) {
     },
     statusText: {
       color: D.ink3,
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
     statusTextActive: {
       color: D.primary,
@@ -394,31 +391,27 @@ function createStyles(D: AppColors) {
     },
     time: {
       color: D.primary,
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
       lineHeight: T.lineHeight.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     dateLabel: {
       color: D.ink3,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     serviceName: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
       lineHeight: T.lineHeight.bodyLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     serviceMeta: {
       color: D.ink2,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     cardDivider: {
       height: 1,
@@ -437,10 +430,9 @@ function createStyles(D: AppColors) {
     },
     price: {
       color: D.ink2,
-      fontFamily: T.family.regular,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     actions: {
       flexDirection: 'row',
@@ -461,9 +453,8 @@ function createStyles(D: AppColors) {
     },
     cancelText: {
       color: D.accent,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     disabled: {
       opacity: 0.48,
@@ -477,10 +468,9 @@ function createStyles(D: AppColors) {
     },
     emptyStateTitle: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.title,
       lineHeight: T.lineHeight.title,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       marginBottom: 8,
     },
     emptyStateText: {
@@ -501,9 +491,8 @@ function createStyles(D: AppColors) {
     },
     emptyStateButtonText: {
       color: D.onPrimary,
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
   });
 }

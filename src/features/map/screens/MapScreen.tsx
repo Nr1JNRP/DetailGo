@@ -15,7 +15,7 @@ import Geolocation from '@react-native-community/geolocation';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, MapPin, Navigation, RefreshCw } from 'lucide-react-native';
 
-import { useAppTheme, type AppColors } from '@shared/theme';
+import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
 import {
   discoverNearbyShops,
   type NearbyShop,
@@ -233,13 +233,13 @@ function createStyles(D: AppColors) {
     },
     headerTitle: {
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
     },
     headerCount: {
       fontSize: 12,
       color: D.ink2,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
 
     fab: {

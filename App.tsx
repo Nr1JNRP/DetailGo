@@ -1,11 +1,28 @@
 import React, { useEffect, useState } from 'react';
+import { Text, TextInput } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, useAuth } from '@features/auth';
 import { ShopProvider, useShop } from '@features/shops/context/ShopContext';
-import { ThemeProvider } from '@shared/theme';
+import { ThemeProvider, typography } from '@shared/theme';
 import { SplashScreen } from '@shared/components/SplashScreen';
 import BootSplash from 'react-native-bootsplash';
 import RootNavigator from './src/navigation/RootNavigator';
+
+const defaultTextProps = {
+  style: {
+    fontFamily: typography.family.regular,
+  },
+};
+
+(Text as any).defaultProps = {
+  ...(Text as any).defaultProps,
+  style: [(Text as any).defaultProps?.style, defaultTextProps.style],
+};
+
+(TextInput as any).defaultProps = {
+  ...(TextInput as any).defaultProps,
+  style: [(TextInput as any).defaultProps?.style, defaultTextProps.style],
+};
 
 function AppContent() {
   const { user, initializing } = useAuth();

@@ -15,7 +15,7 @@ import { Calendar, History, LogOut, Settings, Store, User } from 'lucide-react-n
 import { getAuth } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 
-import { darkColors as D } from '@shared/theme';
+import { darkColors as D, typography as T } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
 import { useShop } from '@features/shops';
 import type { RootStackParamList } from '@app/types';
@@ -195,15 +195,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10,
   },
-  drawerAvatarText: { fontSize: 18, fontWeight: '700', color: '#0B0D0E' },
-  drawerName: { fontSize: 16, fontWeight: '700', color: D.ink, marginBottom: 4 },
+  drawerAvatarText: { fontSize: 18, fontFamily: T.family.bold, color: '#0B0D0E' },
+  drawerName: { fontSize: 16, fontFamily: T.family.bold, color: D.ink, marginBottom: 4 },
   emailRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     flexWrap: 'wrap',
   },
-  drawerEmail: { fontSize: 14, color: D.ink3, flexShrink: 1 },
+  drawerEmail: { fontSize: 14, fontFamily: T.family.regular, color: D.ink3, flexShrink: 1 },
   shopBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(212,255,61,0.2)',
   },
-  shopBadgeText: { fontSize: 11, fontWeight: '700', color: D.primary },
+  shopBadgeText: { fontSize: 11, fontFamily: T.family.bold, color: D.primary },
   drawerMenu: { paddingTop: 8, flex: 1 },
   drawerItem: {
     flexDirection: 'row',
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
   },
-  drawerItemText: { fontSize: 16, fontWeight: '500', color: D.ink },
+  drawerItemText: { fontSize: 16, fontFamily: T.family.medium, color: D.ink },
   drawerItemDanger: { color: D.accent },
   drawerDivider: { height: 1, backgroundColor: D.border, marginVertical: 8 },
 });

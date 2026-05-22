@@ -1,7 +1,7 @@
 // src/shared/components/SelectModal.tsx
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { colors, spacing, radii } from '@shared/theme';
+import { colors, spacing, radii, typography as T } from '@shared/theme';
 
 function OptionSeparator() {
   return <View style={{ height: spacing.sm }} />;
@@ -90,12 +90,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: '900',
+    fontFamily: T.family.extraBold,
     color: colors.text.primary,
   },
   close: {
     fontSize: 14,
-    fontWeight: '900',
+    fontFamily: T.family.extraBold,
     color: colors.primary.main,
   },
 
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     color: colors.text.primary,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
   },
   itemTextSelected: {
     color: colors.text.white,
