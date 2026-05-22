@@ -27,7 +27,7 @@ import {
   type FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
 
-import { darkColors as D } from '@shared/theme';
+import { darkColors as D, typography as T } from '@shared/theme';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
 import { useShop } from '@features/shops';
 import { getAuth } from '@react-native-firebase/auth';
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   headerTitle: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: D.ink,
     letterSpacing: -0.5,
   },
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: D.ink3,
     marginTop: 2,
-    fontWeight: '500',
+    fontFamily: T.family.medium,
   },
 
   // Filters
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: D.ink3,
     letterSpacing: 0.5,
   },
@@ -418,13 +418,13 @@ const styles = StyleSheet.create({
   // List
   listContent: { paddingHorizontal: 20, paddingBottom: 32 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontSize: 14, color: D.ink3 },
+  emptyText: { fontSize: 14, fontFamily: T.family.regular, color: D.ink3 },
   loadingMore: { paddingVertical: 20, alignItems: 'center' },
 
   // Month group header
   monthLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: D.ink3,
     letterSpacing: 0.8,
     marginTop: 24,
@@ -444,14 +444,14 @@ const styles = StyleSheet.create({
   },
   rowDay: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: D.ink,
     letterSpacing: -1,
     lineHeight: 28,
   },
   rowHour: {
     fontSize: 11,
-    fontWeight: '500',
+    fontFamily: T.family.medium,
     color: D.ink3,
     marginTop: 2,
     fontVariant: ['tabular-nums'],
@@ -462,14 +462,14 @@ const styles = StyleSheet.create({
   },
   rowService: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: D.ink,
     marginBottom: 3,
   },
   rowCustomer: {
     fontSize: 12,
     color: D.ink3,
-    fontWeight: '500',
+    fontFamily: T.family.medium,
   },
   rowRight: {
     alignItems: 'flex-end',
@@ -479,25 +479,25 @@ const styles = StyleSheet.create({
   },
   rowPrice: {
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: D.primary,
     letterSpacing: -0.3,
   },
   rowNoShowDash: {
     fontSize: 15,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: D.accent,
   },
   rowNoShowLabel: {
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: D.accent,
     letterSpacing: 0.3,
     marginTop: 2,
   },
   rowCancelled: {
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     color: D.ink3,
     letterSpacing: 0.3,
     marginTop: 6,

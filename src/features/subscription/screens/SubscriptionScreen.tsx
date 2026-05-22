@@ -27,7 +27,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { getAuth } from '@react-native-firebase/auth';
 
-import { colors, spacing, radii } from '@shared/theme';
+import { colors, spacing, radii, typography as T } from '@shared/theme';
 import { useShop } from '@features/shops';
 import { useAuth } from '@features/auth';
 
@@ -316,7 +316,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
-  brand: { fontSize: 20, fontWeight: '800', color: colors.text.white, letterSpacing: 1.5 },
+  brand: {
+    fontSize: 20,
+    fontFamily: T.family.extraBold,
+    color: colors.text.white,
+    letterSpacing: 1.5,
+  },
   logoutBtn: { padding: spacing.xs },
   trialBadge: {
     flexDirection: 'row',
@@ -330,16 +335,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   expiredBadge: { backgroundColor: '#FEF2F2' },
-  trialBadgeText: { fontSize: 12, fontWeight: '700', color: '#F97316' },
+  trialBadgeText: { fontSize: 12, fontFamily: T.family.bold, color: '#F97316' },
   expiredBadgeText: { color: colors.status.error },
   headerTitle: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: T.family.extraBold,
     color: colors.text.white,
     marginBottom: spacing.xs,
   },
   headerSubtitle: {
     fontSize: 14,
+    fontFamily: T.family.regular,
     color: 'rgba(255,255,255,0.85)',
     lineHeight: 20,
     marginBottom: spacing.lg,
@@ -354,9 +360,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
   },
-  price: { fontSize: 36, fontWeight: '800', color: colors.text.white, lineHeight: 40 },
-  pricePer: { fontSize: 16, fontWeight: '700', color: 'rgba(255,255,255,0.9)' },
-  priceSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  price: { fontSize: 36, fontFamily: T.family.extraBold, color: colors.text.white, lineHeight: 40 },
+  pricePer: { fontSize: 16, fontFamily: T.family.bold, color: 'rgba(255,255,255,0.9)' },
+  priceSub: { fontSize: 11, fontFamily: T.family.regular, color: 'rgba(255,255,255,0.7)' },
   card: {
     backgroundColor: colors.background.card,
     borderRadius: radii.lg,
@@ -377,16 +383,22 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.text.primary },
+  cardTitle: { fontSize: 16, fontFamily: T.family.bold, color: colors.text.primary },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  featureText: { fontSize: 14, color: colors.text.secondary, flex: 1 },
+  featureText: {
+    fontSize: 14,
+    fontFamily: T.family.regular,
+    color: colors.text.secondary,
+    flex: 1,
+  },
   pixIntro: {
     fontSize: 14,
+    fontFamily: T.family.regular,
     color: colors.text.secondary,
     lineHeight: 20,
     marginBottom: spacing.lg,
@@ -399,7 +411,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   generateBtnDisabled: { backgroundColor: colors.text.disabled },
-  generateBtnText: { color: colors.text.white, fontSize: 15, fontWeight: '700' },
+  generateBtnText: { color: colors.text.white, fontSize: 15, fontFamily: T.family.bold },
   qrContainer: {
     alignItems: 'center',
     marginBottom: spacing.md,
@@ -412,6 +424,7 @@ const styles = StyleSheet.create({
   qrImage: { width: 200, height: 200 },
   qrInstructions: {
     fontSize: 13,
+    fontFamily: T.family.regular,
     color: colors.text.secondary,
     textAlign: 'center',
     marginBottom: spacing.md,
@@ -427,7 +440,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary.main,
     marginBottom: spacing.sm,
   },
-  copyBtnText: { fontSize: 14, fontWeight: '700', color: colors.primary.main },
+  copyBtnText: { fontSize: 14, fontFamily: T.family.bold, color: colors.primary.main },
   regenerateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -435,7 +448,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.xs,
   },
-  regenerateBtnText: { fontSize: 12, color: colors.text.tertiary },
+  regenerateBtnText: { fontSize: 12, fontFamily: T.family.regular, color: colors.text.tertiary },
   autoActivateBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -451,7 +464,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.status.success,
     flex: 1,
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     lineHeight: 16,
   },
   whatsappBtn: {
@@ -463,7 +476,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingVertical: 14,
   },
-  whatsappBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  whatsappBtnText: { fontSize: 15, fontFamily: T.family.bold, color: '#FFFFFF' },
   noteBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -471,5 +484,5 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
-  noteText: { fontSize: 12, color: colors.text.tertiary, flex: 1 },
+  noteText: { fontSize: 12, fontFamily: T.family.regular, color: colors.text.tertiary, flex: 1 },
 });

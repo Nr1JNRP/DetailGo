@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing, radii } from '@shared/theme';
+import { colors, spacing, radii, typography as T } from '@shared/theme';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { getAppointmentStatusConfig } from '../domain/appointment.helpers';
@@ -61,27 +61,29 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: colors.text.primary,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     marginBottom: spacing.xs,
   },
   cardSubtitle: {
     color: colors.text.tertiary,
     fontSize: 14,
+    fontFamily: T.family.regular,
     marginBottom: spacing.xs,
   },
   status: {
-    fontWeight: '600',
+    fontFamily: T.family.semiBold,
     fontSize: 13,
   },
 
   cardPrice: {
     color: colors.primary.main,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: T.family.bold,
     marginBottom: spacing.xs,
   },
   cardDate: {
     color: colors.text.tertiary,
     fontSize: 13,
+    fontFamily: T.family.regular,
   },
 });

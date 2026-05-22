@@ -872,10 +872,9 @@ function createStyles(D: AppColors) {
       borderColor: D.border,
     },
     headerTitle: {
-      fontFamily: T.family.medium,
       fontSize: T.size.title,
       lineHeight: T.lineHeight.title,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       textAlign: 'center',
       flex: 1,
@@ -903,10 +902,9 @@ function createStyles(D: AppColors) {
       marginBottom: spacing.md,
     },
     heroShopName: {
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
       lineHeight: T.lineHeight.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.ink,
     },
     heroMetaRow: {
@@ -932,17 +930,16 @@ function createStyles(D: AppColors) {
       marginBottom: spacing.xs,
     },
     sectionLabel: {
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink3,
       marginBottom: spacing.xs,
       letterSpacing: 0.8,
     },
     sectionNumber: {
       color: D.primary,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
 
     dateSelector: {
@@ -962,10 +959,9 @@ function createStyles(D: AppColors) {
       gap: spacing.sm,
     },
     dateSelectorText: {
-      fontFamily: T.family.regular,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
       color: D.ink,
     },
 
@@ -994,10 +990,9 @@ function createStyles(D: AppColors) {
       opacity: 0.35,
     },
     vehicleLabel: {
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink2,
     },
     vehicleLabelSelected: {
@@ -1024,11 +1019,10 @@ function createStyles(D: AppColors) {
       gap: spacing.sm,
     },
     selectorText: {
-      fontFamily: T.family.regular,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
       color: D.ink,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     selectorPlaceholder: {
       fontFamily: T.family.regular,
@@ -1068,10 +1062,9 @@ function createStyles(D: AppColors) {
       flex: 1,
     },
     serviceName: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink,
       marginBottom: 2,
     },
@@ -1092,10 +1085,9 @@ function createStyles(D: AppColors) {
       flexShrink: 0,
     },
     detailsBadgeText: {
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.primary,
     },
 
@@ -1120,19 +1112,17 @@ function createStyles(D: AppColors) {
       borderColor: D.primary,
     },
     slotTime: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink2,
     },
     slotTimeSelected: {
       color: D.onPrimary,
     },
     slotCountInline: {
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.primary,
       letterSpacing: 0.3,
     },
@@ -1149,11 +1139,10 @@ function createStyles(D: AppColors) {
       borderColor: D.border,
     },
     emptyStateTitle: {
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
       color: D.ink3,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     loadingState: {
       flexDirection: 'row',
@@ -1204,10 +1193,9 @@ function createStyles(D: AppColors) {
       shadowOpacity: 0,
     },
     confirmButtonText: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.onPrimary,
     },
 
@@ -1234,10 +1222,9 @@ function createStyles(D: AppColors) {
       borderBottomColor: D.border,
     },
     modalTitle: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
     },
     modalItem: {
@@ -1254,15 +1241,14 @@ function createStyles(D: AppColors) {
       backgroundColor: D.primaryLight,
     },
     modalItemText: {
-      fontFamily: T.family.regular,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
       color: D.ink,
     },
     modalItemTextSelected: {
       color: D.primary,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
     modalItemCheck: {
       width: 22,
@@ -1310,10 +1296,9 @@ function createStyles(D: AppColors) {
       flex: 1,
     },
     detailsTitle: {
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
       lineHeight: T.lineHeight.bodyLarge,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       marginBottom: 2,
     },
@@ -1344,20 +1329,18 @@ function createStyles(D: AppColors) {
       padding: spacing.md,
     },
     priceBadgeLabel: {
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.primary,
       marginBottom: 2,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
     priceBadgeValue: {
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
       lineHeight: T.lineHeight.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.primary,
     },
     durationBadge: {
@@ -1372,10 +1355,9 @@ function createStyles(D: AppColors) {
       borderColor: D.border,
     },
     durationBadgeText: {
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink2,
     },
     detailsSection: {
@@ -1388,10 +1370,9 @@ function createStyles(D: AppColors) {
       marginBottom: spacing.sm,
     },
     sectionHeaderTitle: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
     },
     sectionIcon: {
@@ -1427,11 +1408,10 @@ function createStyles(D: AppColors) {
     },
     includedItemText: {
       flex: 1,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
       color: D.ink,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     excludedItemText: {
       flex: 1,
@@ -1454,10 +1434,9 @@ function createStyles(D: AppColors) {
       borderColor: D.border,
     },
     recommendedTagText: {
-      fontFamily: T.family.regular,
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
       color: D.ink2,
     },
     noteContainer: {
@@ -1483,10 +1462,9 @@ function createStyles(D: AppColors) {
       alignItems: 'center',
     },
     detailsActionButtonText: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.onPrimary,
     },
   });

@@ -629,9 +629,8 @@ function createStyles(D: AppColors) {
     },
     brand: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       letterSpacing: 4,
       marginLeft: 4,
     },
@@ -668,9 +667,8 @@ function createStyles(D: AppColors) {
       justifyContent: 'center',
     },
     avatarInitialsText: {
-      fontFamily: T.family.medium,
       fontSize: T.size.display,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.onPrimary,
     },
     cameraBadge: {
@@ -689,18 +687,16 @@ function createStyles(D: AppColors) {
     profileInfo: { flex: 1 },
     greeting: {
       color: D.ink3,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       marginBottom: 3,
     },
     profileName: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
       lineHeight: T.lineHeight.titleLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     profileRolePill: {
       alignSelf: 'flex-start',
@@ -714,10 +710,9 @@ function createStyles(D: AppColors) {
     },
     profileRoleText: {
       color: D.primary,
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
 
     currentShopCard: {
@@ -743,17 +738,15 @@ function createStyles(D: AppColors) {
     },
     currentShopText: { flex: 1 },
     currentShopLabel: {
-      fontFamily: T.family.regular,
       fontSize: T.size.caption,
       color: D.ink3,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       letterSpacing: 0.3,
     },
     currentShopName: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
       color: D.ink,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       marginTop: 1,
     },
     currentShopSwap: {
@@ -764,10 +757,9 @@ function createStyles(D: AppColors) {
       borderColor: D.borderFocus,
     },
     currentShopSwapText: {
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
       color: D.primary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
 
     scheduleCard: {
@@ -798,17 +790,15 @@ function createStyles(D: AppColors) {
     scheduleTextWrap: { flex: 1 },
     scheduleTitle: {
       color: D.onPrimary,
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       lineHeight: T.lineHeight.bodyLarge,
     },
     scheduleSubtitle: {
       color: D.onPrimary,
       opacity: 0.72,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
       marginTop: 2,
     },
     scheduleArrow: {
@@ -829,9 +819,8 @@ function createStyles(D: AppColors) {
     },
     sectionKicker: {
       color: D.ink2,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     servicesRail: {
       paddingHorizontal: 20,
@@ -857,9 +846,8 @@ function createStyles(D: AppColors) {
     },
     servicesEmptyText: {
       color: D.ink3,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
     },
     serviceCard: {
       width: 104,
@@ -886,9 +874,8 @@ function createStyles(D: AppColors) {
     },
     serviceLabel: {
       color: D.ink2,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
 
     upcomingHeader: {
@@ -900,16 +887,14 @@ function createStyles(D: AppColors) {
     },
     upcomingTitle: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       lineHeight: T.lineHeight.bodyLarge,
     },
     upcomingCount: {
       color: D.ink3,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     loadingWrap: {
       marginHorizontal: 20,
@@ -962,29 +947,25 @@ function createStyles(D: AppColors) {
       borderRadius: 3,
     },
     appointmentStatusText: {
-      fontFamily: T.family.medium,
       fontSize: 10,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       letterSpacing: 0.3,
     },
     appointmentTitle: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       marginBottom: 4,
     },
     appointmentMeta: {
       color: D.ink3,
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
     },
     appointmentPrice: {
       color: D.primary,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     emptyCard: {
       marginHorizontal: 20,
@@ -1020,23 +1001,20 @@ function createStyles(D: AppColors) {
     },
     emptyPlusText: {
       color: D.onPrimary,
-      fontFamily: T.family.medium,
       fontSize: T.size.secondary,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       lineHeight: T.lineHeight.secondary,
     },
     emptyTitle: {
       color: D.ink,
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       marginBottom: 10,
     },
     emptyText: {
       color: D.ink2,
-      fontFamily: T.family.regular,
       fontSize: T.size.body,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
       lineHeight: T.lineHeight.body,
       textAlign: 'center',
     },
@@ -1054,9 +1032,8 @@ function createStyles(D: AppColors) {
     },
     emptyButtonText: {
       color: D.primary,
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
 
     bottomNav: {
@@ -1081,9 +1058,8 @@ function createStyles(D: AppColors) {
     bottomNavLabel: {
       marginTop: 4,
       color: D.ink3,
-      fontFamily: T.family.medium,
       fontSize: T.size.caption,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     bottomNavLabelActive: {
       color: D.primary,
@@ -1117,15 +1093,13 @@ function createStyles(D: AppColors) {
       marginBottom: 10,
     },
     drawerAvatarText: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.onPrimary,
     },
     drawerName: {
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       marginBottom: 2,
     },
@@ -1139,9 +1113,8 @@ function createStyles(D: AppColors) {
       paddingHorizontal: 20,
     },
     drawerItemText: {
-      fontFamily: T.family.regular,
       fontSize: T.size.body,
-      fontWeight: '500',
+      fontFamily: T.family.medium,
       color: D.ink,
     },
     drawerItemDanger: { color: D.accent },
@@ -1164,9 +1137,8 @@ function createStyles(D: AppColors) {
       borderColor: D.border,
     },
     modalTitle: {
-      fontFamily: T.family.medium,
       fontSize: T.size.bodyLarge,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink,
       marginBottom: 6,
     },
@@ -1183,9 +1155,8 @@ function createStyles(D: AppColors) {
       borderRadius: 12,
       paddingHorizontal: 16,
       paddingVertical: 12,
-      fontFamily: T.family.medium,
       fontSize: T.size.titleLarge,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.ink,
       textAlign: 'center',
       letterSpacing: 6,
@@ -1203,16 +1174,14 @@ function createStyles(D: AppColors) {
     modalBtnDisabled: { opacity: 0.35 },
     modalBtnText: {
       color: D.onPrimary,
-      fontFamily: T.family.medium,
       fontSize: T.size.body,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     modalCancel: { alignItems: 'center', paddingVertical: 8 },
     modalCancelText: {
-      fontFamily: T.family.regular,
       fontSize: T.size.secondary,
       color: D.ink3,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
     },
   });
 }

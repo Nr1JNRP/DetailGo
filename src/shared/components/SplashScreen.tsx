@@ -11,7 +11,7 @@ import Svg, {
   Rect,
   Stop,
 } from 'react-native-svg';
-import { darkColors, typography } from '@shared/theme';
+import { darkColors, typography as T } from '@shared/theme';
 
 const GridBackground = () => {
   const lines = Array.from({ length: 13 }, (_, index) => index * 8.333);
@@ -151,9 +151,8 @@ const styles = StyleSheet.create({
   },
   wordmark: {
     color: darkColors.ink,
-    fontFamily: typography.family.medium,
     fontSize: 46,
-    fontWeight: '900',
+    fontFamily: T.family.extraBold,
     letterSpacing: 0,
     lineHeight: 54,
   },
@@ -167,7 +166,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     color: darkColors.ink2,
-    fontFamily: typography.family.medium,
+    fontFamily: T.family.medium,
     fontSize: 14,
     lineHeight: 21,
     letterSpacing: 0,
@@ -192,7 +191,7 @@ const styles = StyleSheet.create({
   },
   version: {
     color: 'rgba(255,255,255,0.34)',
-    fontFamily: typography.family.medium,
+    fontFamily: T.family.medium,
     fontSize: 13,
     lineHeight: 18,
     letterSpacing: 0,

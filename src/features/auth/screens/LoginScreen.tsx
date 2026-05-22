@@ -21,7 +21,7 @@ import LinearGradient from 'react-native-linear-gradient';
 
 import type { RootStackParamList } from '@app/types';
 import { useAuth } from '@features/auth';
-import { useAppTheme, type AppColors } from '@shared/theme';
+import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const HERO_H = Math.round(SCREEN_H * 0.48);
@@ -360,14 +360,14 @@ function createStyles(D: AppColors) {
     },
     badgeText: {
       fontSize: 14,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.primary,
       letterSpacing: 0.8,
       lineHeight: 18,
     },
     heroTitle: {
       fontSize: 70,
-      fontWeight: '800',
+      fontFamily: T.family.extraBold,
       color: D.ink,
       lineHeight: 70,
       marginBottom: 24,
@@ -377,6 +377,7 @@ function createStyles(D: AppColors) {
     },
     heroSub: {
       fontSize: 17,
+      fontFamily: T.family.regular,
       color: D.ink2,
       lineHeight: 25,
       maxWidth: 320,
@@ -399,7 +400,7 @@ function createStyles(D: AppColors) {
     },
     fieldLabel: {
       fontSize: 15,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.ink2,
     },
     field: {
@@ -420,11 +421,11 @@ function createStyles(D: AppColors) {
       flex: 1,
       fontSize: 17,
       color: D.ink,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
     },
     forgotText: {
       fontSize: 12,
-      fontWeight: '600',
+      fontFamily: T.family.semiBold,
       color: D.primary,
     },
 
@@ -444,7 +445,7 @@ function createStyles(D: AppColors) {
     },
     btnText: {
       fontSize: 16,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.onPrimary,
     },
     btnArrow: {
@@ -464,11 +465,12 @@ function createStyles(D: AppColors) {
     },
     registerText: {
       fontSize: 14,
+      fontFamily: T.family.regular,
       color: D.ink2,
     },
     registerLink: {
       fontSize: 14,
-      fontWeight: '700',
+      fontFamily: T.family.bold,
       color: D.primary,
     },
     footer: {
@@ -478,6 +480,7 @@ function createStyles(D: AppColors) {
     },
     footerText: {
       fontSize: 12,
+      fontFamily: T.family.regular,
       color: D.ink3,
     },
   });
