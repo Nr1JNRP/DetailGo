@@ -1,80 +1,74 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// DETAILGO — Sistema de cores centralizado
+// DETAILGO - Sistema de cores centralizado
 //
-// Duas paletas:
-//   colors      → Heritage Teal (telas admin e cliente ainda não redesenhadas)
-//   darkColors  → Garage Dark   (novo redesign — Login, Register e futuras telas)
-// ─────────────────────────────────────────────────────────────────────────────
+// Paletas:
+//   colors      -> Theme Light legacy bridge
+//   darkColors  -> Garage Dark
+//   lightColors -> Theme Light
 
-// ── 1. Heritage Teal ─────────────────────────────────────────────────────────
+// 1. Theme Light legacy bridge
+// Usada por componentes antigos que ainda importam `colors` diretamente.
 export const colors = {
   primary: {
-    main: '#0F7173',
-    light: '#E6F3F5',
-    dark: '#0A4D68',
+    main: '#23B5D3',
+    light: '#D7F3F8',
+    dark: '#071013',
   },
   secondary: {
-    main: '#4BA3C3',
-    light: '#E6F3F5',
+    main: '#75ABBC',
+    light: '#E8F2F5',
   },
   status: {
-    success: '#16A34A',
-    warning: '#2563EB',
-    error: '#F05D5E',
-    disabled: '#94A3B8',
+    success: '#2F8F6B',
+    warning: '#B7791F',
+    error: '#D94A3A',
+    disabled: '#A2AEBB',
   },
   text: {
-    primary: '#272932',
-    secondary: '#4B5563',
-    tertiary: '#6B7280',
-    disabled: '#9CA3AF',
+    primary: '#071013',
+    secondary: '#42505B',
+    tertiary: '#6E7E8B',
+    disabled: '#A2AEBB',
     white: '#FFFFFF',
   },
   background: {
-    main: '#E7ECEF',
-    surface: '#F7F9FA',
+    main: '#DFE0E2',
+    surface: '#EEF1F3',
     card: '#FFFFFF',
-    drawer: '#272932',
+    drawer: '#071013',
   },
   border: {
-    main: '#C9D6DF',
-    focus: '#0F7173',
-    error: '#F05D5E',
-    light: '#E2E8F0',
+    main: '#A2AEBB',
+    focus: '#23B5D3',
+    error: '#D94A3A',
+    light: '#D8DDE2',
   },
-  overlay: 'rgba(39, 41, 50, 0.55)',
+  overlay: 'rgba(7,16,19,0.48)',
 } as const;
 
 export type ColorPalette = typeof colors;
 
-// ── 2. Garage Dark ───────────────────────────────────────────────────────────
-// Paleta do novo redesign — escuro, neon amarelo-verde, acento laranja
+// 2. Garage Dark
+// Paleta do redesign escuro: escuro, neon amarelo-verde, acento laranja.
 export const darkColors = {
-  // Fundos
-  bg: '#0B0D0E', // fundo principal — quase preto
-  surface: '#121517', // superfície intermediária
-  card: '#191D20', // cards e inputs
+  bg: '#0B0D0E',
+  surface: '#121517',
+  card: '#191D20',
 
-  // Texto
-  ink: '#F5F7F8', // texto principal — branco suave
-  ink2: '#A8B0B4', // texto secundário — cinza claro
-  ink3: '#6B7378', // texto terciário / labels / placeholders
+  ink: '#F5F7F8',
+  ink2: '#A8B0B4',
+  ink3: '#6B7378',
 
-  // Cor primária — verde-neon
   primary: '#D4FF3D',
   primaryDark: '#B6E300',
   primaryLight: 'rgba(212,255,61,0.12)',
   onPrimary: '#050708',
 
-  // Borda
   border: 'rgba(255,255,255,0.08)',
   borderStrong: 'rgba(255,255,255,0.15)',
   borderFocus: 'rgba(212,255,61,0.45)',
 
-  // Acento — laranja-vermelho (erros, cancelamentos)
   accent: '#FF5C39',
 
-  // Status
   status: {
     success: '#22C55E',
     error: '#FF5C39',
@@ -82,7 +76,6 @@ export const darkColors = {
     info: '#3B82F6',
   },
 
-  // Overlay
   overlay: 'rgba(0,0,0,0.65)',
 } as const;
 
@@ -93,36 +86,36 @@ export type AppColors = {
     : string;
 };
 
-// 3. Garage Light
-// Tema claro do redesign: limpo, frio e com contraste suave.
+// 3. Theme Light
+// Paleta base: #071013, #23B5D3, #75ABBC, #A2AEBB, #DFE0E2.
 export const lightColors = {
-  bg: '#F7FAF9',
-  surface: '#EEF5F2',
+  bg: '#DFE0E2',
+  surface: '#EEF1F3',
   card: '#FFFFFF',
 
-  ink: '#182326',
-  ink2: '#516268',
-  ink3: '#86979D',
+  ink: '#071013',
+  ink2: '#42505B',
+  ink3: '#6E7E8B',
 
-  primary: '#2F6F7E',
-  primaryDark: '#245A66',
-  primaryLight: 'rgba(47,111,126,0.12)',
-  onPrimary: '#FFFFFF',
+  primary: '#23B5D3',
+  primaryDark: '#148DA7',
+  primaryLight: 'rgba(35,181,211,0.16)',
+  onPrimary: '#071013',
 
-  border: 'rgba(24,35,38,0.08)',
-  borderStrong: 'rgba(24,35,38,0.14)',
-  borderFocus: 'rgba(47,111,126,0.38)',
+  border: 'rgba(7,16,19,0.10)',
+  borderStrong: 'rgba(7,16,19,0.18)',
+  borderFocus: 'rgba(35,181,211,0.48)',
 
-  accent: '#E3523B',
+  accent: '#D94A3A',
 
   status: {
-    success: '#2F7D59',
-    error: '#E3523B',
+    success: '#2F8F6B',
+    error: '#D94A3A',
     warning: '#B7791F',
-    info: '#2F6F7E',
+    info: '#23B5D3',
   },
 
-  overlay: 'rgba(24,35,38,0.34)',
+  overlay: 'rgba(7,16,19,0.38)',
 } as const;
 
 export type LightColorPalette = typeof lightColors;

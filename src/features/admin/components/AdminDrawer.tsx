@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -15,7 +15,7 @@ import { Calendar, History, LogOut, Settings, Store, User } from 'lucide-react-n
 import { getAuth } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 
-import { darkColors as D, typography as T } from '@shared/theme';
+import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
 import { useShop } from '@features/shops';
 import type { RootStackParamList } from '@app/types';
@@ -28,7 +28,11 @@ type Props = {
   onClose: () => void;
 };
 
+type DrawerStyles = ReturnType<typeof createStyles>;
+
 export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
+  const { colors: D } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
   const navigation = useNavigation<Nav>();
   const { shop } = useShop();
   const auth = getAuth();
@@ -111,27 +115,32 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
         {/* ── Navegação ── */}
         <View style={styles.drawerMenu}>
           <DrawerItem
+            styles={styles}
             icon={<Calendar size={18} color={D.primary} />}
             label="Agendamentos"
             onPress={() => navigate('AdminDashboard')}
           />
           <DrawerItem
+            styles={styles}
             icon={<History size={18} color={D.primary} />}
             label="Histórico"
             onPress={() => navigate('AdminHistory')}
           />
           <DrawerItem
+            styles={styles}
             icon={<Settings size={18} color={D.primary} />}
             label="Gerenciar loja"
             onPress={() => navigate('AdminManage')}
           />
           <DrawerItem
+            styles={styles}
             icon={<User size={18} color={D.primary} />}
             label="Perfil"
             onPress={() => navigate('AdminProfile')}
           />
           <View style={styles.drawerDivider} />
           <DrawerItem
+            styles={styles}
             icon={<LogOut size={18} color={D.accent} />}
             label="Sair"
             onPress={handleSignOut}
@@ -144,11 +153,13 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
 }
 
 function DrawerItem({
+  styles,
   icon,
   label,
   onPress,
   danger,
 }: {
+  styles: DrawerStyles;
   icon: React.ReactNode;
   label: string;
   onPress?: () => void;
@@ -167,65 +178,67 @@ function DrawerItem({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.65)' },
-  drawer: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: UI.MENU_WIDTH,
-    backgroundColor: D.surface,
-    borderRightWidth: 1,
-    borderRightColor: D.border,
-    paddingTop: 60,
-  },
-  drawerHeader: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: D.border,
-  },
-  drawerAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: D.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  drawerAvatarText: { fontSize: 18, fontFamily: T.family.bold, color: '#0B0D0E' },
-  drawerName: { fontSize: 16, fontFamily: T.family.bold, color: D.ink, marginBottom: 4 },
-  emailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  drawerEmail: { fontSize: 14, fontFamily: T.family.regular, color: D.ink3, flexShrink: 1 },
-  shopBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: D.primaryLight,
-    borderWidth: 1,
-    borderColor: 'rgba(212,255,61,0.2)',
-  },
-  shopBadgeText: { fontSize: 11, fontFamily: T.family.bold, color: D.primary },
-  drawerMenu: { paddingTop: 8, flex: 1 },
-  drawerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  drawerItemText: { fontSize: 16, fontFamily: T.family.medium, color: D.ink },
-  drawerItemDanger: { color: D.accent },
-  drawerDivider: { height: 1, backgroundColor: D.border, marginVertical: 8 },
-});
+function createStyles(D: AppColors) {
+  return StyleSheet.create({
+    overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: D.overlay },
+    drawer: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: UI.MENU_WIDTH,
+      backgroundColor: D.surface,
+      borderRightWidth: 1,
+      borderRightColor: D.border,
+      paddingTop: 60,
+    },
+    drawerHeader: {
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: D.border,
+    },
+    drawerAvatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: D.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 10,
+    },
+    drawerAvatarText: { fontSize: 18, fontFamily: T.family.bold, color: '#0B0D0E' },
+    drawerName: { fontSize: 16, fontFamily: T.family.bold, color: D.ink, marginBottom: 4 },
+    emailRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    drawerEmail: { fontSize: 14, fontFamily: T.family.regular, color: D.ink3, flexShrink: 1 },
+    shopBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      alignSelf: 'flex-start',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: D.primaryLight,
+      borderWidth: 1,
+      borderColor: D.borderFocus,
+    },
+    shopBadgeText: { fontSize: 11, fontFamily: T.family.bold, color: D.primary },
+    drawerMenu: { paddingTop: 8, flex: 1 },
+    drawerItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+    },
+    drawerItemText: { fontSize: 16, fontFamily: T.family.medium, color: D.ink },
+    drawerItemDanger: { color: D.accent },
+    drawerDivider: { height: 1, backgroundColor: D.border, marginVertical: 8 },
+  });
+}

@@ -36,7 +36,7 @@ import {
 } from 'lucide-react-native';
 import AdminDrawer from '../components/AdminDrawer';
 
-import { darkColors, spacing, radii, typography as T } from '@shared/theme';
+import { spacing, radii, typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
@@ -85,6 +85,8 @@ function AppointmentSeparator() {
 }
 
 export default function AdminDashboardScreen() {
+  const { colors: D, isLight } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
   const auth = getAuth();
   const user = auth.currentUser;
   const db = getFirestore();
@@ -344,7 +346,7 @@ export default function AdminDashboardScreen() {
   if (!user?.uid) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ActivityIndicator size="large" color={darkColors.primary} style={{ flex: 1 }} />
+        <ActivityIndicator size="large" color={D.primary} style={{ flex: 1 }} />
       </SafeAreaView>
     );
   }
@@ -499,18 +501,15 @@ export default function AdminDashboardScreen() {
             disabled={!!updatingId}
           >
             {isUpdating ? (
-              <ActivityIndicator
-                size="small"
-                color={isInProgress ? darkColors.onPrimary : darkColors.primary}
-              />
+              <ActivityIndicator size="small" color={isInProgress ? D.onPrimary : D.primary} />
             ) : (
               <>
                 {isExpiredScheduled ? (
-                  <AlertTriangle size={16} color={darkColors.status.error} />
+                  <AlertTriangle size={16} color={D.status.error} />
                 ) : isInProgress ? (
-                  <CheckCircle2 size={16} color={darkColors.onPrimary} />
+                  <CheckCircle2 size={16} color={D.onPrimary} />
                 ) : (
-                  <PlayCircle size={16} color={darkColors.primary} />
+                  <PlayCircle size={16} color={D.primary} />
                 )}
                 <Text
                   style={[
@@ -535,7 +534,7 @@ export default function AdminDashboardScreen() {
       {/* ── Topbar ─────────────────────────────── */}
       <View style={styles.topbar}>
         <TouchableOpacity style={styles.headerBtn} onPress={toggleDrawer} activeOpacity={0.7}>
-          <Menu size={20} color={darkColors.ink2} />
+          <Menu size={20} color={D.ink2} />
         </TouchableOpacity>
         <Text style={styles.topbarBrand}>DETAILGO</Text>
         <TouchableOpacity
@@ -543,7 +542,7 @@ export default function AdminDashboardScreen() {
           onPress={() => Alert.alert('Notificações', 'Em breve!')}
           activeOpacity={0.7}
         >
-          <Bell size={20} color={darkColors.ink2} />
+          <Bell size={20} color={D.ink2} />
           <View style={styles.bellDot} />
         </TouchableOpacity>
       </View>
@@ -576,10 +575,7 @@ export default function AdminDashboardScreen() {
           </View>
           {deltaVsPrev !== 0 && (
             <Text
-              style={[
-                styles.kpiDelta,
-                { color: deltaVsPrev > 0 ? darkColors.primary : darkColors.status.error },
-              ]}
+              style={[styles.kpiDelta, { color: deltaVsPrev > 0 ? D.primary : D.status.error }]}
             >
               {deltaVsPrev > 0 ? '▲' : '▼'} {deltaVsPrev > 0 ? '+' : ''}
               {deltaVsPrev} vs semana passada
@@ -604,14 +600,14 @@ export default function AdminDashboardScreen() {
               onPress={() => setWeekAnchor(prev => dateUtils.addDays(prev, -7))}
               activeOpacity={0.7}
             >
-              <ChevronLeft size={16} color={darkColors.ink2} />
+              <ChevronLeft size={16} color={D.ink2} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.weekNavBtn}
               onPress={() => setWeekAnchor(prev => dateUtils.addDays(prev, 7))}
               activeOpacity={0.7}
             >
-              <ChevronRight size={16} color={darkColors.ink2} />
+              <ChevronRight size={16} color={D.ink2} />
             </TouchableOpacity>
           </View>
         </View>
@@ -655,7 +651,7 @@ export default function AdminDashboardScreen() {
 
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor={darkColors.bg} />
+      <StatusBar barStyle={isLight ? 'dark-content' : 'light-content'} backgroundColor={D.bg} />
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <FlatList
           data={agendaList}
@@ -668,7 +664,7 @@ export default function AdminDashboardScreen() {
           ListEmptyComponent={
             loadingWeek ? (
               <View style={styles.loadingBox}>
-                <ActivityIndicator size="large" color={darkColors.primary} />
+                <ActivityIndicator size="large" color={D.primary} />
               </View>
             ) : (
               <View style={styles.emptyState}>
@@ -686,442 +682,444 @@ export default function AdminDashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: darkColors.bg,
-  },
-  listContent: {
-    paddingBottom: spacing.lg,
-  },
+function createStyles(D: AppColors) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: D.bg,
+    },
+    listContent: {
+      paddingBottom: spacing.lg,
+    },
 
-  // ── Header ──────────────────────────────────────
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  headerMeta: {
-    fontSize: 11,
-    fontFamily: T.family.semiBold,
-    color: darkColors.ink3,
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontFamily: T.family.extraBold,
-    color: darkColors.ink,
-    letterSpacing: -0.3,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginTop: 4,
-  },
-  headerBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: darkColors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: darkColors.border,
-  },
+    // ── Header ──────────────────────────────────────
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    headerMeta: {
+      fontSize: 11,
+      fontFamily: T.family.semiBold,
+      color: D.ink3,
+      letterSpacing: 0.8,
+      marginBottom: 4,
+    },
+    headerTitle: {
+      fontSize: 26,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+      letterSpacing: -0.3,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      marginTop: 4,
+    },
+    headerBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: D.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: D.border,
+    },
 
-  // ── KPI Cards ────────────────────────────────────
-  kpiRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  kpiCard: {
-    backgroundColor: darkColors.card,
-    borderRadius: radii.lg,
-    padding: spacing.sm + 2,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-  },
-  kpiLabel: {
-    fontSize: 10,
-    fontFamily: T.family.semiBold,
-    color: darkColors.ink3,
-    letterSpacing: 0.6,
-    marginBottom: spacing.xs,
-  },
-  kpiValueRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    flexWrap: 'wrap',
-  },
-  kpiNumber: {
-    fontSize: 32,
-    fontFamily: T.family.extraBold,
-    color: darkColors.ink,
-    lineHeight: 36,
-  },
-  kpiUnit: {
-    fontSize: 13,
-    fontFamily: T.family.medium,
-    color: darkColors.ink2,
-    marginBottom: 4,
-  },
-  kpiDelta: {
-    fontSize: 12,
-    fontFamily: T.family.semiBold,
-    marginTop: 4,
-  },
-  kpiAvg: {
-    fontSize: 26,
-    fontFamily: T.family.extraBold,
-    color: darkColors.ink,
-    lineHeight: 32,
-    marginBottom: 2,
-  },
-  kpiSub: {
-    fontSize: 11,
-    color: darkColors.ink3,
-    fontFamily: T.family.medium,
-  },
+    // ── KPI Cards ────────────────────────────────────
+    kpiRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+    },
+    kpiCard: {
+      backgroundColor: D.card,
+      borderRadius: radii.lg,
+      padding: spacing.sm + 2,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    kpiLabel: {
+      fontSize: 10,
+      fontFamily: T.family.semiBold,
+      color: D.ink3,
+      letterSpacing: 0.6,
+      marginBottom: spacing.xs,
+    },
+    kpiValueRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      flexWrap: 'wrap',
+    },
+    kpiNumber: {
+      fontSize: 32,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+      lineHeight: 36,
+    },
+    kpiUnit: {
+      fontSize: 13,
+      fontFamily: T.family.medium,
+      color: D.ink2,
+      marginBottom: 4,
+    },
+    kpiDelta: {
+      fontSize: 12,
+      fontFamily: T.family.semiBold,
+      marginTop: 4,
+    },
+    kpiAvg: {
+      fontSize: 26,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+      lineHeight: 32,
+      marginBottom: 2,
+    },
+    kpiSub: {
+      fontSize: 11,
+      color: D.ink3,
+      fontFamily: T.family.medium,
+    },
 
-  // ── Week Strip ───────────────────────────────────
-  weekStrip: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  weekNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  weekPeriod: {
-    fontSize: 13,
-    fontFamily: T.family.semiBold,
-    color: darkColors.ink2,
-    letterSpacing: 0.2,
-  },
-  weekNavBtns: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  weekNavBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: darkColors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: darkColors.border,
-  },
-  weekDays: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  dayCell: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderRadius: radii.md,
-    backgroundColor: darkColors.card,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-  },
-  dayCellSelected: {
-    backgroundColor: darkColors.primary,
-    borderColor: darkColors.primary,
-  },
-  dayName: {
-    fontSize: 9,
-    fontFamily: T.family.bold,
-    color: darkColors.ink3,
-    letterSpacing: 0.3,
-    marginBottom: 2,
-  },
-  dayNumber: {
-    fontSize: 15,
-    fontFamily: T.family.bold,
-    color: darkColors.ink,
-    marginBottom: 2,
-  },
-  dayTextSelected: {
-    color: darkColors.onPrimary,
-  },
-  dayCount: {
-    fontSize: 11,
-    fontFamily: T.family.semiBold,
-    color: darkColors.primary,
-  },
-  dayCountSelected: {
-    color: darkColors.onPrimary,
-  },
-  dayCountZero: {
-    color: darkColors.ink3,
-  },
+    // ── Week Strip ───────────────────────────────────
+    weekStrip: {
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+    },
+    weekNav: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    weekPeriod: {
+      fontSize: 13,
+      fontFamily: T.family.semiBold,
+      color: D.ink2,
+      letterSpacing: 0.2,
+    },
+    weekNavBtns: {
+      flexDirection: 'row',
+      gap: 4,
+    },
+    weekNavBtn: {
+      width: 28,
+      height: 28,
+      borderRadius: 8,
+      backgroundColor: D.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    weekDays: {
+      flexDirection: 'row',
+      gap: 4,
+    },
+    dayCell: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      borderRadius: radii.md,
+      backgroundColor: D.card,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    dayCellSelected: {
+      backgroundColor: D.primary,
+      borderColor: D.primary,
+    },
+    dayName: {
+      fontSize: 9,
+      fontFamily: T.family.bold,
+      color: D.ink3,
+      letterSpacing: 0.3,
+      marginBottom: 2,
+    },
+    dayNumber: {
+      fontSize: 15,
+      fontFamily: T.family.bold,
+      color: D.ink,
+      marginBottom: 2,
+    },
+    dayTextSelected: {
+      color: D.onPrimary,
+    },
+    dayCount: {
+      fontSize: 11,
+      fontFamily: T.family.semiBold,
+      color: D.primary,
+    },
+    dayCountSelected: {
+      color: D.onPrimary,
+    },
+    dayCountZero: {
+      color: D.ink3,
+    },
 
-  // ── Section label ────────────────────────────────
-  sectionLabel: {
-    fontSize: 11,
-    fontFamily: T.family.bold,
-    color: darkColors.ink3,
-    letterSpacing: 0.8,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
+    // ── Section label ────────────────────────────────
+    sectionLabel: {
+      fontSize: 11,
+      fontFamily: T.family.bold,
+      color: D.ink3,
+      letterSpacing: 0.8,
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+    },
 
-  // ── Agenda rows ──────────────────────────────────
-  agendaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  agendaTimeCol: {
-    width: 48,
-    alignItems: 'flex-start',
-  },
-  agendaHour: {
-    fontSize: 15,
-    fontFamily: T.family.bold,
-    color: darkColors.ink,
-    lineHeight: 18,
-  },
-  agendaDuration: {
-    fontSize: 11,
-    color: darkColors.ink3,
-    fontFamily: T.family.medium,
-    marginTop: 1,
-  },
-  agendaCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: darkColors.card,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    minHeight: 68,
-  },
-  agendaCardActive: {
-    borderColor: darkColors.primary,
-  },
-  agendaCardExpired: {
-    borderColor: darkColors.status.error,
-  },
-  agendaCardContent: {
-    flex: 1,
-  },
-  agendaService: {
-    fontSize: 16,
-    fontFamily: T.family.bold,
-    color: darkColors.ink,
-    marginBottom: 3,
-  },
-  agendaClient: {
-    fontSize: 13,
-    color: darkColors.ink3,
-    fontFamily: T.family.regular,
-  },
-  agendaStatusRow: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-  },
-  agendaStatusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: 999,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: darkColors.border,
-  },
-  agendaStatusPillActive: {
-    backgroundColor: darkColors.primaryLight,
-    borderColor: darkColors.primary,
-  },
-  agendaStatusPillExpired: {
-    backgroundColor: 'rgba(255,92,57,0.12)',
-    borderColor: darkColors.status.error,
-  },
-  agendaStatusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: darkColors.ink3,
-  },
-  agendaStatusDotActive: {
-    backgroundColor: darkColors.primary,
-  },
-  agendaStatusDotExpired: {
-    backgroundColor: darkColors.status.error,
-  },
-  agendaStatusText: {
-    fontSize: 11,
-    fontFamily: T.family.bold,
-    color: darkColors.ink2,
-  },
-  agendaStatusTextActive: {
-    color: darkColors.primary,
-  },
-  agendaStatusTextExpired: {
-    color: darkColors.status.error,
-  },
-  agendaActionButton: {
-    width: 118,
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: darkColors.primary,
-    backgroundColor: 'transparent',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  agendaActionButtonDone: {
-    backgroundColor: darkColors.primary,
-  },
-  agendaActionButtonExpired: {
-    borderColor: darkColors.status.error,
-  },
-  agendaActionText: {
-    flexShrink: 1,
-    fontSize: 11,
-    lineHeight: 13,
-    fontFamily: T.family.extraBold,
-    color: darkColors.primary,
-    textAlign: 'center',
-  },
-  agendaActionTextDone: {
-    color: darkColors.onPrimary,
-  },
-  agendaActionTextExpired: {
-    color: darkColors.status.error,
-  },
+    // ── Agenda rows ──────────────────────────────────
+    agendaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
+    agendaTimeCol: {
+      width: 48,
+      alignItems: 'flex-start',
+    },
+    agendaHour: {
+      fontSize: 15,
+      fontFamily: T.family.bold,
+      color: D.ink,
+      lineHeight: 18,
+    },
+    agendaDuration: {
+      fontSize: 11,
+      color: D.ink3,
+      fontFamily: T.family.medium,
+      marginTop: 1,
+    },
+    agendaCard: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: D.card,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: D.border,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      minHeight: 68,
+    },
+    agendaCardActive: {
+      borderColor: D.primary,
+    },
+    agendaCardExpired: {
+      borderColor: D.status.error,
+    },
+    agendaCardContent: {
+      flex: 1,
+    },
+    agendaService: {
+      fontSize: 16,
+      fontFamily: T.family.bold,
+      color: D.ink,
+      marginBottom: 3,
+    },
+    agendaClient: {
+      fontSize: 13,
+      color: D.ink3,
+      fontFamily: T.family.regular,
+    },
+    agendaStatusRow: {
+      flexDirection: 'row',
+      marginTop: spacing.sm,
+    },
+    agendaStatusPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      borderRadius: 999,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 5,
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    agendaStatusPillActive: {
+      backgroundColor: D.primaryLight,
+      borderColor: D.primary,
+    },
+    agendaStatusPillExpired: {
+      backgroundColor: 'rgba(255,92,57,0.12)',
+      borderColor: D.status.error,
+    },
+    agendaStatusDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: D.ink3,
+    },
+    agendaStatusDotActive: {
+      backgroundColor: D.primary,
+    },
+    agendaStatusDotExpired: {
+      backgroundColor: D.status.error,
+    },
+    agendaStatusText: {
+      fontSize: 11,
+      fontFamily: T.family.bold,
+      color: D.ink2,
+    },
+    agendaStatusTextActive: {
+      color: D.primary,
+    },
+    agendaStatusTextExpired: {
+      color: D.status.error,
+    },
+    agendaActionButton: {
+      width: 118,
+      minHeight: 44,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: D.primary,
+      backgroundColor: 'transparent',
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    agendaActionButtonDone: {
+      backgroundColor: D.primary,
+    },
+    agendaActionButtonExpired: {
+      borderColor: D.status.error,
+    },
+    agendaActionText: {
+      flexShrink: 1,
+      fontSize: 11,
+      lineHeight: 13,
+      fontFamily: T.family.extraBold,
+      color: D.primary,
+      textAlign: 'center',
+    },
+    agendaActionTextDone: {
+      color: D.onPrimary,
+    },
+    agendaActionTextExpired: {
+      color: D.status.error,
+    },
 
-  // ── Loading / Empty ──────────────────────────────
-  loadingBox: {
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  emptyState: {
-    marginHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-    backgroundColor: darkColors.card,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: darkColors.border,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontFamily: T.family.semiBold,
-    color: darkColors.ink2,
-    marginBottom: 4,
-  },
-  emptyText: {
-    fontSize: 13,
-    fontFamily: T.family.regular,
-    color: darkColors.ink3,
-  },
+    // ── Loading / Empty ──────────────────────────────
+    loadingBox: {
+      paddingVertical: spacing.xl,
+      alignItems: 'center',
+    },
+    emptyState: {
+      marginHorizontal: spacing.lg,
+      paddingVertical: spacing.xl,
+      alignItems: 'center',
+      backgroundColor: D.card,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: D.border,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontFamily: T.family.semiBold,
+      color: D.ink2,
+      marginBottom: 4,
+    },
+    emptyText: {
+      fontSize: 13,
+      fontFamily: T.family.regular,
+      color: D.ink3,
+    },
 
-  // ── Topbar padronizado ──────────────────────────
-  topbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  topbarBrand: {
-    fontSize: 13,
-    fontFamily: T.family.extraBold,
-    color: darkColors.ink,
-    letterSpacing: 2,
-  },
-  bellDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: darkColors.primary,
-    borderWidth: 1.5,
-    borderColor: darkColors.card,
-  },
+    // ── Topbar padronizado ──────────────────────────
+    topbar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    topbarBrand: {
+      fontSize: 13,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+      letterSpacing: 2,
+    },
+    bellDot: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: D.primary,
+      borderWidth: 1.5,
+      borderColor: D.card,
+    },
 
-  // ── Perfil — igual ao cliente ───────────────────
-  profileRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
-    gap: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: darkColors.border,
-    marginBottom: spacing.lg,
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: darkColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 22,
-    fontFamily: T.family.extraBold,
-    color: '#0B0D0E',
-  },
-  profileInfo: { flex: 1 },
-  greetingText: {
-    fontSize: 9,
-    fontFamily: T.family.bold,
-    color: darkColors.ink3,
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  ownerName: {
-    fontSize: 16,
-    fontFamily: T.family.extraBold,
-    color: darkColors.ink,
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  shopBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: darkColors.primaryLight,
-    borderWidth: 1,
-    borderColor: 'rgba(212,255,61,0.2)',
-  },
-  shopBadgeText: {
-    fontSize: 10,
-    fontFamily: T.family.bold,
-    color: darkColors.primary,
-  },
-  profileRole: {
-    fontSize: 11,
-    fontFamily: T.family.semiBold,
-    color: darkColors.ink3,
-  },
-});
+    // ── Perfil — igual ao cliente ───────────────────
+    profileRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.lg,
+      gap: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: D.border,
+      marginBottom: spacing.lg,
+    },
+    avatar: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: D.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarText: {
+      fontSize: 22,
+      fontFamily: T.family.extraBold,
+      color: '#0B0D0E',
+    },
+    profileInfo: { flex: 1 },
+    greetingText: {
+      fontSize: 9,
+      fontFamily: T.family.bold,
+      color: D.ink3,
+      letterSpacing: 1,
+      marginBottom: 2,
+    },
+    ownerName: {
+      fontSize: 16,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+      letterSpacing: -0.3,
+      marginBottom: 4,
+    },
+    shopBadge: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 999,
+      backgroundColor: D.primaryLight,
+      borderWidth: 1,
+      borderColor: 'rgba(212,255,61,0.2)',
+    },
+    shopBadgeText: {
+      fontSize: 10,
+      fontFamily: T.family.bold,
+      color: D.primary,
+    },
+    profileRole: {
+      fontSize: 11,
+      fontFamily: T.family.semiBold,
+      color: D.ink3,
+    },
+  });
+}
