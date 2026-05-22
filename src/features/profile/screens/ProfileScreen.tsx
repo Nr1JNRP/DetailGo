@@ -16,7 +16,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, Check, ChevronRight, Moon, RefreshCw, Sun, X } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Camera,
+  Check,
+  ChevronRight,
+  Moon,
+  RefreshCw,
+  Sun,
+  X,
+} from 'lucide-react-native';
+import { launchImageLibrary, type ImageLibraryOptions } from 'react-native-image-picker';
 
 import { getAuth } from '@react-native-firebase/auth';
 import {
@@ -32,7 +42,6 @@ import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import type { RootStackParamList } from '@app/types';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useAuth } from '@features/auth';
-import { useShop } from '@features/shops';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -62,12 +71,12 @@ export default function ProfileScreen() {
   const authInstance = getAuth();
   const user = authInstance.currentUser;
   const { signOut } = useAuth();
-  const { shop, loading: loadingShop } = useShop();
 
   const uid = user?.uid ?? null;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
   const [checkingConfirm, setCheckingConfirm] = useState(false);
 
   const [profile, setProfile] = useState<UserProfile>({
@@ -96,11 +105,11 @@ export default function ProfileScreen() {
 
   const displayName = useMemo(() => {
     const profileName = `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim();
-    return profileName || user?.displayName || 'Cliente DetailGo';
+    return profileName || user?.displayName || 'Usuário DetailGo';
   }, [profile.firstName, profile.lastName, user?.displayName]);
 
   const initials = useMemo(() => {
-    const source = displayName.trim() || user?.email || 'Cliente';
+    const source = displayName.trim() || user?.email || 'Usuário';
     return source
       .split(' ')
       .filter(Boolean)
@@ -116,7 +125,36 @@ export default function ProfileScreen() {
     ? { uri: profile.photoURL }
     : null;
 
-  const linkedShopName = loadingShop ? 'Carregando...' : shop?.name ?? 'Não vinculada';
+  const handleAvatarChange = async () => {
+    if (!userRef) return;
+
+    try {
+      const res = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1,
+        includeBase64: true,
+        quality: 0.7,
+        maxWidth: 500,
+        maxHeight: 500,
+      } as ImageLibraryOptions);
+
+      if (res.didCancel) return;
+      const asset = res.assets?.[0];
+      if (!asset?.base64) return;
+
+      setSavingPhoto(true);
+      const photoB64 = `data:${
+        asset.type?.startsWith('image/') ? asset.type : 'image/jpeg'
+      };base64,${asset.base64}`;
+
+      await updateDoc(userRef, { photoB64 });
+      setProfile(prev => ({ ...prev, photoB64 }));
+    } catch {
+      Alert.alert('Erro', 'Não foi possível atualizar a foto');
+    } finally {
+      setSavingPhoto(false);
+    }
+  };
 
   useEffect(() => {
     if (!userRef || !user) {
@@ -442,13 +480,27 @@ export default function ProfileScreen() {
 
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.hero}>
-              <View style={styles.avatar}>
+              <TouchableOpacity
+                style={styles.avatarWrap}
+                onPress={handleAvatarChange}
+                activeOpacity={0.85}
+                disabled={savingPhoto}
+              >
                 {avatarSource ? (
                   <Image source={avatarSource} style={styles.avatarImage} />
                 ) : (
-                  <Text style={styles.avatarText}>{initials}</Text>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{initials}</Text>
+                  </View>
                 )}
-              </View>
+                <View style={styles.cameraBadge}>
+                  {savingPhoto ? (
+                    <ActivityIndicator color={D.primary} size="small" />
+                  ) : (
+                    <Camera size={12} color={D.primary} strokeWidth={2.4} />
+                  )}
+                </View>
+              </TouchableOpacity>
 
               <View style={styles.heroInfo}>
                 <View style={styles.heroTopLine}>
@@ -456,9 +508,6 @@ export default function ProfileScreen() {
                     <Text style={styles.name} numberOfLines={1}>
                       {displayName}
                     </Text>
-                  </View>
-                  <View style={styles.rolePill}>
-                    <Text style={styles.rolePillText}>Cliente</Text>
                   </View>
                 </View>
               </View>
@@ -641,8 +690,6 @@ export default function ProfileScreen() {
                   </View>
                 </View>
               )}
-
-              <DataRow label="Estética vinculada" value={linkedShopName} bordered last />
             </View>
 
             <View style={styles.sectionHeader}>
@@ -851,11 +898,11 @@ function createStyles(D: AppColors) {
       paddingBottom: 24,
     },
     hero: {
-      minHeight: 74,
+      minHeight: 94,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 14,
-      marginBottom: 4,
+      gap: 16,
+      marginBottom: 10,
     },
     heroGlow: {
       position: 'absolute',
@@ -866,23 +913,41 @@ function createStyles(D: AppColors) {
       borderRadius: 85,
       backgroundColor: D.primaryLight,
     },
+    avatarWrap: {
+      width: 82,
+      height: 82,
+      borderRadius: 41,
+    },
     avatar: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+      width: 82,
+      height: 82,
+      borderRadius: 41,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: D.primary,
     },
     avatarImage: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+      width: 82,
+      height: 82,
+      borderRadius: 41,
     },
     avatarText: {
       color: D.onPrimary,
-      fontSize: T.size.titleLarge,
+      fontSize: T.size.display,
       fontFamily: T.family.extraBold,
+    },
+    cameraBadge: {
+      position: 'absolute',
+      right: -2,
+      bottom: -2,
+      width: 29,
+      height: 29,
+      borderRadius: 15,
+      backgroundColor: D.card,
+      borderWidth: 2,
+      borderColor: D.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     heroInfo: {
       flex: 1,
@@ -899,8 +964,8 @@ function createStyles(D: AppColors) {
     },
     name: {
       color: D.ink,
-      fontSize: T.size.title,
-      lineHeight: T.lineHeight.title,
+      fontSize: T.size.titleLarge,
+      lineHeight: T.lineHeight.titleLarge,
       fontFamily: T.family.extraBold,
     },
     email: {
@@ -910,21 +975,6 @@ function createStyles(D: AppColors) {
       marginTop: 2,
       fontFamily: T.family.medium,
     },
-    rolePill: {
-      alignSelf: 'center',
-      paddingHorizontal: 9,
-      paddingVertical: 3,
-      borderRadius: 999,
-      backgroundColor: D.primaryLight,
-      borderWidth: 1,
-      borderColor: D.borderFocus,
-    },
-    rolePillText: {
-      color: D.primary,
-      fontSize: T.size.caption,
-      fontFamily: T.family.bold,
-    },
-
     sectionHeader: {
       minHeight: 38,
       flexDirection: 'row',
