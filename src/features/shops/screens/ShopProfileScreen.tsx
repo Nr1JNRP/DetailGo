@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StatusBar,
@@ -8,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
@@ -32,7 +33,9 @@ export default function ShopProfileScreen() {
   const { shopId } = route.params;
 
   const { colors: D, isLight } = useAppTheme();
-  const styles = useMemo(() => createStyles(D), [D]);
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
+  const styles = useMemo(() => createStyles(D, bottomInset), [D, bottomInset]);
 
   const [shop, setShop] = useState<ShopProfileData | null>(null);
   const [hours, setHours] = useState<{ open: number; close: number } | null>(null);
@@ -150,7 +153,7 @@ export default function ShopProfileScreen() {
             </View>
           )}
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 100 + bottomInset }} />
         </ScrollView>
 
         <View style={styles.ctaWrap}>
@@ -193,7 +196,7 @@ function ServiceRow({ service, colors: D }: { service: ShopService; colors: AppC
   );
 }
 
-function createStyles(D: AppColors) {
+function createStyles(D: AppColors, bottomInset = 0) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: D.bg },
     loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -344,7 +347,7 @@ function createStyles(D: AppColors) {
       left: 0,
       right: 0,
       padding: 16,
-      paddingBottom: 24,
+      paddingBottom: 24 + bottomInset,
       backgroundColor: D.bg,
       borderTopWidth: 1,
       borderTopColor: D.border,

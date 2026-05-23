@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  FlatList,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,8 +13,9 @@ import {
   TouchableOpacity,
   View,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -68,7 +71,10 @@ function getGreeting() {
 export default function DashboardScreen() {
   const navigation = useNavigation<NavProp>();
   const { colors: D, isLight } = useAppTheme();
-  const styles = useMemo(() => createStyles(D), [D]);
+  const { width: windowWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
+  const styles = useMemo(() => createStyles(D, bottomInset), [D, bottomInset]);
   const auth = getAuth();
   const user = auth.currentUser!;
   const uid = user.uid;
@@ -102,6 +108,7 @@ export default function DashboardScreen() {
   const nextAppointment = activeAppointments[0] ?? null;
   const upcomingAppointments = activeAppointments.slice(0, 3);
   const homeServices = shopServices;
+  const appointmentCardWidth = Math.max(280, windowWidth - 72);
 
   // Garbage collection: se tem shopId mas zero ativos, desvincula
   useEffect(() => {
@@ -204,6 +211,8 @@ export default function DashboardScreen() {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
+          scrollEnabled={false}
+          bounces={false}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.heroSurface}>
@@ -373,16 +382,24 @@ export default function DashboardScreen() {
                   <ActivityIndicator color={D.primary} size="small" />
                 </View>
               ) : nextAppointment ? (
-                <View style={styles.appointmentsCard}>
-                  {upcomingAppointments.map((appt, i) => (
-                    <AppointmentRow
-                      key={appt.id}
-                      appt={appt}
-                      last={i === upcomingAppointments.length - 1}
+                <FlatList
+                  horizontal
+                  pagingEnabled
+                  snapToInterval={appointmentCardWidth + 12}
+                  decelerationRate="fast"
+                  showsHorizontalScrollIndicator={false}
+                  data={upcomingAppointments}
+                  keyExtractor={item => item.id}
+                  contentContainerStyle={styles.appointmentsRail}
+                  ItemSeparatorComponent={() => <View style={styles.appointmentCardGap} />}
+                  renderItem={({ item }) => (
+                    <AppointmentCard
+                      appt={item}
+                      width={appointmentCardWidth}
                       onPress={() => navigation.navigate('MyAppointments')}
                     />
-                  ))}
-                </View>
+                  )}
+                />
               ) : (
                 <View style={styles.emptyCard}>
                   <View style={styles.emptyIconWrap}>
@@ -407,7 +424,7 @@ export default function DashboardScreen() {
             </>
           )}
 
-          <View style={{ height: 112 }} />
+          <View style={{ height: 112 + bottomInset }} />
         </ScrollView>
 
         <View style={styles.bottomNav}>
@@ -492,13 +509,13 @@ export default function DashboardScreen() {
   );
 }
 
-function AppointmentRow({
+function AppointmentCard({
   appt,
-  last,
+  width,
   onPress,
 }: {
   appt: UserAppointment;
-  last: boolean;
+  width: number;
   onPress: () => void;
 }) {
   const { colors: D } = useAppTheme();
@@ -507,34 +524,36 @@ function AppointmentRow({
 
   return (
     <TouchableOpacity
-      style={[styles.appointmentRow, !last && styles.appointmentRowBorder]}
+      style={[styles.appointmentCard, { width }]}
       onPress={onPress}
       activeOpacity={0.78}
     >
-      <View style={styles.appointmentIcon}>
-        <Calendar size={22} color={D.primary} />
-      </View>
-      <View style={styles.appointmentInfo}>
-        <Text style={styles.appointmentTitle} numberOfLines={1}>
-          {appt.serviceLabel ?? 'Serviço'}
-        </Text>
-        <Text style={styles.appointmentMeta} numberOfLines={1}>
-          {dateUtils.formatDate(appt.startAtMs)} · {dateUtils.formatHour(appt.startAtMs)} ·{' '}
-          {appt.carCategory ?? appt.vehicleType}
-        </Text>
-        <View
-          style={[
-            styles.appointmentStatusBadge,
-            { backgroundColor: statusConfig.color + '20', borderColor: statusConfig.color },
-          ]}
-        >
-          <View style={[styles.appointmentStatusDot, { backgroundColor: statusConfig.color }]} />
-          <Text style={[styles.appointmentStatusText, { color: statusConfig.color }]}>
-            {statusConfig.label}
-          </Text>
+      <View style={styles.appointmentCardTop}>
+        <View style={styles.appointmentIcon}>
+          <Calendar size={22} color={D.primary} />
         </View>
+        <View style={styles.appointmentInfo}>
+          <Text style={styles.appointmentTitle} numberOfLines={1}>
+            {appt.serviceLabel ?? 'Serviço'}
+          </Text>
+          <Text style={styles.appointmentMeta} numberOfLines={1}>
+            {dateUtils.formatDate(appt.startAtMs)} · {dateUtils.formatHour(appt.startAtMs)} ·{' '}
+            {appt.carCategory ?? appt.vehicleType}
+          </Text>
+          <View
+            style={[
+              styles.appointmentStatusBadge,
+              { backgroundColor: statusConfig.color + '20', borderColor: statusConfig.color },
+            ]}
+          >
+            <View style={[styles.appointmentStatusDot, { backgroundColor: statusConfig.color }]} />
+            <Text style={[styles.appointmentStatusText, { color: statusConfig.color }]}>
+              {statusConfig.label}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.appointmentPrice}>{formatUtils.currencyCompact(appt.price)}</Text>
       </View>
-      <Text style={styles.appointmentPrice}>{formatUtils.currencyCompact(appt.price)}</Text>
     </TouchableOpacity>
   );
 }
@@ -588,7 +607,7 @@ function DrawerItem({
   );
 }
 
-function createStyles(D: AppColors) {
+function createStyles(D: AppColors, bottomInset = 0) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: D.bg },
     scroll: { flex: 1 },
@@ -827,7 +846,7 @@ function createStyles(D: AppColors) {
       paddingHorizontal: 20,
       flexDirection: 'row',
       gap: 10,
-      paddingBottom: 28,
+      paddingBottom: 18,
     },
     servicesLoading: {
       height: 100,
@@ -884,7 +903,7 @@ function createStyles(D: AppColors) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 14,
+      marginBottom: 10,
     },
     upcomingTitle: {
       color: D.ink,
@@ -899,28 +918,31 @@ function createStyles(D: AppColors) {
     },
     loadingWrap: {
       marginHorizontal: 20,
-      minHeight: 180,
+      minHeight: 112,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    appointmentsCard: {
-      marginHorizontal: 20,
+    appointmentsRail: {
+      paddingHorizontal: 20,
+      paddingBottom: 0,
+    },
+    appointmentCardGap: {
+      width: 12,
+    },
+    appointmentCard: {
+      minHeight: 104,
       borderRadius: 17,
       backgroundColor: D.card,
       borderWidth: 1.5,
       borderColor: D.borderStrong,
-      overflow: 'hidden',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      justifyContent: 'center',
     },
-    appointmentRow: {
+    appointmentCardTop: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 18,
-      paddingVertical: 12,
       gap: 10,
-    },
-    appointmentRowBorder: {
-      borderBottomWidth: 1,
-      borderBottomColor: D.border,
     },
     appointmentIcon: {
       width: 40,
@@ -1036,7 +1058,7 @@ function createStyles(D: AppColors) {
       left: 0,
       right: 0,
       bottom: 0,
-      height: 86,
+      height: 72 + bottomInset,
       backgroundColor: D.surface,
       borderTopWidth: 1,
       borderTopColor: D.borderStrong,
@@ -1044,6 +1066,7 @@ function createStyles(D: AppColors) {
       justifyContent: 'space-around',
       alignItems: 'flex-start',
       paddingTop: 14,
+      paddingBottom: bottomInset,
     },
     bottomNavItem: {
       width: 96,

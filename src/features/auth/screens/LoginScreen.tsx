@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -29,7 +30,9 @@ type NavProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 export default function LoginScreen() {
   const navigation = useNavigation<NavProp>();
   const { colors: D, isLight } = useAppTheme();
-  const styles = useMemo(() => createStyles(D, isLight), [D, isLight]);
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
+  const styles = useMemo(() => createStyles(D, isLight, bottomInset), [D, isLight, bottomInset]);
   const { signIn } = useAuth();
   const heroGradient = isLight
     ? {
@@ -223,7 +226,7 @@ export default function LoginScreen() {
   );
 }
 
-function createStyles(D: AppColors, isLight: boolean) {
+function createStyles(D: AppColors, isLight: boolean, bottomInset: number) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -390,7 +393,7 @@ function createStyles(D: AppColors, isLight: boolean) {
       color: D.primary,
     },
     footer: {
-      paddingBottom: 22,
+      paddingBottom: bottomInset + 12,
       alignItems: 'center',
     },
   });

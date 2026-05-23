@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getAuth } from '@react-native-firebase/auth';
 import { doc, getDoc, getFirestore, setDoc } from '@react-native-firebase/firestore';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -305,7 +305,9 @@ function SelectModal<T extends string>({
 
 export default function AppointmentScreen() {
   const { colors: D, isLight } = useAppTheme();
-  const styles = useMemo(() => createStyles(D), [D]);
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
+  const styles = useMemo(() => createStyles(D, bottomInset), [D, bottomInset]);
   const auth = getAuth();
   const navigation = useNavigation<NavProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'Appointment'>>();
@@ -815,7 +817,7 @@ export default function AppointmentScreen() {
             )}
           </View>
 
-          <View style={{ height: 96 }} />
+          <View style={{ height: 96 + bottomInset }} />
         </ScrollView>
 
         {/* CTA sticky no rodapé com total embutido */}
@@ -844,7 +846,7 @@ export default function AppointmentScreen() {
   );
 }
 
-function createStyles(D: AppColors) {
+function createStyles(D: AppColors, bottomInset = 0) {
   return StyleSheet.create({
     safe: {
       flex: 1,
@@ -1169,7 +1171,7 @@ function createStyles(D: AppColors) {
       right: 0,
       paddingHorizontal: spacing.md,
       paddingTop: spacing.sm,
-      paddingBottom: spacing.md,
+      paddingBottom: spacing.md + bottomInset,
       backgroundColor: D.bg,
       borderTopWidth: 1,
       borderTopColor: D.border,

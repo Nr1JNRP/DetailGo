@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MapPin, X, ArrowRight } from 'lucide-react-native';
 
 import type { RootStackParamList } from '@app/types';
@@ -18,7 +19,9 @@ type Props = {
 
 export default function ShopDetailSheet({ shop, onClose }: Props) {
   const { colors: D } = useAppTheme();
-  const styles = useMemo(() => createStyles(D), [D]);
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
+  const styles = useMemo(() => createStyles(D, bottomInset), [D, bottomInset]);
   const navigation = useNavigation<Nav>();
 
   const handleOpenProfile = () => {
@@ -56,7 +59,7 @@ export default function ShopDetailSheet({ shop, onClose }: Props) {
   );
 }
 
-function createStyles(D: AppColors) {
+function createStyles(D: AppColors, bottomInset: number) {
   return StyleSheet.create({
     sheet: {
       position: 'absolute',
@@ -67,7 +70,7 @@ function createStyles(D: AppColors) {
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       padding: 24,
-      paddingBottom: 36,
+      paddingBottom: 24 + bottomInset,
       borderWidth: 1,
       borderColor: D.border,
       shadowColor: '#000',
