@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
   ArrowRight,
@@ -78,7 +79,9 @@ const ACCOUNT_TYPES = [
 export default function RegisterScreen() {
   const navigation = useNavigation<NavProp>();
   const { colors: D, isLight } = useAppTheme();
-  const styles = useMemo(() => createStyles(D), [D]);
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
+  const styles = useMemo(() => createStyles(D, bottomInset), [D, bottomInset]);
   const { register } = useAuth();
 
   const [accountType, setAccountType] = useState<UserRole | null>(null);
@@ -862,7 +865,7 @@ function DField({
   );
 }
 
-function createStyles(D: AppColors) {
+function createStyles(D: AppColors, bottomInset = 0) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -872,7 +875,7 @@ function createStyles(D: AppColors) {
       flexGrow: 1,
       paddingHorizontal: 22,
       paddingTop: 60,
-      paddingBottom: 24,
+      paddingBottom: 24 + bottomInset,
     },
 
     // ── Step 1
