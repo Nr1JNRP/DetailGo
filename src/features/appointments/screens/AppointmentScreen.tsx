@@ -531,6 +531,11 @@ export default function AppointmentScreen() {
       if (error?.code === 'SLOT_FULL') {
         Alert.alert('Horário indisponível', 'Selecione outro horário.');
         await refreshSlots(day, selectedService);
+      } else if (error?.code === 'CUSTOMER_DAILY_SHOP_CONFLICT') {
+        Alert.alert(
+          'Agendamento em outra estética',
+          'Você já tem um serviço agendado em outra estética nesta data. Para o mesmo dia, escolha serviços da mesma estética.',
+        );
       } else {
         Alert.alert('Erro', 'Não foi possível realizar o agendamento.');
       }

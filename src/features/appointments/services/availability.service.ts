@@ -13,6 +13,7 @@ import {
 
 import { getShopSettings, type ShopSettings } from '@features/settings';
 import type { VehicleType, CarCategory, AppointmentStatus } from '../domain/appointment.types';
+import { ACTIVE_APPOINTMENT_SET } from '../domain/appointment.constants';
 import { dateUtils } from '@shared/utils/date.utils';
 
 type QDoc = FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.DocumentData>;
@@ -37,9 +38,14 @@ export type AppointmentCreateInput = {
 
 type AppointmentDoc = {
   dayKey?: string;
+  shopId?: string | null;
   startAtMs: number;
   endAtMs: number;
   status: AppointmentStatus;
+};
+
+type UserAppointmentDoc = AppointmentDoc & {
+  whenMs?: number;
 };
 
 export class AvailabilityError extends Error {
@@ -77,6 +83,71 @@ function isNotInPast(slot: Slot): boolean {
 function hasValidDuration(slot: Slot, requiredDuration: number): boolean {
   const actualDuration = (slot.endAtMs - slot.startAtMs) / (60 * 1000);
   return Math.abs(actualDuration - requiredDuration) < 1;
+}
+
+function isActiveAppointmentStatus(status?: AppointmentStatus): boolean {
+  return (ACTIVE_APPOINTMENT_SET as readonly AppointmentStatus[]).includes(
+    status as AppointmentStatus,
+  );
+}
+
+async function getCustomerAppointmentsForDay(
+  customerUid: string,
+  dayKey: string,
+  dayStart: number,
+  dayEnd: number,
+): Promise<UserAppointmentDoc[]> {
+  const db = getFirestore();
+  const appointments = new Map<string, UserAppointmentDoc>();
+
+  const qByDayKey = query(
+    collection(db, 'users', customerUid, 'appointments'),
+    where('dayKey', '==', dayKey),
+  );
+  const snapByDayKey = await getDocs(qByDayKey);
+
+  snapByDayKey.docs.forEach((d: QDoc) => {
+    appointments.set(d.id, d.data() as UserAppointmentDoc);
+  });
+
+  const qByRange = query(
+    collection(db, 'users', customerUid, 'appointments'),
+    where('whenMs', '>=', dayStart),
+    where('whenMs', '<=', dayEnd),
+  );
+  const snapByRange = await getDocs(qByRange);
+
+  snapByRange.docs.forEach((d: QDoc) => {
+    appointments.set(d.id, d.data() as UserAppointmentDoc);
+  });
+
+  return Array.from(appointments.values());
+}
+
+async function assertCustomerCanBookShopOnDay(
+  customerUid: string,
+  shopId: string,
+  dayKey: string,
+  dayStart: number,
+  dayEnd: number,
+) {
+  const customerAppointments = await getCustomerAppointmentsForDay(
+    customerUid,
+    dayKey,
+    dayStart,
+    dayEnd,
+  );
+
+  const hasDifferentShopAppointment = customerAppointments.some(
+    appt => isActiveAppointmentStatus(appt.status) && !!appt.shopId && appt.shopId !== shopId,
+  );
+
+  if (hasDifferentShopAppointment) {
+    throw new AvailabilityError(
+      'Você já possui agendamento em outra estética nesta data.',
+      'CUSTOMER_DAILY_SHOP_CONFLICT',
+    );
+  }
 }
 
 async function getScheduledAppointmentsForDay(
@@ -194,6 +265,8 @@ export async function createAppointmentWithCapacityCheck(input: AppointmentCreat
   const settings = await getShopSettings(shopId);
   const customerName = await getCustomerName(input.customerUid);
   const dayKey = dateUtils.toDayKey(input.startAtMs);
+  const dayStart = dateUtils.startOfDay(new Date(input.startAtMs));
+  const dayEnd = dateUtils.endOfDay(new Date(input.startAtMs));
 
   const slot: Slot = {
     startAtMs: input.startAtMs,
@@ -208,6 +281,8 @@ export async function createAppointmentWithCapacityCheck(input: AppointmentCreat
   if (!isWithinBusinessHours(slot, settings)) {
     throw new AvailabilityError('Horário fora do expediente', 'OUTSIDE_BUSINESS_HOURS');
   }
+
+  await assertCustomerCanBookShopOnDay(input.customerUid, shopId, dayKey, dayStart, dayEnd);
 
   return runTransaction(db, async tx => {
     const qy = query(
