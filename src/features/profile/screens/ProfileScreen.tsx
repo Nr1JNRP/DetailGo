@@ -32,6 +32,7 @@ import { getAuth } from '@react-native-firebase/auth';
 import {
   getFirestore,
   doc,
+  setDoc,
   updateDoc,
   deleteField,
   onSnapshot,
@@ -147,7 +148,7 @@ export default function ProfileScreen() {
         asset.type?.startsWith('image/') ? asset.type : 'image/jpeg'
       };base64,${asset.base64}`;
 
-      await updateDoc(userRef, { photoB64 });
+      await setDoc(userRef, { photoB64 }, { merge: true });
       setProfile(prev => ({ ...prev, photoB64 }));
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar a foto');
