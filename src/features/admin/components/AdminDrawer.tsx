@@ -12,7 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar, History, LogOut, Settings, Store, User } from 'lucide-react-native';
-import { getAuth } from '@react-native-firebase/auth';
+import { getAuth, signOut } from '@react-native-firebase/auth';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
@@ -75,7 +75,7 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
         onPress: async () => {
           try {
             onClose();
-            await auth.signOut();
+            await signOut(auth);
           } catch {
             Alert.alert('Erro', 'Falha ao sair da conta.');
           }

@@ -29,6 +29,13 @@ local.properties
 *.hprof
 .cxx/
 .kotlin/
+# Chaves sensíveis Android (use secrets.properties.example como template)
+android/secrets.properties
+
+# ── React Native build artifacts (gerados em tempo de build, nunca commitar) ──
+android/app/src/main/assets/index.android.bundle
+android/app/src/main/assets/index.android.bundle.map
+android/app/src/main/res/raw/keep.xml
 
 # ── SEGURANÇA: Keystores (nunca subir chaves de assinatura) ──────────────────
 *.keystore

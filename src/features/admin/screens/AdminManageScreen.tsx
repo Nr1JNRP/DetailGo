@@ -26,7 +26,7 @@ import {
   LogOut,
 } from 'lucide-react-native';
 
-import { getAuth } from '@react-native-firebase/auth';
+import { getAuth, signOut } from '@react-native-firebase/auth';
 import { spacing, radii, useAppTheme, type AppColors, typography as T } from '@shared/theme';
 import { formatUtils } from '@shared/utils/format.utils';
 import {
@@ -135,7 +135,7 @@ export default function AdminManageScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await auth.signOut();
+            await signOut(auth);
           } catch {
             Alert.alert('Erro', 'Falha ao sair da conta.');
           }

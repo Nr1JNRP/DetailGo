@@ -6,6 +6,13 @@ apply plugin: "com.facebook.react"
 def enableProguardInReleaseBuilds = false
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// Carrega chaves sensíveis do secrets.properties (não rastreado pelo git)
+def secretsFile = rootProject.file("secrets.properties")
+def secrets = new Properties()
+if (secretsFile.exists()) {
+    secrets.load(new FileInputStream(secretsFile))
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -19,7 +26,7 @@ android {
         versionCode 1
         versionName "1.0"
         manifestPlaceholders = [
-            GOOGLE_MAPS_API_KEY: project.findProperty("GOOGLE_MAPS_API_KEY") ?: ""
+            GOOGLE_MAPS_API_KEY: secrets.getProperty("GOOGLE_MAPS_API_KEY", "")
         ]
     }
     signingConfigs {
