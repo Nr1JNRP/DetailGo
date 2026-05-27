@@ -40,7 +40,7 @@ import { useForm } from '@shared/hooks/useForm';
 import { validationUtils, validationMessages } from '@shared/utils/validation.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
-import { generateGeohash, geocodeAddress } from '@shared/utils/geo.utils';
+import { generateGeohash, geocodeAddress, reverseGeocode } from '@shared/utils/geo.utils';
 import { cepMask, cepOnlyDigits, fetchCep, formatCepAddress } from '@shared/utils/cep.utils';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -252,20 +252,32 @@ export default function RegisterScreen() {
     }
 
     Geolocation.getCurrentPosition(
-      pos => {
+      async pos => {
         const { latitude, longitude } = pos.coords;
-        const address = values.shopAddress.trim();
-        const number = values.shopNumber.trim();
-        const addressWithNumber = number ? `${address}, ${number}` : address || 'Localização atual';
+        const geohash = generateGeohash(latitude, longitude);
+
+        // Reverse geocode para preencher endereço e cidade
+        const reversed = await reverseGeocode({ lat: latitude, lng: longitude });
+
+        if (reversed?.address) handleChange('shopAddress', reversed.address);
+        if (reversed?.city) handleChange('shopCity', reversed.city);
+        if (reversed?.cep) {
+          handleChange('shopCep', reversed.cep);
+          setDisplayCep(cepMask(reversed.cep));
+        }
+
+        const addressLabel = reversed?.address || values.shopAddress.trim() || 'Localização atual';
+        const cityLabel = reversed?.city || values.shopCity.trim() || '';
+
         setShopLocation({
           lat: latitude,
           lng: longitude,
-          address: addressWithNumber,
-          city: values.shopCity.trim() || '',
-          geohash: generateGeohash(latitude, longitude),
+          address: addressLabel,
+          city: cityLabel,
+          geohash,
         });
         setLoadingLocation(false);
-        Alert.alert('Localização obtida!', 'Sua posição atual foi salva.');
+        Alert.alert('Localização obtida!', `${addressLabel}${cityLabel ? `\n${cityLabel}` : ''}`);
       },
       err => {
         setLoadingLocation(false);
@@ -279,8 +291,9 @@ export default function RegisterScreen() {
   };
 
   /**
-   * Confirma o endereço. Usa GPS para coordenadas precisas e mantém o texto
-   * preenchido pelo CEP. Se o GPS falhar, tenta Nominatim como fallback.
+   * Geocodifica o endereço digitado via Nominatim e salva as coordenadas do shop.
+   * Tenta múltiplas variações da query para contornar limitações do Nominatim com
+   * formatos de endereço brasileiro (ex: "Cidade - UF", bairro junto ao logradouro).
    */
   const handleGeocodeAddress = async () => {
     const address = values.shopAddress.trim();
@@ -294,56 +307,45 @@ export default function RegisterScreen() {
 
     setLoadingLocation(true);
 
-    const hasPermission = await ensureLocationPermission();
-    if (!hasPermission) {
+    // Normaliza cidade: "Barueri - SP" → "Barueri, SP"
+    const cityNorm = city.replace(/\s*-\s*/, ', ');
+    // Extrai apenas o nome da cidade (antes do " - ")
+    const cityOnly = city.split(/\s*-\s*/)[0].trim();
+    // Extrai apenas o logradouro (antes de qualquer vírgula — remove bairro)
+    const streetOnly = address.split(',')[0].trim();
+    const addressWithNumber = number ? `${address}, ${number}` : address;
+
+    // Estratégias em ordem decrescente de especificidade
+    const queries = [
+      [streetOnly, number, cityNorm, 'Brasil'].filter(Boolean).join(', '),
+      [streetOnly, cityNorm, 'Brasil'].filter(Boolean).join(', '),
+      [streetOnly, cityOnly, 'Brasil'].filter(Boolean).join(', '),
+      [address, cityOnly, 'Brasil'].filter(Boolean).join(', '),
+    ];
+
+    let coords = null;
+    for (const query of queries) {
+      coords = await geocodeAddress(query);
+      if (coords) break;
+    }
+
+    if (coords) {
+      setShopLocation({
+        lat: coords.lat,
+        lng: coords.lng,
+        address: addressWithNumber,
+        city,
+        geohash: generateGeohash(coords.lat, coords.lng),
+      });
       setLoadingLocation(false);
-      Alert.alert(
-        'Permissão necessária',
-        'Para confirmar o endereço, permita o acesso à localização nas configurações.',
-      );
+      Alert.alert('Localização confirmada', `${addressWithNumber}\n${city}`);
       return;
     }
 
-    Geolocation.getCurrentPosition(
-      pos => {
-        const { latitude, longitude } = pos.coords;
-        const addressWithNumber = number ? `${address}, ${number}` : address;
-        setShopLocation({
-          lat: latitude,
-          lng: longitude,
-          address: addressWithNumber,
-          city,
-          geohash: generateGeohash(latitude, longitude),
-        });
-        setLoadingLocation(false);
-        Alert.alert('Localização confirmada', `${addressWithNumber}\n${city}`);
-      },
-      async err => {
-        // Fallback: tenta geocodificar via Nominatim
-        const fullAddress = [address, number, city, 'Brasil'].filter(Boolean).join(', ');
-        const coords = await geocodeAddress(fullAddress);
-
-        if (coords) {
-          const addressWithNumber = number ? `${address}, ${number}` : address;
-          setShopLocation({
-            lat: coords.lat,
-            lng: coords.lng,
-            address: addressWithNumber,
-            city,
-            geohash: generateGeohash(coords.lat, coords.lng),
-          });
-          setLoadingLocation(false);
-          Alert.alert('Localização confirmada', `${addressWithNumber}\n${city}`);
-          return;
-        }
-
-        setLoadingLocation(false);
-        Alert.alert(
-          'Não foi possível obter a localização',
-          `GPS: ${err?.message ?? 'falhou'}\n\nVerifique se o GPS está ativado.`,
-        );
-      },
-      { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 },
+    setLoadingLocation(false);
+    Alert.alert(
+      'Endereço não encontrado',
+      'Não foi possível localizar o endereço. Verifique os dados ou use "Usar minha localização atual" estando no local da estética.',
     );
   };
 
@@ -387,8 +389,8 @@ export default function RegisterScreen() {
 
     if (accountType === 'owner') {
       Alert.alert(
-        '🎉 Estética criada!',
-        'Sua estética foi cadastrada com sucesso!\n\nAtive sua assinatura para aparecer no mapa e receber clientes.',
+        'Estética criada!',
+        'Sua estética foi cadastrada com sucesso!\n\nVocê tem 7 dias grátis para usar o app. Após isso, ative sua assinatura para continuar visível no mapa.',
         [{ text: 'Entendido!' }],
       );
     } else {
@@ -555,9 +557,9 @@ export default function RegisterScreen() {
               error={touched.shopCity ? errors.shopCity : undefined}
             />
 
-            {/* Botão confirmar com GPS */}
+            {/* Botão confirmar endereço */}
             <TouchableOpacity
-              style={[styles.btn, { backgroundColor: D.surface }]}
+              style={[styles.btn, { backgroundColor: D.surface, justifyContent: 'center' }]}
               onPress={handleGeocodeAddress}
               disabled={loadingLocation}
               activeOpacity={0.85}
@@ -565,10 +567,9 @@ export default function RegisterScreen() {
               {loadingLocation ? (
                 <ActivityIndicator color={D.primary} />
               ) : (
-                <>
-                  <Navigation size={16} color={D.primary} />
-                  <Text style={[styles.btnText, { color: D.primary }]}>Confirmar com GPS</Text>
-                </>
+                <Text style={[styles.btnText, { color: D.primary, textAlign: 'center' }]}>
+                  Confirmar endereço
+                </Text>
               )}
             </TouchableOpacity>
 
@@ -611,7 +612,11 @@ export default function RegisterScreen() {
 
           <View style={styles.locationCta}>
             <TouchableOpacity
-              style={[styles.btn, (!shopLocation || isSubmitting) && styles.btnDisabled]}
+              style={[
+                styles.btn,
+                { justifyContent: 'center' },
+                (!shopLocation || isSubmitting) && styles.btnDisabled,
+              ]}
               onPress={handleSubmit}
               disabled={!shopLocation || isSubmitting}
               activeOpacity={0.85}
@@ -619,12 +624,7 @@ export default function RegisterScreen() {
               {isSubmitting ? (
                 <ActivityIndicator color={D.onPrimary} />
               ) : (
-                <>
-                  <Text style={styles.btnText}>Criar estética e conta</Text>
-                  <View style={styles.btnArrow}>
-                    <ArrowRight size={18} color={D.onPrimary} />
-                  </View>
-                </>
+                <Text style={styles.btnText}>Criar estética e conta</Text>
               )}
             </TouchableOpacity>
           </View>

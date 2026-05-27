@@ -5,12 +5,12 @@ import { View, ActivityIndicator } from 'react-native';
 import type { RootStackParamList } from '@app/types';
 
 import { useAuth, LoginScreen, RegisterScreen } from '@features/auth';
+import { SubscriptionScreen } from '@features/subscription';
 import { MapScreen } from '@features/map';
 import { DashboardScreen } from '@features/dashboard';
 import { AppointmentScreen, MyAppointmentsScreen, HistoryScreen } from '@features/appointments';
 import { AdminDashboardScreen, AdminManageScreen, AdminHistoryScreen } from '@features/admin';
 import { ProfileScreen } from '@features/profile';
-import { SubscriptionScreen } from '@features/subscription';
 import { useShop, ShopProfileScreen } from '@features/shops';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -19,7 +19,9 @@ export default function RootNavigator() {
   const { user, initializing } = useAuth();
   const { userRole, loading: loadingShop, isSubscriptionActive } = useShop();
 
-  if (initializing || (user && loadingShop)) {
+  // Aguarda tanto o loading do shop quanto a resolução do role para evitar
+  // flicker entre stacks (ex: stack de cliente piscando antes do owner carregar)
+  if (initializing || (user && (loadingShop || userRole === null))) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
@@ -34,7 +36,7 @@ export default function RootNavigator() {
       {user ? (
         isOwner ? (
           isSubscriptionActive ? (
-            // Owner com assinatura ativa → painel completo
+            // Owner com trial/assinatura ativa → painel completo
             <Stack.Group>
               <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
               <Stack.Screen name="AdminManage" component={AdminManageScreen} />
