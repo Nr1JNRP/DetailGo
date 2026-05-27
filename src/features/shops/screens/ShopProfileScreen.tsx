@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Platform,
   Pressable,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -102,11 +102,7 @@ export default function ShopProfileScreen() {
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={styles.content}>
           <View style={styles.heroCard}>
             <Text style={styles.shopName}>{shop.name}</Text>
             {shop.location?.address ? (
@@ -114,7 +110,7 @@ export default function ShopProfileScreen() {
                 <MapPin size={14} color={D.ink2} />
                 <Text style={styles.metaText} numberOfLines={2}>
                   {shop.location.address}
-                  {shop.location.city ? ` · ${shop.location.city}` : ''}
+                  {shop.location.city ? ` - ${shop.location.city}` : ''}
                 </Text>
               </View>
             ) : null}
@@ -123,7 +119,7 @@ export default function ShopProfileScreen() {
               <View style={styles.row}>
                 <Clock size={14} color={D.ink2} />
                 <Text style={styles.metaText}>
-                  Seg-Sex · {String(hours.open).padStart(2, '0')}h às{' '}
+                  Seg-Sex - {String(hours.open).padStart(2, '0')}h as{' '}
                   {String(hours.close).padStart(2, '0')}h
                 </Text>
               </View>
@@ -147,14 +143,16 @@ export default function ShopProfileScreen() {
             </View>
           ) : (
             <View style={styles.servicesList}>
-              {services.map(svc => (
-                <ServiceRow key={svc.id} service={svc} colors={D} />
-              ))}
+              <FlatList
+                data={services}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => <ServiceRow service={item} colors={D} />}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.servicesListContent}
+              />
             </View>
           )}
-
-          <View style={{ height: 100 + bottomInset }} />
-        </ScrollView>
+        </View>
 
         <View style={styles.ctaWrap}>
           <Pressable
@@ -230,8 +228,12 @@ function createStyles(D: AppColors, bottomInset = 0) {
       color: D.ink,
     },
 
-    scroll: { flex: 1 },
-    scrollContent: { paddingHorizontal: 20, paddingTop: 18 },
+    content: {
+      flex: 1,
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: 96 + bottomInset,
+    },
 
     heroCard: {
       backgroundColor: D.card,
@@ -294,13 +296,18 @@ function createStyles(D: AppColors, bottomInset = 0) {
     },
 
     servicesList: {
+      flex: 1,
       borderRadius: 16,
       borderWidth: 1,
       borderColor: D.borderStrong,
       backgroundColor: D.card,
       overflow: 'hidden',
     },
+    servicesListContent: {
+      paddingBottom: 2,
+    },
     serviceRow: {
+      minHeight: 94,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,

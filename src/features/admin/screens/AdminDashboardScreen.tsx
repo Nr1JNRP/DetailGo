@@ -245,7 +245,7 @@ export default function AdminDashboardScreen() {
         const expiredScheduled = base.filter(
           it =>
             it.status === 'scheduled' &&
-            now > it.startAtMs + NO_SHOW_GRACE_MS &&
+            now >= it.startAtMs + NO_SHOW_GRACE_MS &&
             !noShowMarkedRef.current.has(it.id),
         );
 

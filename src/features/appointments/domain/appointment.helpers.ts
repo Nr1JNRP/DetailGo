@@ -24,7 +24,7 @@ export const getAppointmentStatusConfig = (
 };
 
 export function isAppointmentExpired(startAtMs: number): boolean {
-  return Date.now() > startAtMs + NO_SHOW_GRACE_MS;
+  return Date.now() >= startAtMs + NO_SHOW_GRACE_MS;
 }
 
 export function getEffectiveStatus(

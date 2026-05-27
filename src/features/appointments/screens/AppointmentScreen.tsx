@@ -839,7 +839,7 @@ export default function AppointmentScreen() {
                 <Text style={styles.confirmButtonText}>
                   Confirmar · {formatUtils.currency(finalPrice)}
                 </Text>
-                <ArrowRight size={18} color={D.onPrimary} />
+                <ArrowRight size={18} color={D.onPrimary} style={styles.confirmButtonIcon} />
               </>
             ) : (
               <Text style={styles.confirmButtonText}>Selecione os dados</Text>
@@ -1187,7 +1187,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
       backgroundColor: D.primary,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      justifyContent: 'center',
       paddingHorizontal: spacing.lg,
       shadowColor: D.primary,
       shadowOpacity: 0.25,
@@ -1200,10 +1200,15 @@ function createStyles(D: AppColors, bottomInset = 0) {
       shadowOpacity: 0,
     },
     confirmButtonText: {
+      textAlign: 'center',
       fontSize: T.size.body,
       lineHeight: T.lineHeight.body,
       fontFamily: T.family.extraBold,
       color: D.onPrimary,
+    },
+    confirmButtonIcon: {
+      position: 'absolute',
+      right: spacing.lg,
     },
 
     modalOverlay: {
