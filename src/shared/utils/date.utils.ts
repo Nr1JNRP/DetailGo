@@ -89,7 +89,7 @@ export const dateUtils = {
   },
 
   isExpired: (startAtMs: number, graceMs: number = 15 * 60 * 1000): boolean => {
-    return Date.now() > startAtMs + graceMs;
+    return Date.now() >= startAtMs + graceMs;
   },
 
   isToday: (date: Date): boolean => {

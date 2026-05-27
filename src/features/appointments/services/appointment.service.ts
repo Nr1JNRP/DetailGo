@@ -12,7 +12,7 @@ import {
 } from '@react-native-firebase/firestore';
 import { getAuth } from '@react-native-firebase/auth';
 import type { AppointmentStatus } from '../domain/appointment.types';
-import { ACTIVE_APPOINTMENT_SET } from '../domain/appointment.constants';
+import { ACTIVE_APPOINTMENT_SET, NO_SHOW_GRACE_MS } from '../domain/appointment.constants';
 import { mapFirestoreError } from '@shared/utils/firebase.utils';
 
 export type CancelAppointmentResult =
@@ -144,6 +144,51 @@ export async function cancelAppointment(
     return { ok: true, message: 'Agendamento cancelado com sucesso!' };
   } catch (error: any) {
     return { ok: false, message: mapFirestoreError(error) };
+  }
+}
+
+export async function markExpiredScheduledAppointmentsAsNoShow(
+  customerUid: string,
+  shopId: string,
+): Promise<number> {
+  try {
+    const db = getFirestore();
+    const now = Date.now();
+
+    const userAppointmentsQuery = query(
+      collection(db, 'shops', shopId, 'appointments'),
+      where('customerUid', '==', customerUid),
+    );
+
+    const snap = await getDocs(userAppointmentsQuery);
+    const expired = snap.docs.filter((d: { data: () => unknown }) => {
+      const data = d.data() as { status?: AppointmentStatus; startAtMs?: number };
+      const startAtMs = Number(data.startAtMs ?? 0);
+      return data.status === 'scheduled' && startAtMs > 0 && now >= startAtMs + NO_SHOW_GRACE_MS;
+    });
+
+    if (expired.length === 0) return 0;
+
+    const batch = writeBatch(db);
+
+    expired.forEach((d: any) => {
+      const payload = {
+        status: 'no_show' as AppointmentStatus,
+        noShowAt: serverTimestamp(),
+        noShowReason: 'auto_expired',
+        updatedAt: serverTimestamp(),
+      };
+
+      batch.update(d.ref, payload);
+      batch.set(doc(db, 'users', customerUid, 'appointments', d.id), payload, { merge: true });
+    });
+
+    await batch.commit();
+    await clearShopFavoriteIfNoActive(customerUid, shopId);
+
+    return expired.length;
+  } catch {
+    return 0;
   }
 }
 

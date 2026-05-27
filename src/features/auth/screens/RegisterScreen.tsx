@@ -474,7 +474,7 @@ export default function RegisterScreen() {
 
   const isOwner = accountType === 'owner';
 
-  // ── Step 3: Localização da estética (owner) ────────────────
+  // -- Step 3: Localizacao da estetica (owner)
   if (isOwner && locationStep) {
     return (
       <KeyboardAvoidingView
@@ -482,22 +482,23 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <StatusBar barStyle={isLight ? 'dark-content' : 'light-content'} backgroundColor={D.bg} />
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          <View style={styles.step2Header}>
-            <Text style={styles.stepIndicator}>03 / 03 · LOCALIZAÇÃO</Text>
-            <Text style={styles.step2Title}>{'Onde fica\nsua estética?'}</Text>
-            <TouchableOpacity style={styles.typePill} onPress={() => setLocationStep(false)}>
-              <ArrowLeft size={12} color={D.primary} />
-              <Text style={styles.typePillText}>Voltar</Text>
-            </TouchableOpacity>
+        <View style={styles.locationFormContent}>
+          <View style={styles.locationHeader}>
+            <View style={styles.locationTopBar}>
+              <TouchableOpacity
+                style={styles.locationBackButton}
+                onPress={() => setLocationStep(false)}
+              >
+                <ArrowLeft size={21} color={D.ink} strokeWidth={2.3} />
+              </TouchableOpacity>
+
+              <Text style={styles.locationTitle} numberOfLines={2}>
+                Onde fica sua estética?
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.fields}>
+          <View style={styles.locationFields}>
             {/* CEP com busca automática */}
             <View style={styles.cepRow}>
               <DField
@@ -515,7 +516,6 @@ export default function RegisterScreen() {
                 placeholder="00000-000"
                 keyboardType="numeric"
                 maxLength={9}
-                containerStyle={styles.cepField}
                 error={undefined}
               />
               {loadingCep && (
@@ -609,7 +609,7 @@ export default function RegisterScreen() {
             )}
           </View>
 
-          <View style={styles.cta}>
+          <View style={styles.locationCta}>
             <TouchableOpacity
               style={[styles.btn, (!shopLocation || isSubmitting) && styles.btnDisabled]}
               onPress={handleSubmit}
@@ -628,9 +628,7 @@ export default function RegisterScreen() {
               )}
             </TouchableOpacity>
           </View>
-
-          <View style={{ height: 24 }} />
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     );
   }
@@ -642,24 +640,23 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar barStyle={isLight ? 'dark-content' : 'light-content'} backgroundColor={D.bg} />
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
+      <View style={styles.formContent}>
         {/* Header */}
         <View style={styles.step2Header}>
-          <Text style={styles.stepIndicator}>02 / 02 · CADASTRO</Text>
-          <Text style={styles.step2Title}>{isOwner ? 'Cadastrar\nestética' : 'Criar\nconta'}</Text>
+          <View style={styles.registerTopBar}>
+            <TouchableOpacity
+              style={styles.registerBackButton}
+              onPress={() => setAccountType(null)}
+            >
+              <ArrowLeft size={21} color={D.ink} strokeWidth={2.3} />
+            </TouchableOpacity>
 
-          {/* Type switcher pill */}
-          <TouchableOpacity style={styles.typePill} onPress={() => setAccountType(null)}>
-            <ArrowLeft size={12} color={D.primary} />
-            <Text style={styles.typePillText}>
-              {isOwner ? 'Dono de estética' : 'Cliente'} · trocar
+            <Text style={styles.step2Title} numberOfLines={1}>
+              {isOwner ? 'Cadastrar estética' : 'Criar conta'}
             </Text>
-          </TouchableOpacity>
+
+            <View style={styles.registerHeaderSpacer} />
+          </View>
         </View>
 
         {/* Campos */}
@@ -799,9 +796,7 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        <View style={{ height: 24 }} />
-      </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -876,6 +871,18 @@ function createStyles(D: AppColors, bottomInset = 0) {
       paddingHorizontal: 22,
       paddingTop: 60,
       paddingBottom: 24 + bottomInset,
+    },
+    formContent: {
+      flex: 1,
+      paddingHorizontal: 22,
+      paddingTop: 42,
+      paddingBottom: 14 + bottomInset,
+    },
+    locationFormContent: {
+      flex: 1,
+      paddingHorizontal: 22,
+      paddingTop: 42,
+      paddingBottom: 14 + bottomInset,
     },
 
     // ── Step 1
@@ -999,23 +1006,75 @@ function createStyles(D: AppColors, bottomInset = 0) {
 
     // ── Step 2
     step2Header: {
-      marginBottom: 24,
+      marginBottom: 34,
+    },
+    registerTopBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    registerBackButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: D.surface,
+      borderWidth: 1,
+      borderColor: D.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    registerHeaderSpacer: {
+      width: 44,
+      height: 44,
     },
     step2Title: {
-      fontSize: 30,
+      flex: 1,
+      fontSize: 27,
       fontFamily: T.family.bold,
       color: D.ink,
       letterSpacing: -0.8,
       lineHeight: 32,
-      marginBottom: 12,
-      marginTop: 8,
+      marginBottom: 0,
+      marginTop: 0,
+      textAlign: 'center',
+    },
+    locationHeader: {
+      marginBottom: 26,
+    },
+    locationTopBar: {
+      minHeight: 62,
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    locationBackButton: {
+      position: 'absolute',
+      left: 0,
+      top: 9,
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: D.surface,
+      borderWidth: 1,
+      borderColor: D.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2,
+    },
+    locationTitle: {
+      fontSize: 25,
+      fontFamily: T.family.bold,
+      color: D.ink,
+      letterSpacing: -0.6,
+      lineHeight: 29,
+      textAlign: 'center',
+      paddingHorizontal: 54,
     },
     typePill: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
       alignSelf: 'flex-start',
-      paddingHorizontal: 10,
+      paddingHorizontal: 11,
       paddingVertical: 5,
       borderRadius: 999,
       backgroundColor: D.primaryLight,
@@ -1023,28 +1082,32 @@ function createStyles(D: AppColors, bottomInset = 0) {
       borderColor: D.borderFocus,
     },
     typePillText: {
-      fontSize: 11,
+      fontSize: 12,
       fontFamily: T.family.semiBold,
       color: D.primary,
     },
 
     // ── Fields
     fields: {
-      gap: 12,
-      marginBottom: 24,
+      gap: 7,
+      marginBottom: 18,
+    },
+    locationFields: {
+      gap: 7,
+      marginBottom: 14,
     },
     row: {
       flexDirection: 'row',
-      gap: 10,
+      gap: 8,
     },
     col: {
       flex: 1,
     },
     fieldWrap: {
-      gap: 5,
+      gap: 3,
     },
     fieldLabel: {
-      fontSize: 10,
+      fontSize: 9,
       fontFamily: T.family.semiBold,
       color: D.ink3,
       letterSpacing: 0.5,
@@ -1052,25 +1115,25 @@ function createStyles(D: AppColors, bottomInset = 0) {
     field: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
-      height: 50,
+      gap: 9,
+      height: 48,
       borderRadius: 12,
       backgroundColor: D.card,
       borderWidth: 1,
       borderColor: D.border,
-      paddingHorizontal: 14,
+      paddingHorizontal: 12,
     },
     fieldError: {
       borderColor: D.accent,
     },
     fieldInput: {
       flex: 1,
-      fontSize: 14,
+      fontSize: 13,
       color: D.ink,
       fontFamily: T.family.medium,
     },
     fieldErrorText: {
-      fontSize: 11,
+      fontSize: 10,
       fontFamily: T.family.regular,
       color: D.accent,
       marginTop: 2,
@@ -1081,7 +1144,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
       position: 'relative',
     },
     cepField: {
-      flex: 1,
+      width: '100%',
     },
     cepBadge: {
       position: 'absolute',
@@ -1132,16 +1195,22 @@ function createStyles(D: AppColors, bottomInset = 0) {
 
     // ── CTA
     cta: {
-      gap: 16,
+      gap: 10,
+      marginTop: 'auto',
+    },
+    locationCta: {
+      gap: 10,
+      marginTop: 'auto',
+      paddingTop: 12,
     },
     btn: {
-      height: 54,
+      height: 50,
       borderRadius: 14,
       backgroundColor: D.primary,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 22,
+      paddingHorizontal: 18,
     },
     btnDisabled: {
       opacity: 0.35,
@@ -1152,9 +1221,9 @@ function createStyles(D: AppColors, bottomInset = 0) {
       color: D.onPrimary,
     },
     btnArrow: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
       backgroundColor: D.primaryLight,
       alignItems: 'center',
       justifyContent: 'center',
@@ -1163,6 +1232,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
       flexDirection: 'row',
       justifyContent: 'center',
       alignItems: 'center',
+      minHeight: 28,
     },
     loginText: {
       fontSize: 14,

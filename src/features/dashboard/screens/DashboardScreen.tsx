@@ -30,6 +30,7 @@ import {
   CircleUserRound,
   History,
   Home,
+  Info,
   LogOut,
   MapPin,
   Menu,
@@ -45,6 +46,7 @@ import {
   ACTIVE_APPOINTMENT_SET,
   clearShopFavoriteIfNoActive,
   getAppointmentStatusConfig,
+  markExpiredScheduledAppointmentsAsNoShow,
   useDashboardAppointments,
 } from '@features/appointments';
 import type { RootStackParamList } from '@app/types';
@@ -110,13 +112,26 @@ export default function DashboardScreen() {
   const homeServices = shopServices;
   const appointmentCardWidth = Math.max(280, windowWidth - 72);
 
-  // Garbage collection: se tem shopId mas zero ativos, desvincula
+  // Consolida agendamentos expirados e limpa a estetica quando nao ha proximos servicos.
   useEffect(() => {
     if (loadingAppointments) return;
     if (!shopId || !uid) return;
-    if (activeAppointments.length > 0) return;
 
-    clearShopFavoriteIfNoActive(uid, shopId);
+    let cancelled = false;
+
+    const syncExpiredAppointments = async () => {
+      await markExpiredScheduledAppointmentsAsNoShow(uid, shopId);
+      if (cancelled) return;
+      if (activeAppointments.length === 0) {
+        await clearShopFavoriteIfNoActive(uid, shopId);
+      }
+    };
+
+    syncExpiredAppointments();
+
+    return () => {
+      cancelled = true;
+    };
   }, [loadingAppointments, shopId, uid, activeAppointments.length]);
 
   useEffect(() => {
@@ -202,6 +217,19 @@ export default function DashboardScreen() {
       return;
     }
     navigation.navigate('Appointment');
+  };
+
+  const showShopInfo = () => {
+    if (!shop) return;
+    const address = [shop.location?.address, shop.location?.city].filter(Boolean).join(' - ');
+    Alert.alert(
+      shop.name,
+      [
+        address ? `Endereço: ${address}` : 'Endereço não informado',
+        'Atendimento: Seg-Sex - 08h as 18h',
+        'Telefone: não informado',
+      ].join('\n'),
+    );
   };
 
   return (
@@ -303,10 +331,10 @@ export default function DashboardScreen() {
                   </View>
                   <TouchableOpacity
                     style={styles.currentShopSwap}
-                    onPress={() => navigation.navigate('Map')}
+                    onPress={showShopInfo}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.currentShopSwapText}>Trocar</Text>
+                    <Info size={18} color={D.primary} strokeWidth={2.2} />
                   </TouchableOpacity>
                 </View>
               )}
@@ -322,7 +350,7 @@ export default function DashboardScreen() {
                 <View style={styles.scheduleTextWrap}>
                   <Text style={styles.scheduleTitle}>Agendar serviço</Text>
                   <Text style={styles.scheduleSubtitle}>
-                    {shop ? `em ${shop.name}` : '30s · sem ligar'}
+                    {shop ? `em ${shop.name}` : '30s - sem ligar'}
                   </Text>
                 </View>
                 <View style={styles.scheduleArrow}>
@@ -533,26 +561,34 @@ function AppointmentCard({
           <Calendar size={22} color={D.primary} />
         </View>
         <View style={styles.appointmentInfo}>
-          <Text style={styles.appointmentTitle} numberOfLines={1}>
-            {appt.serviceLabel ?? 'Serviço'}
-          </Text>
-          <Text style={styles.appointmentMeta} numberOfLines={1}>
-            {dateUtils.formatDate(appt.startAtMs)} · {dateUtils.formatHour(appt.startAtMs)} ·{' '}
-            {appt.carCategory ?? appt.vehicleType}
-          </Text>
-          <View
-            style={[
-              styles.appointmentStatusBadge,
-              { backgroundColor: statusConfig.color + '20', borderColor: statusConfig.color },
-            ]}
-          >
-            <View style={[styles.appointmentStatusDot, { backgroundColor: statusConfig.color }]} />
-            <Text style={[styles.appointmentStatusText, { color: statusConfig.color }]}>
-              {statusConfig.label}
+          <View style={styles.appointmentTitleRow}>
+            <Text style={styles.appointmentTitle} numberOfLines={1}>
+              {appt.serviceLabel ?? 'Serviço'}
             </Text>
+            <Text style={styles.appointmentPrice}>{formatUtils.currencyCompact(appt.price)}</Text>
+          </View>
+          <Text style={styles.appointmentMeta} numberOfLines={1}>
+            {dateUtils.formatDate(appt.startAtMs)} - {dateUtils.formatHour(appt.startAtMs)}
+          </Text>
+          <View style={styles.appointmentFooter}>
+            <Text style={styles.appointmentVehicle} numberOfLines={1}>
+              {appt.carCategory ?? appt.vehicleType}
+            </Text>
+            <View
+              style={[
+                styles.appointmentStatusBadge,
+                { backgroundColor: statusConfig.color + '20', borderColor: statusConfig.color },
+              ]}
+            >
+              <View
+                style={[styles.appointmentStatusDot, { backgroundColor: statusConfig.color }]}
+              />
+              <Text style={[styles.appointmentStatusText, { color: statusConfig.color }]}>
+                {statusConfig.label}
+              </Text>
+            </View>
           </View>
         </View>
-        <Text style={styles.appointmentPrice}>{formatUtils.currencyCompact(appt.price)}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -770,16 +806,14 @@ function createStyles(D: AppColors, bottomInset = 0) {
       marginTop: 1,
     },
     currentShopSwap: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 999,
+      width: 38,
+      height: 38,
+      borderRadius: 19,
       borderWidth: 1,
       borderColor: D.borderFocus,
-    },
-    currentShopSwapText: {
-      fontSize: T.size.caption,
-      color: D.primary,
-      fontFamily: T.family.bold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: D.primaryLight,
     },
 
     scheduleCard: {
@@ -930,7 +964,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
       width: 12,
     },
     appointmentCard: {
-      minHeight: 104,
+      minHeight: 118,
       borderRadius: 17,
       backgroundColor: D.card,
       borderWidth: 1.5,
@@ -942,7 +976,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
     appointmentCardTop: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
+      gap: 12,
     },
     appointmentIcon: {
       width: 40,
@@ -952,13 +986,19 @@ function createStyles(D: AppColors, bottomInset = 0) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    appointmentInfo: { flex: 1 },
+    appointmentInfo: { flex: 1, minWidth: 0 },
+    appointmentTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+      marginBottom: 4,
+    },
     appointmentStatusBadge: {
       alignSelf: 'flex-start',
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
-      marginTop: 6,
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 999,
@@ -978,20 +1018,36 @@ function createStyles(D: AppColors, bottomInset = 0) {
       color: D.ink,
       fontSize: T.size.body,
       fontFamily: T.family.bold,
-      marginBottom: 4,
+      flex: 1,
+      minWidth: 0,
     },
     appointmentMeta: {
       color: D.ink3,
       fontSize: T.size.secondary,
       fontFamily: T.family.medium,
     },
+    appointmentFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+      marginTop: 8,
+    },
+    appointmentVehicle: {
+      flex: 1,
+      color: D.ink2,
+      fontSize: T.size.caption,
+      fontFamily: T.family.bold,
+    },
     appointmentPrice: {
       color: D.primary,
       fontSize: T.size.secondary,
       fontFamily: T.family.bold,
+      flexShrink: 0,
     },
     emptyCard: {
       marginHorizontal: 20,
+      marginTop: 20,
       minHeight: 224,
       borderRadius: 20,
       backgroundColor: D.card,
@@ -1000,7 +1056,8 @@ function createStyles(D: AppColors, bottomInset = 0) {
       borderColor: D.borderStrong,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 26,
+      paddingHorizontal: 24,
+      paddingVertical: 26,
     },
     emptyIconWrap: {
       width: 68,
@@ -1036,16 +1093,17 @@ function createStyles(D: AppColors, bottomInset = 0) {
       textAlign: 'center',
     },
     emptyButton: {
-      height: 36,
-      minWidth: 120,
-      borderRadius: 18,
+      minHeight: 44,
+      minWidth: 172,
+      borderRadius: 22,
       borderWidth: 2,
       borderColor: D.primary,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 6,
-      marginTop: 15,
+      gap: 8,
+      marginTop: 18,
+      paddingHorizontal: 18,
     },
     emptyButtonText: {
       color: D.primary,

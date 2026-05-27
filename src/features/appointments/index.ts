@@ -29,7 +29,10 @@ export {
   getAvailableSlotsForDay,
 } from './services/availability.service';
 export type { Slot } from './services/availability.service';
-export { clearShopFavoriteIfNoActive } from './services/appointment.service';
+export {
+  clearShopFavoriteIfNoActive,
+  markExpiredScheduledAppointmentsAsNoShow,
+} from './services/appointment.service';
 
 // Components
 export { default as AppointmentCard } from './components/AppointmentCard';

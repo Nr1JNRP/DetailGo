@@ -30,7 +30,7 @@ export async function updateAppointmentStatus(params: {
   const currentStatus = (globalData.status ?? 'scheduled') as AppointmentStatus;
 
   if (startAtMs) {
-    const expired = Date.now() > startAtMs + NO_SHOW_GRACE_MS;
+    const expired = Date.now() >= startAtMs + NO_SHOW_GRACE_MS;
 
     if (
       expired &&
