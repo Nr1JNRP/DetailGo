@@ -22,6 +22,7 @@
     "apk:release:clean": "powershell -ExecutionPolicy Bypass -File scripts/build-apk.ps1 -BuildType release -Clean"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.4.5",
     "@react-native-community/geolocation": "^3.4.0",
     "@react-native-firebase/app": "^23.4.1",

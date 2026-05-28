@@ -4,7 +4,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, useAuth } from '@features/auth';
 import { ShopProvider, useShop } from '@features/shops/context/ShopContext';
 import { ThemeProvider, typography } from '@shared/theme';
-import { SplashScreen } from '@shared/components/SplashScreen';
 import BootSplash from 'react-native-bootsplash';
 import RootNavigator from './src/navigation/RootNavigator';
 
@@ -30,8 +29,6 @@ function AppContent() {
   const [minimumSplashDone, setMinimumSplashDone] = useState(false);
 
   useEffect(() => {
-    BootSplash.hide({ fade: true });
-
     const timer = setTimeout(() => {
       setMinimumSplashDone(true);
     }, 2000);
@@ -41,8 +38,14 @@ function AppContent() {
 
   const appReady = minimumSplashDone && !initializing && !(user && loadingShop);
 
+  useEffect(() => {
+    if (appReady) {
+      BootSplash.hide({ fade: true });
+    }
+  }, [appReady]);
+
   if (!appReady) {
-    return <SplashScreen />;
+    return null;
   }
 
   return (
