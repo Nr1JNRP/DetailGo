@@ -2,6 +2,69 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.1](https://github.com/jnrpalma/DetailGo/compare/v1.0.0...v1.0.1) (2026-05-28)
+
+### 🔧 Build e configuração
+
+- **apk:** adiciona script de geracao ([ac0037c](https://github.com/jnrpalma/DetailGo/commit/ac0037c0b1d12c11f727cece3233ad79d9e011b5))
+- **ci:** amplia checks do github ([02081ef](https://github.com/jnrpalma/DetailGo/commit/02081efe24f187eb90b396c2c4fd66e79e059fb5))
+- **deps:** atualiza package-lock apos redesign auth screens ([61f910d](https://github.com/jnrpalma/DetailGo/commit/61f910dc662327d1ad0c6e55d9f72b4305d4624d))
+- **deps:** sincroniza package-lock com dependencias atuais ([eb1a69d](https://github.com/jnrpalma/DetailGo/commit/eb1a69da4198e2ac0ab8df0a443018b2a07c9d76))
+
+### ♻️ Refatorações
+
+- **architecture:** standardize feature imports ([dd8915f](https://github.com/jnrpalma/DetailGo/commit/dd8915f9db5ee4bb8e4e7825add5ff9b1a7927a2))
+- **arquitetura:** melhora organizacao do projeto ([e216417](https://github.com/jnrpalma/DetailGo/commit/e216417eb175f2bb86e92d30db6adefb8189a3e6))
+- **theme:** centraliza paletas de cores em colors.ts ([a0795bd](https://github.com/jnrpalma/DetailGo/commit/a0795bded2f2d754741ed607bba42369f0dd101c))
+
+### ✅ Testes
+
+- **jest:** estabiliza renderizacao do app ([aa8206e](https://github.com/jnrpalma/DetailGo/commit/aa8206ecd8348fa84827def7fe2cc72bcc2a31bb))
+
+### 🐛 Correções de bugs
+
+- **admindashboard:** ajusta fluxo card admin ([3f0944c](https://github.com/jnrpalma/DetailGo/commit/3f0944c64be0348a9e5bb11dfdaab00bff166926))
+- **dashboard:** ajusta layout card serviços ([035bc75](https://github.com/jnrpalma/DetailGo/commit/035bc75367e25464ea8af8249f04ba1d422dc4d8))
+- **dashboard:** corrige duração do próximo agendamento ([23c4a3d](https://github.com/jnrpalma/DetailGo/commit/23c4a3d196f854b395f1b3801ac19eca3d3ffb67))
+- **lint:** remove shopid nao usado em rootnavigator ([0b5e139](https://github.com/jnrpalma/DetailGo/commit/0b5e139d21111ac2254d60dbbb158dea8e4d0232))
+- **profile:** corrige upload de avatar na apk ([bbecf63](https://github.com/jnrpalma/DetailGo/commit/bbecf63ed50d16731d9e903bf25dba8225b48417))
+- **shops:** corrige geocoding, seguranca e cadastro de estetica ([78d9318](https://github.com/jnrpalma/DetailGo/commit/78d9318d4ca470b36f3f3166d35e15c838ce914b))
+- **tsconfig:** update path aliases ([f9e22c6](https://github.com/jnrpalma/DetailGo/commit/f9e22c657ed2bd592076d2059d66eebbf6da4181))
+
+### ✨ Novas funcionalidades
+
+- **admin:** padroniza dashboard com perfil foto e drawer ([2b34745](https://github.com/jnrpalma/DetailGo/commit/2b34745207ebd12e1f5fa2f8d7be46350fc4cbc9))
+- **admin:** redesenha historico para tema garage dark ([119c89b](https://github.com/jnrpalma/DetailGo/commit/119c89bfd52d45a119eba1cd2c13f8a100a986f4))
+- **admin:** redesenha home e adiciona logout nas configuracoes ([227c9b7](https://github.com/jnrpalma/DetailGo/commit/227c9b7f613a41338112f2e5eb69a4ed1801445e))
+- **admin:** redesign gerenciar loja, dias de atendimento e fonte inter ([66dba3a](https://github.com/jnrpalma/DetailGo/commit/66dba3a282362caf72b7bfa4ddd553a94190e770))
+- **app:** atualiza icone e nome do app ([8abee4f](https://github.com/jnrpalma/DetailGo/commit/8abee4f54af7684d215efb31ee5a647e850c5c78))
+- **appointment:** redesign da tela de agendar no padrao dark ([697a5c4](https://github.com/jnrpalma/DetailGo/commit/697a5c45b441e3a9eece32fd942305b96021adff))
+- **appointments:** restringe estetica por dia ([cbe2cc6](https://github.com/jnrpalma/DetailGo/commit/cbe2cc6131f54230ce6deffe67401b0a259ebc06))
+- **auth:** redesign login e register para tema garage dark ([637776a](https://github.com/jnrpalma/DetailGo/commit/637776a50f39e2ae5eb05bb914f76257eb599d25)), closes [#0B0D0](https://github.com/jnrpalma/DetailGo/issues/0B0D0) [#D4FF3](https://github.com/jnrpalma/DetailGo/issues/D4FF3) [#191D20](https://github.com/jnrpalma/DetailGo/issues/191D20)
+- **cliente:** adiciona tema claro ([e90c5f6](https://github.com/jnrpalma/DetailGo/commit/e90c5f6711bfc248159fbed8ca095851456d888f))
+- **cliente:** melhora tipografia das telas ([214d233](https://github.com/jnrpalma/DetailGo/commit/214d233c03ea4717a18be59451e3319cb34e0049))
+- **cliente:** redesenha histórico e vínculo da estética ([8d283f6](https://github.com/jnrpalma/DetailGo/commit/8d283f67ca13477ec84b98a512e30743c9461958))
+- **cliente:** redesenha tela de agendamentos ([03aa7d3](https://github.com/jnrpalma/DetailGo/commit/03aa7d3321bac39cbfa0323ba2645deeda238fd7))
+- **dashboard:** ajusta card de agendamento do cliente ([49b9264](https://github.com/jnrpalma/DetailGo/commit/49b92644749369945497d121c21d35db47317d88))
+- **dashboard:** ajusta no-show e telas do cliente ([74783cd](https://github.com/jnrpalma/DetailGo/commit/74783cd6e8bcd3b897e88814a17d47c12b1de7e0))
+- **dashboard:** ajusta rodape e proximos servicos ([ff86436](https://github.com/jnrpalma/DetailGo/commit/ff86436973d2c5ecf4e3abd179b499e5e51d41ea))
+- **dashboard:** badge de status no card proximos servicos ([aef909e](https://github.com/jnrpalma/DetailGo/commit/aef909e791a33a3cebf9309c7da311daeea7f4fd))
+- **dashboard:** redesenha home do cliente ([773ab29](https://github.com/jnrpalma/DetailGo/commit/773ab29b96936d4d4b88f07decd64187c9028bdb))
+- **dashboard:** redesign cliente para tema garage dark ([aeaa11e](https://github.com/jnrpalma/DetailGo/commit/aeaa11efb089076a625e7d934f69a650b503b8e9))
+- **login:** ajusta visual da tela cliente ([a1d26d6](https://github.com/jnrpalma/DetailGo/commit/a1d26d6daed2a7c341c195f47d283df5be580104))
+- **login:** ajuste telas de login para ambos ([e45ce59](https://github.com/jnrpalma/DetailGo/commit/e45ce59462a4ba71147bb41a6d6798c90081f518))
+- **login:** substitui grid por curva de pista de corrida no hero ([5db36dc](https://github.com/jnrpalma/DetailGo/commit/5db36dcf5dd80128a4b9764a33205f77fb05d062))
+- **map:** marketplace com mapa de estéticas e trial de 7 dias ([7748ac1](https://github.com/jnrpalma/DetailGo/commit/7748ac17ffcaf6203cb4fedfa2db5562eeec8ee8))
+- **profile:** redesenha perfil do cliente ([1c1920f](https://github.com/jnrpalma/DetailGo/commit/1c1920f19ee6ee904aa2fc44fb864a70fa4446fb))
+- **shop-profile:** fluxo de descoberta e agendamento por estetica ([18ca2e3](https://github.com/jnrpalma/DetailGo/commit/18ca2e3b290a39b3008343e0d77b86a8f966309e))
+- **shop-services:** adiciona servicos configuraveis ([5517d33](https://github.com/jnrpalma/DetailGo/commit/5517d33217432e7223c6403760fff8218925567b))
+- **shops:** permite gerenciar serviços da estética ([e4b1149](https://github.com/jnrpalma/DetailGo/commit/e4b1149583f49aba41327458f72d62660fe5bad1))
+- **shops:** remove convites e configurar veiculos por servico ([1522881](https://github.com/jnrpalma/DetailGo/commit/152288164a8c4a3450bd6a63b351e48e9f13dbd4))
+- **splash:** redesenha splash e badge do login ([6f5040c](https://github.com/jnrpalma/DetailGo/commit/6f5040c436bc120184e58bd3fd787e55ff35346e))
+- **ui:** adiciona tema claro ([643e396](https://github.com/jnrpalma/DetailGo/commit/643e39693ffa6c441f054666215f075be75cf294))
+- **ui:** padroniza perfis e headers ([d93628a](https://github.com/jnrpalma/DetailGo/commit/d93628ac6aeb4e6aaded38d94ac26313c771f597))
+- **ui:** padroniza tipografia inter ([6691965](https://github.com/jnrpalma/DetailGo/commit/66919650c2f03f02d346c1af73eedd74821cb16c))
+
 ## 1.0.0 (2026-04-29)
 
 ### ✨ Novas funcionalidades
