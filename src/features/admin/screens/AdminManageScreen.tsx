@@ -53,7 +53,6 @@ const NEW_SERVICE_DRAFT = '__new_service__';
 
 type ServiceDraft = {
   name: string;
-  title: string;
   description: string;
   includes: string;
   note: string;
@@ -67,7 +66,6 @@ type ServiceDraft = {
 function toServiceDraft(service: ShopService): ServiceDraft {
   return {
     name: service.name,
-    title: service.title ?? service.name,
     description: service.description ?? '',
     includes: (service.includes ?? []).join('\n'),
     note: service.note ?? '',
@@ -89,7 +87,6 @@ function parseLines(value: string): string[] {
 function createEmptyServiceDraft(): ServiceDraft {
   return {
     name: '',
-    title: '',
     description: '',
     includes: '',
     note: '',
@@ -155,7 +152,7 @@ export default function AdminManageScreen() {
 
   const { loading: loadingServices, items: services } = useShopServices({
     shopId,
-    ensureDefaults: true,
+    ensureDefaults: false,
   });
   const [serviceDrafts, setServiceDrafts] = useState<Record<string, ServiceDraft>>({});
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
@@ -302,7 +299,6 @@ export default function AdminManageScreen() {
 
   const buildServiceInput = (draft: ServiceDraft, sortOrder: number): ShopServiceInput | null => {
     const name = draft.name.trim();
-    const title = draft.title.trim();
     const description = draft.description.trim();
     const includes = parseLines(draft.includes);
     const note = draft.note.trim();
@@ -339,7 +335,7 @@ export default function AdminManageScreen() {
 
     return {
       name,
-      title: title || name,
+      title: name,
       description: description || null,
       includes,
       note: note || null,
@@ -482,7 +478,7 @@ export default function AdminManageScreen() {
     onSave: () => void;
   }) => (
     <View style={styles.serviceForm}>
-      <Text style={styles.inputLabel}>Nome na home</Text>
+      <Text style={styles.inputLabel}>Nome do serviço</Text>
       <TextInput
         style={styles.serviceInput}
         value={draft.name}
@@ -491,17 +487,6 @@ export default function AdminManageScreen() {
         placeholderTextColor={D.ink3}
         editable={!isSaving}
         maxLength={40}
-      />
-
-      <Text style={styles.inputLabel}>Título do serviço</Text>
-      <TextInput
-        style={styles.serviceInput}
-        value={draft.title}
-        onChangeText={value => updateServiceDraft(serviceId, 'title', value)}
-        placeholder="Ex: Lavagem completa premium"
-        placeholderTextColor={D.ink3}
-        editable={!isSaving}
-        maxLength={60}
       />
 
       <Text style={styles.inputLabel}>Descrição</Text>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -17,7 +17,7 @@ import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore'
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
-import { useShop } from '@features/shops';
+import { useShop, useShopServices } from '@features/shops';
 import type { RootStackParamList } from '@app/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -34,7 +34,7 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
   const navigation = useNavigation<Nav>();
-  const { shop } = useShop();
+  const { shop, shopId } = useShop();
   const auth = getAuth();
   const user = auth.currentUser;
   const db = getFirestore();
@@ -50,6 +50,38 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
     });
     return () => unsub();
   }, [user?.uid, db]);
+
+  // Verifica se há serviços cadastrados e notifica o owner na primeira abertura
+  const { items: services, loading: loadingServices } = useShopServices({
+    shopId,
+    ensureDefaults: false,
+  });
+  const alertedRef = useRef(false);
+
+  useEffect(() => {
+    if (!visible) {
+      alertedRef.current = false; // reseta ao fechar para alertar na próxima abertura
+      return;
+    }
+    if (loadingServices) return;
+    if (services.length === 0 && !alertedRef.current) {
+      alertedRef.current = true;
+      Alert.alert(
+        'Sem serviços cadastrados',
+        'Sua estética ainda não tem serviços cadastrados. Acesse "Gerenciamento da loja" para adicionar os serviços que você oferece.',
+        [
+          { text: 'Agora não', style: 'cancel' },
+          {
+            text: 'Ir para gerenciamento',
+            onPress: () => {
+              onClose();
+              navigation.navigate('AdminManage');
+            },
+          },
+        ],
+      );
+    }
+  }, [visible, loadingServices, services.length, navigation, onClose]);
 
   const shopName = shop?.name ?? 'Minha estética';
   const ownerName = user?.displayName ?? 'Proprietário';
