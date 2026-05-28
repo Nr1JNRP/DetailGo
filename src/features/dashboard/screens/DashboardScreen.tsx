@@ -42,6 +42,7 @@ import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
 import { useAuth } from '@features/auth';
 import { useShop, useShopServices, getShopServiceIcon } from '@features/shops';
+import { getShopSettings } from '@features/settings';
 import {
   ACTIVE_APPOINTMENT_SET,
   clearShopFavoriteIfNoActive,
@@ -99,6 +100,29 @@ export default function DashboardScreen() {
     shopId,
     activeOnly: true,
   });
+
+  // Telefone e horários da estética vinculada — usados no card de informações
+  const [shopPhone, setShopPhone] = useState<string | null>(null);
+  const [shopHours, setShopHours] = useState<{ open: number; close: number } | null>(null);
+
+  useEffect(() => {
+    if (!shop?.ownerId || !shopId) {
+      setShopPhone(null);
+      setShopHours(null);
+      return;
+    }
+    const db = getFirestore();
+    // Busca telefone do owner
+    const unsub = onSnapshot(doc(db, 'users', shop.ownerId), snap => {
+      const data = snap.data() as { phone?: string } | undefined;
+      setShopPhone(data?.phone ?? null);
+    });
+    // Busca horários reais do shop
+    getShopSettings(shopId)
+      .then(s => setShopHours({ open: s.openHour, close: s.closeHour }))
+      .catch(() => {});
+    return () => unsub();
+  }, [shop?.ownerId, shopId]);
 
   const activeAppointments = useMemo(
     () =>
@@ -222,14 +246,19 @@ export default function DashboardScreen() {
   const showShopInfo = () => {
     if (!shop) return;
     const address = [shop.location?.address, shop.location?.city].filter(Boolean).join(' - ');
-    Alert.alert(
-      shop.name,
-      [
-        address ? `Endereço: ${address}` : 'Endereço não informado',
-        'Atendimento: Seg-Sex - 08h as 18h',
-        'Telefone: não informado',
-      ].join('\n'),
-    );
+    const hoursText = shopHours
+      ? `${String(shopHours.open).padStart(2, '0')}h às ${String(shopHours.close).padStart(
+          2,
+          '0',
+        )}h`
+      : null;
+    const phoneText = shopPhone ? formatUtils.phoneMask(shopPhone) : 'Não informado';
+    const lines = [
+      address ? `📍 ${address}` : '📍 Endereço não informado',
+      hoursText ? `🕐 Atendimento: ${hoursText}` : null,
+      `📞 Telefone: ${phoneText}`,
+    ].filter(Boolean) as string[];
+    Alert.alert(shop.name, lines.join('\n\n'));
   };
 
   return (
@@ -319,47 +348,44 @@ export default function DashboardScreen() {
           ) : (
             <>
               {shop && (
-                <View style={styles.currentShopCard}>
-                  <View style={styles.currentShopIcon}>
-                    <MapPin size={16} color={D.primary} />
-                  </View>
-                  <View style={styles.currentShopText}>
-                    <Text style={styles.currentShopLabel}>Sua estética</Text>
-                    <Text style={styles.currentShopName} numberOfLines={1}>
-                      {shop.name}
-                    </Text>
-                  </View>
+                <View style={styles.shopActionCard}>
                   <TouchableOpacity
-                    style={styles.currentShopSwap}
-                    onPress={showShopInfo}
-                    activeOpacity={0.7}
+                    style={styles.shopActionMain}
+                    onPress={goToAppointment}
+                    activeOpacity={0.88}
                   >
-                    <Info size={18} color={D.primary} strokeWidth={2.2} />
+                    <View style={styles.scheduleIcon}>
+                      <Calendar size={22} color={D.primary} strokeWidth={2.1} />
+                    </View>
+                    <View style={styles.shopActionScheduleCopy}>
+                      <Text style={styles.shopActionScheduleText}>Agendar serviço</Text>
+                      <Text style={styles.shopActionScheduleSub} numberOfLines={1}>
+                        em {shop.name}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
+
+                  <View style={styles.shopActionButtons}>
+                    <TouchableOpacity
+                      style={styles.shopActionIconButton}
+                      onPress={showShopInfo}
+                      activeOpacity={0.75}
+                    >
+                      <Info size={18} color={D.primary} strokeWidth={2.2} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.shopActionArrow}
+                      onPress={goToAppointment}
+                      activeOpacity={0.75}
+                    >
+                      <ArrowRight size={18} color={D.primary} strokeWidth={2.1} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               )}
 
-              <TouchableOpacity
-                style={styles.scheduleCard}
-                onPress={goToAppointment}
-                activeOpacity={0.88}
-              >
-                <View style={styles.scheduleIcon}>
-                  <Calendar size={24} color={D.primary} strokeWidth={2.1} />
-                </View>
-                <View style={styles.scheduleTextWrap}>
-                  <Text style={styles.scheduleTitle}>Agendar serviço</Text>
-                  <Text style={styles.scheduleSubtitle}>
-                    {shop ? `em ${shop.name}` : '30s - sem ligar'}
-                  </Text>
-                </View>
-                <View style={styles.scheduleArrow}>
-                  <ArrowRight size={22} color={D.primary} strokeWidth={2.1} />
-                </View>
-              </TouchableOpacity>
-
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionKicker}>Serviços</Text>
+                <Text style={styles.sectionKicker}>Serviços oferecidos pela estética</Text>
               </View>
 
               {loadingServices ? (
@@ -385,11 +411,9 @@ export default function DashboardScreen() {
                         <View
                           style={[styles.serviceIconWrap, isActive && styles.serviceIconActive]}
                         >
-                          <Icon size={22} color={isActive ? D.primary : D.ink2} strokeWidth={2} />
+                          <Icon size={16} color={isActive ? D.primary : D.ink2} strokeWidth={2} />
                         </View>
-                        <Text style={styles.serviceLabel} numberOfLines={1}>
-                          {svc.name}
-                        </Text>
+                        <Text style={styles.serviceLabel}>{svc.name}</Text>
                       </TouchableOpacity>
                     );
                   })}
@@ -452,7 +476,7 @@ export default function DashboardScreen() {
             </>
           )}
 
-          <View style={{ height: 112 + bottomInset }} />
+          <View style={styles.dashboardBottomSpacer} />
         </ScrollView>
 
         <View style={styles.bottomNav}>
@@ -647,7 +671,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: D.bg },
     scroll: { flex: 1 },
-    scrollContent: { paddingBottom: 16 },
+    scrollContent: { paddingBottom: 0 },
 
     heroSurface: {
       minHeight: 190,
@@ -771,67 +795,30 @@ function createStyles(D: AppColors, bottomInset = 0) {
       fontFamily: T.family.bold,
     },
 
-    currentShopCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    shopActionCard: {
+      minHeight: 76,
       marginHorizontal: 20,
-      marginTop: 14,
+      marginTop: 18,
+      marginBottom: 22,
       paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderRadius: 12,
-      backgroundColor: D.surface,
-      borderWidth: 1,
-      borderColor: D.border,
-      gap: 10,
-    },
-    currentShopIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      backgroundColor: D.primaryLight,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    currentShopText: { flex: 1 },
-    currentShopLabel: {
-      fontSize: T.size.caption,
-      color: D.ink3,
-      fontFamily: T.family.semiBold,
-      letterSpacing: 0.3,
-    },
-    currentShopName: {
-      fontSize: T.size.body,
-      color: D.ink,
-      fontFamily: T.family.bold,
-      marginTop: 1,
-    },
-    currentShopSwap: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      borderWidth: 1,
-      borderColor: D.borderFocus,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: D.primaryLight,
-    },
-
-    scheduleCard: {
-      minHeight: 72,
-      marginHorizontal: 20,
-      marginTop: 16,
-      marginBottom: 18,
-      paddingHorizontal: 18,
       borderRadius: 18,
       backgroundColor: D.primary,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: 10,
       shadowColor: D.primary,
       shadowOpacity: 0.22,
       shadowOffset: { width: 0, height: 9 },
       shadowRadius: 12,
       elevation: 8,
+    },
+    shopActionMain: {
+      flex: 1,
+      minWidth: 0,
+      minHeight: 76,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
     },
     scheduleIcon: {
       width: 44,
@@ -841,21 +828,38 @@ function createStyles(D: AppColors, bottomInset = 0) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    scheduleTextWrap: { flex: 1 },
-    scheduleTitle: {
+    shopActionScheduleCopy: {
+      flex: 1,
+      minWidth: 0,
+    },
+    shopActionScheduleText: {
       color: D.onPrimary,
       fontSize: T.size.bodyLarge,
       fontFamily: T.family.extraBold,
       lineHeight: T.lineHeight.bodyLarge,
     },
-    scheduleSubtitle: {
+    shopActionScheduleSub: {
       color: D.onPrimary,
       opacity: 0.72,
       fontSize: T.size.secondary,
       fontFamily: T.family.medium,
       marginTop: 2,
     },
-    scheduleArrow: {
+    shopActionButtons: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      flexShrink: 0,
+    },
+    shopActionIconButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: D.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    shopActionArrow: {
       width: 38,
       height: 38,
       borderRadius: 19,
@@ -869,7 +873,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 11,
+      marginBottom: 12,
     },
     sectionKicker: {
       color: D.ink2,
@@ -880,7 +884,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
       paddingHorizontal: 20,
       flexDirection: 'row',
       gap: 10,
-      paddingBottom: 18,
+      paddingBottom: 26,
     },
     servicesLoading: {
       height: 100,
@@ -904,32 +908,34 @@ function createStyles(D: AppColors, bottomInset = 0) {
       fontFamily: T.family.extraBold,
     },
     serviceCard: {
-      width: 104,
-      height: 104,
-      borderRadius: 18,
+      width: 90,
+      borderRadius: 16,
       backgroundColor: D.card,
       borderWidth: 1.5,
       borderColor: D.borderStrong,
       alignItems: 'center',
       justifyContent: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 10,
     },
     serviceIconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
+      width: 36,
+      height: 36,
+      borderRadius: 10,
       borderWidth: 1.5,
       borderColor: D.borderStrong,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 12,
+      marginBottom: 6,
     },
     serviceIconActive: {
       borderColor: D.primary,
     },
     serviceLabel: {
       color: D.ink2,
-      fontSize: T.size.secondary,
+      fontSize: T.size.caption,
       fontFamily: T.family.bold,
+      textAlign: 'center',
     },
 
     upcomingHeader: {
@@ -937,7 +943,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 10,
+      marginBottom: 14,
     },
     upcomingTitle: {
       color: D.ink,
@@ -964,13 +970,13 @@ function createStyles(D: AppColors, bottomInset = 0) {
       width: 12,
     },
     appointmentCard: {
-      minHeight: 118,
-      borderRadius: 17,
+      minHeight: 132,
+      borderRadius: 18,
       backgroundColor: D.card,
       borderWidth: 1.5,
       borderColor: D.borderStrong,
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 14,
       justifyContent: 'center',
     },
     appointmentCardTop: {
@@ -1111,6 +1117,10 @@ function createStyles(D: AppColors, bottomInset = 0) {
       fontFamily: T.family.bold,
     },
 
+    dashboardBottomSpacer: {
+      height: 72 + bottomInset,
+    },
+
     bottomNav: {
       position: 'absolute',
       left: 0,
@@ -1230,7 +1240,7 @@ function createStyles(D: AppColors, bottomInset = 0) {
       borderColor: D.border,
       borderRadius: 12,
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 14,
       fontSize: T.size.titleLarge,
       fontFamily: T.family.semiBold,
       color: D.ink,
