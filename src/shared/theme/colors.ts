@@ -35,6 +35,7 @@ export const colors = {
     surface: '#EEF1F3',
     card: '#FFFFFF',
     drawer: '#071013',
+    qr: '#FFFFFF',
   },
   border: {
     main: '#A2AEBB',
@@ -62,6 +63,7 @@ export const darkColors = {
   primaryDark: '#B6E300',
   primaryLight: 'rgba(212,255,61,0.12)',
   onPrimary: '#050708',
+  qrBackground: '#FFFFFF',
 
   border: 'rgba(255,255,255,0.08)',
   borderStrong: 'rgba(255,255,255,0.15)',
@@ -101,6 +103,7 @@ export const lightColors = {
   primaryDark: '#148DA7',
   primaryLight: 'rgba(35,181,211,0.16)',
   onPrimary: '#071013',
+  qrBackground: '#FFFFFF',
 
   border: 'rgba(7,16,19,0.10)',
   borderStrong: 'rgba(7,16,19,0.18)',
