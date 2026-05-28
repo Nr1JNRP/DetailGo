@@ -45,6 +45,7 @@ import { UI } from '@shared/constants/app.constants';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
+import PremiumStar from '@shared/components/PremiumStar';
 
 import { updateAppointmentStatus } from '@features/admin';
 import { useShop } from '@features/shops';
@@ -94,7 +95,8 @@ export default function AdminDashboardScreen() {
   const auth = getAuth();
   const user = auth.currentUser;
   const db = getFirestore();
-  const { shopId } = useShop();
+  const { shopId, shop } = useShop();
+  const isPremium = shop?.subscriptionStatus === 'active';
 
   const [appointmentsWeek, setAppointmentsWeek] = useState<AdminAppointment[]>([]);
   const [doneThisWeek, setDoneThisWeek] = useState<AdminAppointment[]>([]);
@@ -582,10 +584,17 @@ export default function AdminDashboardScreen() {
           <Text style={styles.greetingText}>{greeting}</Text>
           <Text style={styles.ownerName}>{ownerName}</Text>
         </View>
-        <View style={styles.trialBadge}>
-          <Clock size={12} color={D.primary} strokeWidth={2.5} />
-          <Text style={styles.trialBadgeText}>Trial</Text>
-        </View>
+        {isPremium ? (
+          <View style={styles.premiumBadge}>
+            <PremiumStar size={26} light={isLight} />
+            <Text style={styles.premiumBadgeText}>Premium</Text>
+          </View>
+        ) : (
+          <View style={styles.trialBadge}>
+            <Clock size={12} color={D.primary} strokeWidth={2.5} />
+            <Text style={styles.trialBadgeText}>Trial</Text>
+          </View>
+        )}
       </View>
 
       {/* ── KPI Cards ──────────────────────────── */}
@@ -1185,6 +1194,18 @@ function createStyles(D: AppColors) {
       fontSize: T.size.caption,
       lineHeight: T.lineHeight.caption,
       fontFamily: T.family.bold,
+    },
+    premiumBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      alignSelf: 'center',
+    },
+    premiumBadgeText: {
+      color: '#C89B3C',
+      fontSize: T.size.caption,
+      lineHeight: T.lineHeight.caption,
+      fontFamily: T.family.extraBold,
     },
   });
 }
