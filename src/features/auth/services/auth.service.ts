@@ -71,7 +71,7 @@ async function registerAsOwner(uid: string, data: RegisterInput): Promise<void> 
         }
       : null,
     geohash,
-    isVisibleOnMap: true, // visível no mapa durante o trial; Cloud Function oculta após expirar
+    isVisibleOnMap: true, // controle de visibilidade independente da assinatura
   });
 
   // Configurações padrão do shop

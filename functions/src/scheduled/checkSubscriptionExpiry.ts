@@ -3,12 +3,12 @@ import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 
 /**
- * Roda todo dia as 03:00 (horario de Brasilia).
- * Verifica shops com trial expirado e bloqueia o acesso do owner.
+ * Roda todo dia as 03:10 (horario de Brasilia).
+ * Verifica shops com assinatura mensal expirada e bloqueia o acesso Pro.
  */
-export const checkTrialExpiry = onSchedule(
+export const checkSubscriptionExpiry = onSchedule(
   {
-    schedule: '0 6 * * *', // 03:00 BRT = 06:00 UTC
+    schedule: '10 6 * * *', // 03:10 BRT = 06:10 UTC
     timeZone: 'America/Sao_Paulo',
   },
   async () => {
@@ -17,12 +17,12 @@ export const checkTrialExpiry = onSchedule(
 
     const snap = await db
       .collection('shops')
-      .where('subscriptionStatus', '==', 'trial')
-      .where('trialEndsAt', '<=', now)
+      .where('subscriptionStatus', '==', 'active')
+      .where('activeUntil', '<=', now)
       .get();
 
     if (snap.empty) {
-      logger.info('Nenhum trial expirado encontrado.');
+      logger.info('Nenhuma assinatura expirada encontrada.');
       return;
     }
 
@@ -39,6 +39,6 @@ export const checkTrialExpiry = onSchedule(
 
     await batch.commit();
 
-    logger.info(`${count} shop(s) com trial expirado bloqueados.`);
+    logger.info(`${count} shop(s) com assinatura expirada bloqueados.`);
   },
 );
