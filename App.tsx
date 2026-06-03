@@ -3,6 +3,7 @@ import { Text, TextInput } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider, useAuth } from '@features/auth';
 import { ShopProvider, useShop } from '@features/shops/context/ShopContext';
+import { useForegroundNotifications } from '@features/notifications';
 import { ThemeProvider, typography } from '@shared/theme';
 import BootSplash from 'react-native-bootsplash';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -27,6 +28,10 @@ function AppContent() {
   const { user, initializing } = useAuth();
   const { loading: loadingShop } = useShop();
   const [minimumSplashDone, setMinimumSplashDone] = useState(false);
+
+  // Handler global de notificações em foreground (exibe push via notifee
+  // independente da tela/conta ativa).
+  useForegroundNotifications();
 
   useEffect(() => {
     const timer = setTimeout(() => {

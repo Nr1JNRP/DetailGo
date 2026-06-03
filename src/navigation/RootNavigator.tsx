@@ -10,6 +10,7 @@ import { MapScreen } from '@features/map';
 import { DashboardScreen } from '@features/dashboard';
 import { AppointmentScreen, MyAppointmentsScreen, HistoryScreen } from '@features/appointments';
 import { AdminDashboardScreen, AdminManageScreen, AdminHistoryScreen } from '@features/admin';
+import { NotificationsScreen } from '@features/notifications';
 import { ProfileScreen } from '@features/profile';
 import { useShop, ShopProfileScreen } from '@features/shops';
 
@@ -42,6 +43,7 @@ export default function RootNavigator() {
               <Stack.Screen name="AdminManage" component={AdminManageScreen} />
               <Stack.Screen name="AdminHistory" component={AdminHistoryScreen} />
               <Stack.Screen name="AdminProfile" component={ProfileScreen} />
+              <Stack.Screen name="AdminNotifications" component={NotificationsScreen} />
             </Stack.Group>
           ) : (
             // Owner sem assinatura → tela de pagamento

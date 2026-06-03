@@ -30,4 +30,5 @@ export type RootStackParamList = {
   AdminManage: undefined;
   AdminHistory: undefined;
   AdminProfile: undefined;
+  AdminNotifications: undefined;
 };
