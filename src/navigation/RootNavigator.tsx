@@ -10,7 +10,7 @@ import { MapScreen } from '@features/map';
 import { DashboardScreen } from '@features/dashboard';
 import { AppointmentScreen, MyAppointmentsScreen, HistoryScreen } from '@features/appointments';
 import { AdminDashboardScreen, AdminManageScreen, AdminHistoryScreen } from '@features/admin';
-import { NotificationsScreen } from '@features/notifications';
+import { NotificationsScreen, CustomerNotificationsScreen } from '@features/notifications';
 import { ProfileScreen } from '@features/profile';
 import { useShop, ShopProfileScreen } from '@features/shops';
 
@@ -61,6 +61,7 @@ export default function RootNavigator() {
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="Map" component={MapScreen} />
             <Stack.Screen name="ShopProfile" component={ShopProfileScreen} />
+            <Stack.Screen name="Notifications" component={CustomerNotificationsScreen} />
           </Stack.Group>
         )
       ) : (

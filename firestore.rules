@@ -22,6 +22,11 @@ service cloud.firestore {
       match /appointments/{appointmentId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Notificações do cliente (escritas pela Cloud Function, lidas pelo dono)
+      match /notifications/{notificationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // Pagamentos — apenas backend (Cloud Functions)

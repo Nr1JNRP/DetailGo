@@ -1,30 +1,28 @@
 import {
   collection,
-  doc,
   getDocs,
   getFirestore,
   limit,
   onSnapshot,
   orderBy,
   query,
-  updateDoc,
   where,
   writeBatch,
   type FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
 
-import type { ShopNotification } from '../data/notification.types';
+import type { AppNotification } from '../domain/notification.types';
 
 type QDoc = FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.DocumentData>;
 
 const MAX_NOTIFICATIONS = 50;
 
-function normalize(d: QDoc): ShopNotification {
+function normalize(d: QDoc): AppNotification {
   const data = d.data() as Record<string, unknown>;
   const createdAt = data.createdAt as FirebaseFirestoreTypes.Timestamp | undefined;
   return {
     id: d.id,
-    type: (data.type as ShopNotification['type']) ?? 'appointment_created',
+    type: (data.type as AppNotification['type']) ?? 'appointment_created',
     title: (data.title as string) ?? 'Notificação',
     body: (data.body as string) ?? '',
     appointmentId: data.appointmentId as string | undefined,
@@ -36,15 +34,25 @@ function normalize(d: QDoc): ShopNotification {
   };
 }
 
-/** Escuta as notificações do shop em tempo real (mais recentes primeiro). */
-export function watchShopNotifications(
-  shopId: string,
-  onChange: (items: ShopNotification[]) => void,
+// Caminho da coleção de notificações: shop (owner) ou user (cliente).
+type Scope = { kind: 'shop'; shopId: string } | { kind: 'user'; uid: string };
+
+function notificationsPath(scope: Scope): [string, string, string] {
+  return scope.kind === 'shop'
+    ? ['shops', scope.shopId, 'notifications']
+    : ['users', scope.uid, 'notifications'];
+}
+
+/** Escuta as notificações de um escopo em tempo real (mais recentes primeiro). */
+function watchNotifications(
+  scope: Scope,
+  onChange: (items: AppNotification[]) => void,
   onError?: (err: unknown) => void,
 ) {
   const db = getFirestore();
+  const [c, id, sub] = notificationsPath(scope);
   const qy = query(
-    collection(db, 'shops', shopId, 'notifications'),
+    collection(db, c, id, sub),
     orderBy('createdAt', 'desc'),
     limit(MAX_NOTIFICATIONS),
   );
@@ -56,17 +64,12 @@ export function watchShopNotifications(
   );
 }
 
-/** Marca uma notificação como lida. */
-export async function markNotificationRead(shopId: string, notificationId: string): Promise<void> {
+/** Marca todas as notificações não lidas de um escopo como lidas. */
+async function markAllRead(scope: Scope): Promise<void> {
   const db = getFirestore();
-  await updateDoc(doc(db, 'shops', shopId, 'notifications', notificationId), { read: true });
-}
-
-/** Marca todas as notificações não lidas do shop como lidas. */
-export async function markAllNotificationsRead(shopId: string): Promise<void> {
-  const db = getFirestore();
+  const [c, id, sub] = notificationsPath(scope);
   const qy = query(
-    collection(db, 'shops', shopId, 'notifications'),
+    collection(db, c, id, sub),
     where('read', '==', false),
     limit(MAX_NOTIFICATIONS),
   );
@@ -76,4 +79,30 @@ export async function markAllNotificationsRead(shopId: string): Promise<void> {
   const batch = writeBatch(db);
   snap.docs.forEach((d: QDoc) => batch.update(d.ref, { read: true }));
   await batch.commit();
+}
+
+// ── Owner (shop) ──
+export function watchShopNotifications(
+  shopId: string,
+  onChange: (items: AppNotification[]) => void,
+  onError?: (err: unknown) => void,
+) {
+  return watchNotifications({ kind: 'shop', shopId }, onChange, onError);
+}
+
+export function markAllNotificationsRead(shopId: string): Promise<void> {
+  return markAllRead({ kind: 'shop', shopId });
+}
+
+// ── Cliente (user) ──
+export function watchUserNotifications(
+  uid: string,
+  onChange: (items: AppNotification[]) => void,
+  onError?: (err: unknown) => void,
+) {
+  return watchNotifications({ kind: 'user', uid }, onChange, onError);
+}
+
+export function markAllUserNotificationsRead(uid: string): Promise<void> {
+  return markAllRead({ kind: 'user', uid });
 }

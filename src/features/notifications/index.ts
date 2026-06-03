@@ -1,10 +1,13 @@
 export { default as NotificationsScreen } from './screens/NotificationsScreen';
+export { default as CustomerNotificationsScreen } from './screens/CustomerNotificationsScreen';
 export { useShopNotifications } from './hooks/useShopNotifications';
+export { useUserNotifications } from './hooks/useUserNotifications';
 export { useRegisterPushToken } from './hooks/useRegisterPushToken';
 export { useForegroundNotifications } from './hooks/useForegroundNotifications';
 export {
   watchShopNotifications,
-  markNotificationRead,
+  watchUserNotifications,
   markAllNotificationsRead,
+  markAllUserNotificationsRead,
 } from './services/notifications.service';
-export type { ShopNotification, ShopNotificationType } from './data/notification.types';
+export type { AppNotification, AppNotificationType } from './domain/notification.types';

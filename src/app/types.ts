@@ -24,6 +24,7 @@ export type RootStackParamList = {
   MyAppointments: undefined;
   History: undefined;
   Profile: undefined;
+  Notifications: undefined;
 
   // ADMIN
   AdminDashboard: undefined;
