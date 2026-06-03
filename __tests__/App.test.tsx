@@ -38,6 +38,10 @@ jest.mock('react-native-bootsplash', () => ({
   hide: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('@features/notifications', () => ({
+  useForegroundNotifications: jest.fn(),
+}));
+
 jest.mock('../src/navigation/RootNavigator', () => () => null);
 
 import App from '../App';

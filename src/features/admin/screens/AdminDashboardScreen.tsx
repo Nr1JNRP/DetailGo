@@ -47,12 +47,19 @@ import { formatUtils } from '@shared/utils/format.utils';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
 import PremiumStar from '@shared/components/PremiumStar';
 
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { updateAppointmentStatus } from '@features/admin';
 import { useShop } from '@features/shops';
+import { useShopNotifications, useRegisterPushToken } from '@features/notifications';
 import { NO_SHOW_GRACE_MS } from '@features/appointments';
 import type { AppointmentStatus } from '@features/appointments';
+import type { RootStackParamList } from '@app/types';
 import type { AdminAppointment } from '../domain/adminAppointment.types';
 import { normalizeAdminAppointmentFromGlobal } from '../data/adminAppointment.normalizers';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type QDoc = FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.DocumentData>;
 
@@ -97,6 +104,11 @@ export default function AdminDashboardScreen() {
   const db = getFirestore();
   const { shopId, shop } = useShop();
   const isPremium = shop?.subscriptionStatus === 'active';
+  const navigation = useNavigation<Nav>();
+  const { unreadCount } = useShopNotifications(shopId);
+
+  // Registra o token de push do owner (pede permissão na primeira vez).
+  useRegisterPushToken(user?.uid);
 
   const [appointmentsWeek, setAppointmentsWeek] = useState<AdminAppointment[]>([]);
   const [doneThisWeek, setDoneThisWeek] = useState<AdminAppointment[]>([]);
@@ -549,11 +561,15 @@ export default function AdminDashboardScreen() {
         <Text style={styles.topbarBrand}>DETAILGO</Text>
         <TouchableOpacity
           style={styles.headerBtn}
-          onPress={() => Alert.alert('Notificações', 'Em breve!')}
+          onPress={() => navigation.navigate('AdminNotifications')}
           activeOpacity={0.7}
         >
           <Bell size={20} color={D.ink2} />
-          <View style={styles.bellDot} />
+          {unreadCount > 0 && (
+            <View style={styles.bellBadge}>
+              <Text style={styles.bellBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -1094,16 +1110,25 @@ function createStyles(D: AppColors) {
       color: D.ink,
       letterSpacing: 2,
     },
-    bellDot: {
+    bellBadge: {
       position: 'absolute',
-      top: 8,
-      right: 8,
-      width: 7,
-      height: 7,
-      borderRadius: 4,
-      backgroundColor: D.primary,
+      top: 4,
+      right: 4,
+      minWidth: 16,
+      height: 16,
+      paddingHorizontal: 3,
+      borderRadius: 8,
+      backgroundColor: D.accent,
       borderWidth: 1.5,
       borderColor: D.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bellBadgeText: {
+      fontSize: 9,
+      lineHeight: 11,
+      fontFamily: T.family.extraBold,
+      color: D.onPrimary,
     },
 
     // ── Perfil — igual ao cliente ───────────────────
