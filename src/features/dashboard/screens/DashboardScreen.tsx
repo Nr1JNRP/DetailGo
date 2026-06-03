@@ -43,6 +43,7 @@ import { UI } from '@shared/constants/app.constants';
 import { useAuth } from '@features/auth';
 import { useShop, useShopServices, getShopServiceIcon } from '@features/shops';
 import { getShopSettings } from '@features/settings';
+import { useRegisterPushToken, useUserNotifications } from '@features/notifications';
 import {
   ACTIVE_APPOINTMENT_SET,
   clearShopFavoriteIfNoActive,
@@ -82,6 +83,10 @@ export default function DashboardScreen() {
   const user = auth.currentUser!;
   const uid = user.uid;
   const { signOut } = useAuth();
+
+  // Registra o token de push do cliente (para receber lembrete de agendamento).
+  useRegisterPushToken(uid);
+  const { unreadCount } = useUserNotifications(uid);
   const { shopId, shop } = useShop();
 
   const [profile, setProfile] = useState<UserProfile>({
@@ -112,11 +117,17 @@ export default function DashboardScreen() {
       return;
     }
     const db = getFirestore();
-    // Busca telefone do owner
-    const unsub = onSnapshot(doc(db, 'users', shop.ownerId), snap => {
-      const data = snap.data() as { phone?: string } | undefined;
-      setShopPhone(data?.phone ?? null);
-    });
+    // Busca telefone do owner. O cliente pode não ter permissão de ler o doc de
+    // outro usuário (regras do Firestore) — nesse caso o erro é tratado e o
+    // telefone fica indisponível, sem quebrar o app.
+    const unsub = onSnapshot(
+      doc(db, 'users', shop.ownerId),
+      snap => {
+        const data = snap?.data() as { phone?: string } | undefined;
+        setShopPhone(data?.phone ?? null);
+      },
+      () => setShopPhone(null),
+    );
     // Busca horários reais do shop
     getShopSettings(shopId)
       .then(s => setShopHours({ open: s.openHour, close: s.closeHour }))
@@ -160,10 +171,14 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     const db = getFirestore();
-    const unsub = onSnapshot(doc(db, 'users', uid), snap => {
-      const data = snap.data() as UserProfile | undefined;
-      if (data) setProfile(p => ({ ...p, ...data }));
-    });
+    const unsub = onSnapshot(
+      doc(db, 'users', uid),
+      snap => {
+        const data = snap?.data() as UserProfile | undefined;
+        if (data) setProfile(p => ({ ...p, ...data }));
+      },
+      () => {},
+    );
     return () => unsub();
   }, [uid]);
 
@@ -284,11 +299,17 @@ export default function DashboardScreen() {
 
               <TouchableOpacity
                 style={styles.squareBtn}
-                onPress={() => Alert.alert('Notificações', 'Em breve!')}
+                onPress={() => navigation.navigate('Notifications')}
                 activeOpacity={0.75}
               >
                 <Bell size={20} color={D.ink} strokeWidth={2} />
-                <View style={styles.notificationDot} />
+                {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
 
@@ -714,14 +735,25 @@ function createStyles(D: AppColors, bottomInset = 0) {
       letterSpacing: 4,
       marginLeft: 4,
     },
-    notificationDot: {
+    notificationBadge: {
       position: 'absolute',
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      right: 9,
-      top: 8,
-      backgroundColor: D.primary,
+      top: 3,
+      right: 3,
+      minWidth: 16,
+      height: 16,
+      paddingHorizontal: 3,
+      borderRadius: 8,
+      backgroundColor: D.accent,
+      borderWidth: 1.5,
+      borderColor: D.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    notificationBadgeText: {
+      fontSize: 9,
+      lineHeight: 11,
+      fontFamily: T.family.extraBold,
+      color: D.onPrimary,
     },
     profileBlock: {
       flexDirection: 'row',

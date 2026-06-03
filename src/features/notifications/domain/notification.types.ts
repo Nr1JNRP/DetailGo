@@ -1,8 +1,8 @@
-export type ShopNotificationType = 'appointment_created';
+export type AppNotificationType = 'appointment_created' | 'appointment_reminder';
 
-export type ShopNotification = {
+export type AppNotification = {
   id: string;
-  type: ShopNotificationType;
+  type: AppNotificationType;
   title: string;
   body: string;
   appointmentId?: string;

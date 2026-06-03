@@ -2,6 +2,8 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 
+import { formatWhen } from './format';
+
 /**
  * Dispara quando um novo agendamento e criado em
  * shops/{shopId}/appointments/{appointmentId}.
@@ -17,22 +19,6 @@ type AppointmentData = {
   startAtMs?: number;
   status?: string;
 };
-
-/** Formata um timestamp (ms) como "dd/MM • HH:mm" no fuso de Sao Paulo. */
-function formatWhen(startAtMs?: number): string {
-  if (!startAtMs) return '';
-  const date = new Date(startAtMs);
-  const fmt = new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const parts = fmt.formatToParts(date);
-  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
-  return `${get('day')}/${get('month')} • ${get('hour')}:${get('minute')}`;
-}
 
 export const onAppointmentCreated = onDocumentCreated(
   'shops/{shopId}/appointments/{appointmentId}',

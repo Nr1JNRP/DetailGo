@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { watchShopNotifications } from '../services/notifications.service';
+import { watchUserNotifications } from '../services/notifications.service';
 import type { AppNotification } from '../domain/notification.types';
 
 type Result = {
@@ -9,21 +9,21 @@ type Result = {
   loading: boolean;
 };
 
-/** Escuta em tempo real as notificações do shop e calcula não lidas. */
-export function useShopNotifications(shopId: string | null | undefined): Result {
+/** Escuta em tempo real as notificações do cliente e calcula não lidas. */
+export function useUserNotifications(uid: string | null | undefined): Result {
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!shopId) {
+    if (!uid) {
       setItems([]);
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    const unsub = watchShopNotifications(
-      shopId,
+    const unsub = watchUserNotifications(
+      uid,
       list => {
         setItems(list);
         setLoading(false);
@@ -32,7 +32,7 @@ export function useShopNotifications(shopId: string | null | undefined): Result 
     );
 
     return () => unsub();
-  }, [shopId]);
+  }, [uid]);
 
   const unreadCount = useMemo(() => items.filter(n => !n.read).length, [items]);
 

@@ -8,6 +8,14 @@
         { "fieldPath": "subscriptionStatus", "order": "ASCENDING" },
         { "fieldPath": "trialEndsAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "appointments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "startAtMs", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
