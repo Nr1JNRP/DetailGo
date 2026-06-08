@@ -12,72 +12,31 @@ import {
 } from '@react-native-firebase/firestore';
 import { getAuth } from '@react-native-firebase/auth';
 import type { AppointmentStatus } from '../domain/appointment.types';
-import { ACTIVE_APPOINTMENT_SET, NO_SHOW_GRACE_MS } from '../domain/appointment.constants';
+import { ACTIVE_APPOINTMENT_SET } from '../domain/appointment.constants';
 import { mapFirestoreError } from '@shared/utils/firebase.utils';
 
 export type CancelAppointmentResult =
   | { ok: true; message: string; data?: any }
   | { ok: false; message: string; code?: string };
 
-export function getAppointmentRules(appointment: {
-  status: AppointmentStatus;
-  startAtMs: number;
-}): {
+export function getAppointmentRules(appointment: { status: AppointmentStatus }): {
   canCancel: boolean;
-  canReschedule: boolean;
   message?: string;
-  isExpired: boolean;
 } {
-  const now = Date.now();
-  const isExpired = now >= appointment.startAtMs;
-
-  if (appointment.status === 'cancelled') {
-    return {
-      canCancel: false,
-      canReschedule: false,
-      isExpired: true,
-      message: 'Este agendamento foi cancelado por você.',
-    };
-  }
-
-  if (appointment.status === 'no_show') {
-    return {
-      canCancel: false,
-      canReschedule: true,
-      isExpired: true,
-      message: 'Você não compareceu a este agendamento. Pode reagendar.',
-    };
-  }
-
-  if (appointment.status === 'done') {
-    return {
-      canCancel: false,
-      canReschedule: false,
-      isExpired: true,
-      message: 'Este serviço já foi realizado.',
-    };
-  }
-
-  if (appointment.status === 'in_progress') {
-    return {
-      canCancel: false,
-      canReschedule: false,
-      isExpired: true,
-      message: 'Serviço em andamento não pode ser alterado.',
-    };
-  }
-
+  // O cliente pode cancelar a qualquer momento enquanto o serviço está agendado,
+  // inclusive depois do horário marcado (libera o slot e o card).
   if (appointment.status === 'scheduled') {
-    const passedTime = now >= appointment.startAtMs;
-    return {
-      canCancel: !passedTime,
-      canReschedule: true,
-      isExpired: passedTime,
-      message: passedTime ? 'Horário já passou. Você pode reagendar, mas não cancelar.' : undefined,
-    };
+    return { canCancel: true };
   }
 
-  return { canCancel: false, canReschedule: false, isExpired };
+  const messages: Record<Exclude<AppointmentStatus, 'scheduled'>, string> = {
+    cancelled: 'Este agendamento foi cancelado.',
+    no_show: 'Você não compareceu a este agendamento.',
+    done: 'Este serviço já foi realizado.',
+    in_progress: 'Serviço em andamento não pode ser cancelado.',
+  };
+
+  return { canCancel: false, message: messages[appointment.status] };
 }
 
 export async function cancelAppointment(
@@ -144,51 +103,6 @@ export async function cancelAppointment(
     return { ok: true, message: 'Agendamento cancelado com sucesso!' };
   } catch (error: any) {
     return { ok: false, message: mapFirestoreError(error) };
-  }
-}
-
-export async function markExpiredScheduledAppointmentsAsNoShow(
-  customerUid: string,
-  shopId: string,
-): Promise<number> {
-  try {
-    const db = getFirestore();
-    const now = Date.now();
-
-    const userAppointmentsQuery = query(
-      collection(db, 'shops', shopId, 'appointments'),
-      where('customerUid', '==', customerUid),
-    );
-
-    const snap = await getDocs(userAppointmentsQuery);
-    const expired = snap.docs.filter((d: { data: () => unknown }) => {
-      const data = d.data() as { status?: AppointmentStatus; startAtMs?: number };
-      const startAtMs = Number(data.startAtMs ?? 0);
-      return data.status === 'scheduled' && startAtMs > 0 && now >= startAtMs + NO_SHOW_GRACE_MS;
-    });
-
-    if (expired.length === 0) return 0;
-
-    const batch = writeBatch(db);
-
-    expired.forEach((d: any) => {
-      const payload = {
-        status: 'no_show' as AppointmentStatus,
-        noShowAt: serverTimestamp(),
-        noShowReason: 'auto_expired',
-        updatedAt: serverTimestamp(),
-      };
-
-      batch.update(d.ref, payload);
-      batch.set(doc(db, 'users', customerUid, 'appointments', d.id), payload, { merge: true });
-    });
-
-    await batch.commit();
-    await clearShopFavoriteIfNoActive(customerUid, shopId);
-
-    return expired.length;
-  } catch {
-    return 0;
   }
 }
 

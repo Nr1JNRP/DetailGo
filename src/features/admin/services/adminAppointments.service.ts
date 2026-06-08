@@ -6,21 +6,21 @@ import {
   getFirestore,
   serverTimestamp,
   updateDoc,
-  collection,
-  getDocs,
-  query,
-  where,
 } from '@react-native-firebase/firestore';
-import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
+/**
+ * Atualiza o status de um agendamento. O owner escreve apenas no doc do shop
+ * (que ele tem permissão). A cópia do cliente em users/{customerUid}/appointments
+ * é sincronizada pela Cloud Function onAppointmentStatusChanged — o owner não
+ * pode escrever na subcoleção de outro usuário (regras do Firestore).
+ */
 export async function updateAppointmentStatus(params: {
   shopId: string;
   appointmentId: string;
-  customerUid: string;
   status: AppointmentStatus;
 }) {
   const db = getFirestore();
-  const { shopId, appointmentId, customerUid, status } = params;
+  const { shopId, appointmentId, status } = params;
 
   const globalRef = doc(db, 'shops', shopId, 'appointments', appointmentId);
   const globalSnap = await getDoc(globalRef);
@@ -43,10 +43,6 @@ export async function updateAppointmentStatus(params: {
     }
   }
 
-  const userCol = collection(db, 'users', customerUid, 'appointments');
-  const qy = query(userCol, where('appointmentId', '==', appointmentId));
-  const snap = await getDocs(qy);
-
   const payload: Record<string, any> = {
     status,
     updatedAt: serverTimestamp(),
@@ -55,13 +51,5 @@ export async function updateAppointmentStatus(params: {
     ...(status === 'no_show' && { noShowAt: serverTimestamp() }),
   };
 
-  const updates: Promise<void>[] = [updateDoc(globalRef, payload)];
-
-  snap.docs.forEach(
-    (d: FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.DocumentData>) => {
-      updates.push(updateDoc(d.ref, payload));
-    },
-  );
-
-  await Promise.all(updates);
+  await updateDoc(globalRef, payload);
 }

@@ -48,7 +48,6 @@ import {
   ACTIVE_APPOINTMENT_SET,
   clearShopFavoriteIfNoActive,
   getAppointmentStatusConfig,
-  markExpiredScheduledAppointmentsAsNoShow,
   useDashboardAppointments,
 } from '@features/appointments';
 import type { RootStackParamList } from '@app/types';
@@ -147,26 +146,13 @@ export default function DashboardScreen() {
   const homeServices = shopServices;
   const appointmentCardWidth = Math.max(280, windowWidth - 72);
 
-  // Consolida agendamentos expirados e limpa a estetica quando nao ha proximos servicos.
+  // Limpa a estetica favorita quando o cliente nao tem mais proximos servicos.
   useEffect(() => {
     if (loadingAppointments) return;
     if (!shopId || !uid) return;
+    if (activeAppointments.length > 0) return;
 
-    let cancelled = false;
-
-    const syncExpiredAppointments = async () => {
-      await markExpiredScheduledAppointmentsAsNoShow(uid, shopId);
-      if (cancelled) return;
-      if (activeAppointments.length === 0) {
-        await clearShopFavoriteIfNoActive(uid, shopId);
-      }
-    };
-
-    syncExpiredAppointments();
-
-    return () => {
-      cancelled = true;
-    };
+    clearShopFavoriteIfNoActive(uid, shopId);
   }, [loadingAppointments, shopId, uid, activeAppointments.length]);
 
   useEffect(() => {

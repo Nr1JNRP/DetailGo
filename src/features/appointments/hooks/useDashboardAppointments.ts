@@ -16,7 +16,7 @@ import {
   normalizeUserAppointmentFromGlobal,
   normalizeUserAppointmentFromSubcollection,
 } from '../data/appointment.normalizers';
-import { getEffectiveStatus, filterActiveAppointments } from '../domain/appointment.helpers';
+import { filterActiveAppointments } from '../domain/appointment.helpers';
 
 export type DashboardAppointment = UserAppointment;
 
@@ -57,12 +57,7 @@ export function useDashboardAppointments({ uid, shopId, limitN = 30 }: Params) {
           .map((d: QDoc) => normalizeUserAppointmentFromSubcollection(d))
           .filter(Boolean) as DashboardAppointment[];
 
-        const withEffectiveStatus = arr.map(item => ({
-          ...item,
-          status: getEffectiveStatus(item.status, item.startAtMs),
-        }));
-
-        const activeAppointments = filterActiveAppointments(withEffectiveStatus);
+        const activeAppointments = filterActiveAppointments(arr);
 
         if (snap.docs.length > 0) {
           setItems(activeAppointments);
@@ -93,12 +88,7 @@ export function useDashboardAppointments({ uid, shopId, limitN = 30 }: Params) {
             .map((d: QDoc) => normalizeUserAppointmentFromGlobal(d))
             .filter(Boolean) as DashboardAppointment[];
 
-          const withEffectiveGlobal = fromGlobal.map(item => ({
-            ...item,
-            status: getEffectiveStatus(item.status, item.startAtMs),
-          }));
-
-          const activeGlobal = filterActiveAppointments(withEffectiveGlobal);
+          const activeGlobal = filterActiveAppointments(fromGlobal);
 
           setItems(activeGlobal);
           setLoading(false);

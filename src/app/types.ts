@@ -13,12 +13,6 @@ export type RootStackParamList = {
   Appointment:
     | {
         shopId?: string; // opcional — quando vem de ShopProfile, agenda nesse shop
-        mode?: 'reschedule';
-        originalAppointmentId?: string;
-        vehicleType?: 'Carro' | 'Moto';
-        carCategory?: 'Hatch' | 'Sedan' | 'SUV' | 'Picape cabine dupla' | null;
-        serviceLabel?: string | null;
-        isExpired?: boolean;
       }
     | undefined;
   MyAppointments: undefined;

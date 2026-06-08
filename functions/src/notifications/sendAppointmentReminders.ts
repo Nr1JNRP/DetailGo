@@ -5,12 +5,12 @@ import * as admin from 'firebase-admin';
 import { formatHour } from './format';
 
 /**
- * Roda a cada 1 minuto. Encontra agendamentos que comecam nos proximos ~2 min
+ * Roda a cada 1 minuto. Encontra agendamentos que comecam nos proximos ~5 min
  * e ainda nao foram lembrados, e envia um push FCM ao cliente avisando que o
  * atendimento esta proximo.
  */
 
-const LEAD_MS = 2 * 60 * 1000; // 2 minutos antes
+const LEAD_MS = 5 * 60 * 1000; // 5 minutos antes
 const BUFFER_MS = 30 * 1000; // folga para nao perder ticks do cron
 
 type ReminderAppointment = {
