@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 
 import type { AppointmentStatus, UserAppointment } from '../domain/appointment.types';
 import { watchUserAppointmentsWithFallback } from '../data/appointmentsRepo';
-import { getEffectiveStatus } from '../domain/appointment.helpers';
 
 type Params = {
   uid?: string | null;
@@ -38,14 +37,7 @@ export function useUserAppointments(params: Params) {
       shopId,
       limitN,
       onChange: list => {
-        const withEffectiveStatus = list.map(item => ({
-          ...item,
-          status: getEffectiveStatus(item.status, item.startAtMs),
-        }));
-
-        const scoped = shopId
-          ? withEffectiveStatus.filter(item => !item.shopId || item.shopId === shopId)
-          : withEffectiveStatus;
+        const scoped = shopId ? list.filter(item => !item.shopId || item.shopId === shopId) : list;
 
         const filtered =
           statusIn && statusIn.length > 0 ? scoped.filter(it => statusSet.has(it.status)) : scoped;

@@ -1,5 +1,4 @@
 import { colors } from '@shared/theme';
-import { NO_SHOW_GRACE_MS } from './appointment.constants';
 
 export type StatusConfig = {
   label: string;
@@ -22,20 +21,6 @@ export const getAppointmentStatusConfig = (
       return { label: 'Agendado', color: colors.text.disabled };
   }
 };
-
-export function isAppointmentExpired(startAtMs: number): boolean {
-  return Date.now() >= startAtMs + NO_SHOW_GRACE_MS;
-}
-
-export function getEffectiveStatus(
-  status: 'scheduled' | 'in_progress' | 'done' | 'no_show' | 'cancelled',
-  startAtMs: number,
-): 'scheduled' | 'in_progress' | 'done' | 'no_show' | 'cancelled' {
-  if (status === 'scheduled' && isAppointmentExpired(startAtMs)) {
-    return 'no_show';
-  }
-  return status;
-}
 
 export function filterActiveAppointments<T extends { status: string }>(appointments: T[]): T[] {
   return appointments.filter(item => item.status === 'scheduled' || item.status === 'in_progress');

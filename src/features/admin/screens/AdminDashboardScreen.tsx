@@ -271,7 +271,6 @@ export default function AdminDashboardScreen() {
                 await updateAppointmentStatus({
                   shopId: shopId ?? '',
                   appointmentId: it.id,
-                  customerUid: it.customerUid,
                   status: 'no_show',
                 });
               } catch {
@@ -392,7 +391,6 @@ export default function AdminDashboardScreen() {
       await updateAppointmentStatus({
         shopId,
         appointmentId: item.id,
-        customerUid: item.customerUid,
         status: next,
       });
     } catch (e: any) {
