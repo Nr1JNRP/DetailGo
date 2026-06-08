@@ -51,5 +51,9 @@ export async function updateAppointmentStatus(params: {
     ...(status === 'no_show' && { noShowAt: serverTimestamp() }),
   };
 
-  await updateDoc(globalRef, payload);
+  // Dispara a escrita sem aguardar o ack do servidor: o Firestore aplica a
+  // mutação no cache local imediatamente (o onSnapshot atualiza a UI na hora) e
+  // sincroniza com o servidor quando houver conexao. Sem isso, o await fica
+  // pendurado quando o aparelho esta offline, travando o botao.
+  updateDoc(globalRef, payload).catch(() => {});
 }

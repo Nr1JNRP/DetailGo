@@ -115,7 +115,6 @@ export default function AdminDashboardScreen() {
   const [donePrevWeekCount, setDonePrevWeekCount] = useState(0);
   const [loadingWeek, setLoadingWeek] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const noShowMarkedRef = useRef<Set<string>>(new Set());
 
   const [weekAnchor, setWeekAnchor] = useState<Date>(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
@@ -255,31 +254,8 @@ export default function AdminDashboardScreen() {
           .map((d: QDoc) => normalizeAdminAppointmentFromGlobal(d))
           .filter(Boolean) as AdminAppointment[];
 
-        const now = Date.now();
-        const expiredScheduled = base.filter(
-          it =>
-            it.status === 'scheduled' &&
-            now >= it.startAtMs + NO_SHOW_GRACE_MS &&
-            !noShowMarkedRef.current.has(it.id),
-        );
-
-        if (expiredScheduled.length > 0) {
-          await Promise.all(
-            expiredScheduled.map(async it => {
-              noShowMarkedRef.current.add(it.id);
-              try {
-                await updateAppointmentStatus({
-                  shopId: shopId ?? '',
-                  appointmentId: it.id,
-                  status: 'no_show',
-                });
-              } catch {
-                noShowMarkedRef.current.delete(it.id);
-              }
-            }),
-          );
-        }
-
+        // Agendamentos expirados ficam como "aguardando baixa" ate o owner dar
+        // baixa manualmente (Nao realizado). Sem marcacao automatica.
         const finalList = await fillMissingNamesAndUpdate(base);
         setAppointmentsWeek(finalList);
         setLoadingWeek(false);
@@ -393,6 +369,14 @@ export default function AdminDashboardScreen() {
         appointmentId: item.id,
         status: next,
       });
+
+      const successMsg =
+        next === 'no_show'
+          ? 'Serviço marcado como não realizado.'
+          : next === 'done'
+          ? 'Serviço concluído.'
+          : 'Atendimento iniciado.';
+      Alert.alert('Pronto', successMsg);
     } catch (e: any) {
       Alert.alert(
         'Erro',
