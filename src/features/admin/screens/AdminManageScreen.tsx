@@ -1202,7 +1202,6 @@ function createStyles(D: AppColors) {
       height: 42,
       backgroundColor: D.primary,
       borderRadius: radii.sm,
-      marginTop: spacing.sm,
     },
     serviceEditActions: {
       flexDirection: 'row',
