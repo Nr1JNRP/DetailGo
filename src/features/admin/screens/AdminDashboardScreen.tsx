@@ -459,40 +459,40 @@ export default function AdminDashboardScreen() {
             isExpiredScheduled && styles.agendaCardExpired,
           ]}
         >
-          <View style={styles.agendaCardContent}>
+          <View style={styles.agendaCardHeader}>
             <Text style={styles.agendaService} numberOfLines={1}>
               {item.serviceLabel ?? 'Serviço'}
             </Text>
-            <Text style={styles.agendaClient} numberOfLines={1}>
-              {item.customerName} · {vehicle}
-            </Text>
-            <View style={styles.agendaStatusRow}>
+            <View
+              style={[
+                styles.agendaStatusPill,
+                isInProgress && styles.agendaStatusPillActive,
+                isExpiredScheduled && styles.agendaStatusPillExpired,
+              ]}
+            >
               <View
                 style={[
-                  styles.agendaStatusPill,
-                  isInProgress && styles.agendaStatusPillActive,
-                  isExpiredScheduled && styles.agendaStatusPillExpired,
+                  styles.agendaStatusDot,
+                  isInProgress && styles.agendaStatusDotActive,
+                  isExpiredScheduled && styles.agendaStatusDotExpired,
                 ]}
+              />
+              <Text
+                style={[
+                  styles.agendaStatusText,
+                  isInProgress && styles.agendaStatusTextActive,
+                  isExpiredScheduled && styles.agendaStatusTextExpired,
+                ]}
+                numberOfLines={1}
               >
-                <View
-                  style={[
-                    styles.agendaStatusDot,
-                    isInProgress && styles.agendaStatusDotActive,
-                    isExpiredScheduled && styles.agendaStatusDotExpired,
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.agendaStatusText,
-                    isInProgress && styles.agendaStatusTextActive,
-                    isExpiredScheduled && styles.agendaStatusTextExpired,
-                  ]}
-                >
-                  {statusLabel}
-                </Text>
-              </View>
+                {statusLabel}
+              </Text>
             </View>
           </View>
+
+          <Text style={styles.agendaClient} numberOfLines={1}>
+            {item.customerName} · {vehicle}
+          </Text>
 
           <TouchableOpacity
             style={[
@@ -505,7 +505,10 @@ export default function AdminDashboardScreen() {
             disabled={!!updatingId}
           >
             {isUpdating ? (
-              <ActivityIndicator size="small" color={isInProgress ? D.onPrimary : D.primary} />
+              <ActivityIndicator
+                size="small"
+                color={isInProgress ? D.onPrimary : isExpiredScheduled ? D.status.error : D.primary}
+              />
             ) : (
               <>
                 {isExpiredScheduled ? (
@@ -521,7 +524,7 @@ export default function AdminDashboardScreen() {
                     isInProgress && styles.agendaActionTextDone,
                     isExpiredScheduled && styles.agendaActionTextExpired,
                   ]}
-                  numberOfLines={2}
+                  numberOfLines={1}
                 >
                   {actionLabel}
                 </Text>
@@ -917,13 +920,14 @@ function createStyles(D: AppColors) {
     // ── Agenda rows ──────────────────────────────────
     agendaRow: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       paddingHorizontal: spacing.lg,
       gap: spacing.sm,
     },
     agendaTimeCol: {
       width: 48,
       alignItems: 'flex-start',
+      paddingTop: spacing.md,
     },
     agendaHour: {
       fontSize: 15,
@@ -939,16 +943,13 @@ function createStyles(D: AppColors) {
     },
     agendaCard: {
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.sm,
       backgroundColor: D.card,
       borderRadius: radii.lg,
       borderWidth: 1,
       borderColor: D.border,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.md,
-      minHeight: 68,
+      gap: 10,
     },
     agendaCardActive: {
       borderColor: D.primary,
@@ -956,23 +957,22 @@ function createStyles(D: AppColors) {
     agendaCardExpired: {
       borderColor: D.status.error,
     },
-    agendaCardContent: {
-      flex: 1,
+    agendaCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
     },
     agendaService: {
+      flex: 1,
       fontSize: 16,
       fontFamily: T.family.bold,
       color: D.ink,
-      marginBottom: 3,
     },
     agendaClient: {
       fontSize: 13,
       color: D.ink3,
       fontFamily: T.family.regular,
-    },
-    agendaStatusRow: {
-      flexDirection: 'row',
-      marginTop: spacing.sm,
+      marginTop: -4,
     },
     agendaStatusPill: {
       flexDirection: 'row',
@@ -1017,32 +1017,30 @@ function createStyles(D: AppColors) {
       color: D.status.error,
     },
     agendaActionButton: {
-      width: 118,
-      minHeight: 44,
+      alignSelf: 'stretch',
+      height: 42,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 6,
+      gap: 8,
       borderRadius: radii.md,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: D.primary,
       backgroundColor: 'transparent',
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
     },
     agendaActionButtonDone: {
       backgroundColor: D.primary,
+      borderColor: D.primary,
     },
     agendaActionButtonExpired: {
       borderColor: D.status.error,
+      backgroundColor: 'rgba(255,92,57,0.1)',
     },
     agendaActionText: {
-      flexShrink: 1,
-      fontSize: 11,
-      lineHeight: 13,
+      fontSize: 13,
       fontFamily: T.family.extraBold,
       color: D.primary,
-      textAlign: 'center',
     },
     agendaActionTextDone: {
       color: D.onPrimary,
