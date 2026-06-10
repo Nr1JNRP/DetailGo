@@ -1,4 +1,7 @@
-export type AppNotificationType = 'appointment_created' | 'appointment_reminder';
+export type AppNotificationType =
+  | 'appointment_created'
+  | 'appointment_reminder'
+  | 'appointment_done';
 
 export type AppNotification = {
   id: string;
