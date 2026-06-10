@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Bell, CalendarCheck, Clock } from 'lucide-react-native';
+import { ArrowLeft, Bell, CalendarCheck, CheckCircle2, Clock } from 'lucide-react-native';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 
@@ -102,7 +102,12 @@ function NotificationRow({
   styles: ReturnType<typeof createStyles>;
   D: AppColors;
 }) {
-  const Icon = item.type === 'appointment_reminder' ? Clock : CalendarCheck;
+  const Icon =
+    item.type === 'appointment_reminder'
+      ? Clock
+      : item.type === 'appointment_done'
+      ? CheckCircle2
+      : CalendarCheck;
   return (
     <View style={[styles.row, !item.read && styles.rowUnread]}>
       <View style={styles.rowIcon}>
