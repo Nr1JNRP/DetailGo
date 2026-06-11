@@ -49,7 +49,30 @@ import {
   ALL_WEEK_DAYS,
   WEEK_DAY_LABELS,
 } from '@features/settings';
+import SelectModal from '@shared/components/SelectModal';
+
 const NEW_SERVICE_DRAFT = '__new_service__';
+
+// Opções de duração (valor em minutos, rótulo amigável em h/min).
+const DURATION_OPTIONS: { label: string; value: string }[] = [
+  { label: '30 min', value: '30' },
+  { label: '45 min', value: '45' },
+  { label: '1h', value: '60' },
+  { label: '1h 30min', value: '90' },
+  { label: '2h', value: '120' },
+  { label: '2h 30min', value: '150' },
+  { label: '3h', value: '180' },
+];
+
+function formatDurationLabel(min: string): string {
+  const found = DURATION_OPTIONS.find(o => o.value === min);
+  if (found) return found.label;
+  const n = Number(min);
+  if (!n) return 'Selecionar';
+  const h = Math.floor(n / 60);
+  const m = n % 60;
+  return h ? (m ? `${h}h ${m}min` : `${h}h`) : `${m} min`;
+}
 
 type ServiceDraft = {
   name: string;
@@ -162,6 +185,8 @@ export default function AdminManageScreen() {
   const [newServiceDraft, setNewServiceDraft] = useState<ServiceDraft>(() =>
     createEmptyServiceDraft(),
   );
+  // serviceId (ou NEW_SERVICE_DRAFT) cujo seletor de duração está aberto.
+  const [durationPickerFor, setDurationPickerFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (shop?.name) setShopName(shop.name);
@@ -460,6 +485,36 @@ export default function AdminManageScreen() {
     </View>
   );
 
+  const stepCapacity = (dir: 1 | -1) => {
+    if (!settings) return;
+    const val = settings.parallelCapacity + dir;
+    if (val < 1 || val > 10) return;
+    setSettings(prev => (prev ? { ...prev, parallelCapacity: val } : prev));
+  };
+
+  const renderCapacityStepper = () => (
+    <View style={styles.stepperRow}>
+      <Text style={styles.stepperLabel}>Atendimentos simultâneos</Text>
+      <View style={styles.stepper}>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={() => stepCapacity(-1)}
+          activeOpacity={0.7}
+        >
+          <ChevronDown size={18} color={D.primary} />
+        </TouchableOpacity>
+        <Text style={styles.stepperValue}>{settings?.parallelCapacity ?? 1}</Text>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={() => stepCapacity(1)}
+          activeOpacity={0.7}
+        >
+          <ChevronUp size={18} color={D.primary} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderServiceForm = ({
     draft,
     serviceId,
@@ -583,15 +638,17 @@ export default function AdminManageScreen() {
       <View style={styles.serviceInlineFields}>
         <View style={styles.inlineField}>
           <Text style={styles.inputLabel}>Duração</Text>
-          <TextInput
-            style={styles.serviceInput}
-            value={draft.durationMin}
-            onChangeText={value => updateServiceDraft(serviceId, 'durationMin', value)}
-            placeholder="30"
-            placeholderTextColor={D.ink3}
-            keyboardType="numeric"
-            editable={!isSaving}
-          />
+          <TouchableOpacity
+            style={[styles.serviceInput, styles.durationSelect]}
+            onPress={() => setDurationPickerFor(serviceId)}
+            disabled={isSaving}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.durationSelectText, !draft.durationMin && { color: D.ink3 }]}>
+              {formatDurationLabel(draft.durationMin)}
+            </Text>
+            <ChevronDown size={16} color={D.ink3} />
+          </TouchableOpacity>
         </View>
         <View style={styles.inlineField}>
           <Text style={styles.inputLabel}>Preço</Text>
@@ -709,6 +766,10 @@ export default function AdminManageScreen() {
                 {renderHourStepper('Abertura', 'openHour')}
                 <View style={styles.divider} />
                 {renderHourStepper('Fechamento', 'closeHour')}
+
+                <View style={styles.divider} />
+
+                {renderCapacityStepper()}
 
                 <View style={styles.divider} />
 
@@ -904,6 +965,23 @@ export default function AdminManageScreen() {
           <View style={{ height: spacing.xl }} />
         </ScrollView>
       </SafeAreaView>
+
+      <SelectModal
+        title="Duração do serviço"
+        visible={durationPickerFor !== null}
+        value={
+          durationPickerFor === NEW_SERVICE_DRAFT
+            ? newServiceDraft.durationMin
+            : durationPickerFor
+            ? serviceDrafts[durationPickerFor]?.durationMin ?? null
+            : null
+        }
+        options={DURATION_OPTIONS}
+        onClose={() => setDurationPickerFor(null)}
+        onSelect={value => {
+          if (durationPickerFor) updateServiceDraft(durationPickerFor, 'durationMin', value);
+        }}
+      />
     </>
   );
 }
@@ -1151,6 +1229,17 @@ function createStyles(D: AppColors) {
       fontFamily: T.family.regular,
       color: D.ink,
       backgroundColor: D.card,
+    },
+    durationSelect: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.md,
+    },
+    durationSelectText: {
+      fontSize: 14,
+      fontFamily: T.family.regular,
+      color: D.ink,
     },
     chipGroup: {
       flexDirection: 'row',

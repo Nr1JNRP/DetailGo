@@ -188,11 +188,12 @@ function generateSlots(day: Date, settings: ShopSettings, durationMin: number): 
   const close = new Date(day);
   close.setHours(settings.closeHour, 0, 0, 0);
 
-  const stepMs = settings.slotStepMin * 60 * 1000;
+  // Cada serviço usa a própria duração como intervalo entre os horários:
+  // lavagem (30min) → 8:00, 8:30, 9:00…; polimento (90min) → 8:00, 9:30, 11:00…
   const durationMs = durationMin * 60 * 1000;
 
   const slots: Slot[] = [];
-  for (let t = open.getTime(); t + durationMs <= close.getTime(); t += stepMs) {
+  for (let t = open.getTime(); t + durationMs <= close.getTime(); t += durationMs) {
     slots.push({
       startAtMs: t,
       endAtMs: t + durationMs,
@@ -226,6 +227,13 @@ export async function getAvailableSlotsForDay(
   shopId: string,
 ): Promise<Slot[]> {
   const settings = await getShopSettings(shopId);
+
+  // Dia não atendido pela estética → sem horários disponíveis.
+  const WEEKDAY_KEYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'] as const;
+  if (!settings.workingDays.includes(WEEKDAY_KEYS[day.getDay()])) {
+    return [];
+  }
+
   const dayKey = dateUtils.toDayKey(day);
   const dayStart = dateUtils.startOfDay(day);
   const dayEnd = dateUtils.endOfDay(day);

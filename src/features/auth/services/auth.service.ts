@@ -78,8 +78,8 @@ async function registerAsOwner(uid: string, data: RegisterInput): Promise<void> 
   await setDoc(doc(db, 'shops', shopId, 'settings', 'config'), {
     openHour: 8,
     closeHour: 18,
-    slotStepMin: 30,
     parallelCapacity: 2,
+    workingDays: ['seg', 'ter', 'qua', 'qui', 'sex'],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
