@@ -1,7 +1,7 @@
 // src/shared/components/SelectModal.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { colors, spacing, radii, typography as T } from '@shared/theme';
+import { spacing, radii, typography as T, useAppTheme, type AppColors } from '@shared/theme';
 
 function OptionSeparator() {
   return <View style={{ height: spacing.sm }} />;
@@ -26,6 +26,9 @@ export default function SelectModal<T extends string>({
   onClose,
   onSelect,
 }: Props<T>) {
+  const { colors: D } = useAppTheme();
+  const styles = useMemo(() => createStyles(D), [D]);
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
@@ -67,55 +70,57 @@ export default function SelectModal<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.background.main,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    maxHeight: '72%',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  title: {
-    fontSize: 16,
-    fontFamily: T.family.extraBold,
-    color: colors.text.primary,
-  },
-  close: {
-    fontSize: 14,
-    fontFamily: T.family.extraBold,
-    color: colors.primary.main,
-  },
+function createStyles(D: AppColors) {
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: D.overlay,
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: D.bg,
+      borderTopLeftRadius: radii.xl,
+      borderTopRightRadius: radii.xl,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.md,
+      maxHeight: '72%',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+    },
+    title: {
+      fontSize: 16,
+      fontFamily: T.family.extraBold,
+      color: D.ink,
+    },
+    close: {
+      fontSize: 14,
+      fontFamily: T.family.extraBold,
+      color: D.primary,
+    },
 
-  item: {
-    borderWidth: 1,
-    borderColor: colors.border.main,
-    borderRadius: radii.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.background.card,
-  },
-  itemSelected: {
-    backgroundColor: colors.primary.main,
-    borderColor: colors.primary.main,
-  },
-  itemText: {
-    color: colors.text.primary,
-    fontFamily: T.family.extraBold,
-  },
-  itemTextSelected: {
-    color: colors.text.white,
-  },
-});
+    item: {
+      borderWidth: 1,
+      borderColor: D.border,
+      borderRadius: radii.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      backgroundColor: D.card,
+    },
+    itemSelected: {
+      backgroundColor: D.primary,
+      borderColor: D.primary,
+    },
+    itemText: {
+      color: D.ink,
+      fontFamily: T.family.extraBold,
+    },
+    itemTextSelected: {
+      color: D.onPrimary,
+    },
+  });
+}

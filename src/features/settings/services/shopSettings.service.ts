@@ -23,9 +23,7 @@ export const WEEK_DAY_LABELS: Record<WeekDay, string> = {
 export type ShopSettings = {
   openHour: number;
   closeHour: number;
-  /** Interno — usado pelo motor de agendamento, não exposto na UI */
-  slotStepMin: number;
-  /** Interno — usado pelo motor de agendamento, não exposto na UI */
+  /** Quantos atendimentos simultâneos a estética suporta (carros ao mesmo tempo) */
   parallelCapacity: number;
   /** Dias da semana em que a estética atende */
   workingDays: WeekDay[];
@@ -34,7 +32,6 @@ export type ShopSettings = {
 const DEFAULT_SETTINGS: ShopSettings = {
   openHour: 8,
   closeHour: 18,
-  slotStepMin: 30,
   parallelCapacity: 2,
   workingDays: ['seg', 'ter', 'qua', 'qui', 'sex'],
 };
@@ -50,10 +47,6 @@ function validateHour(hour?: number): number | null {
   return hour != null && hour >= 0 && hour <= 23 ? hour : null;
 }
 
-function validateSlotStep(step?: number): number | null {
-  return step && step >= 15 && step <= 60 ? step : null;
-}
-
 function validateCapacity(capacity?: number): number | null {
   return capacity && capacity >= 1 && capacity <= 10 ? capacity : null;
 }
@@ -67,7 +60,6 @@ function validateAndMergeSettings(data: Partial<ShopSettings>): ShopSettings {
   return {
     openHour: validateHour(data?.openHour) ?? DEFAULT_SETTINGS.openHour,
     closeHour: validateHour(data?.closeHour) ?? DEFAULT_SETTINGS.closeHour,
-    slotStepMin: validateSlotStep(data?.slotStepMin) ?? DEFAULT_SETTINGS.slotStepMin,
     parallelCapacity: validateCapacity(data?.parallelCapacity) ?? DEFAULT_SETTINGS.parallelCapacity,
     workingDays: validateWorkingDays(data?.workingDays),
   };
