@@ -17,6 +17,7 @@ import { getAuth } from '@react-native-firebase/auth';
 import {
   collection,
   doc,
+  getCountFromServer,
   getFirestore,
   onSnapshot,
   orderBy,
@@ -284,7 +285,9 @@ export default function AdminDashboardScreen() {
     return () => unsub();
   }, [db, shopId, weekStartMs, weekEndMs]);
 
-  // Previous week done count for delta comparison
+  // Contagem da semana anterior (para o delta). A semana passada não muda, então
+  // usamos getCountFromServer (1 leitura) em vez de um onSnapshot que leria todos
+  // os docs "done" daquela semana.
   useEffect(() => {
     if (!shopId) return;
 
@@ -297,16 +300,20 @@ export default function AdminDashboardScreen() {
       where('status', '==', 'done'),
       where('startAtMs', '>=', prevStart),
       where('startAtMs', '<=', prevEnd),
-      orderBy('startAtMs', 'asc'),
     );
 
-    const unsub = onSnapshot(
-      q,
-      snap => setDonePrevWeekCount(snap.size),
-      () => {},
-    );
+    let cancelled = false;
+    getCountFromServer(q)
+      .then(snap => {
+        if (!cancelled) setDonePrevWeekCount(snap.data().count);
+      })
+      .catch(() => {
+        if (!cancelled) setDonePrevWeekCount(0);
+      });
 
-    return () => unsub();
+    return () => {
+      cancelled = true;
+    };
   }, [db, shopId, weekStartMs, weekEndMs]);
 
   // KPI computations
