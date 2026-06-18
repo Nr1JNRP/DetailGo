@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Alert,
   Animated,
@@ -13,10 +13,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar, History, LogOut, Settings, Store, User } from 'lucide-react-native';
 import { getAuth, signOut } from '@react-native-firebase/auth';
-import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
+import { useMeStore } from '@features/auth';
 import { useShop, useShopServices } from '@features/shops';
 import type { RootStackParamList } from '@app/types';
 
@@ -37,19 +37,9 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
   const { shop, shopId } = useShop();
   const auth = getAuth();
   const user = auth.currentUser;
-  const db = getFirestore();
 
-  const [photoB64, setPhotoB64] = useState<string | null>(null);
-
-  // Carrega foto do Firestore em tempo real
-  useEffect(() => {
-    if (!user?.uid) return;
-    const unsub = onSnapshot(doc(db, 'users', user.uid), snap => {
-      const data = snap.data() as { photoB64?: string } | undefined;
-      setPhotoB64(data?.photoB64 ?? null);
-    });
-    return () => unsub();
-  }, [user?.uid, db]);
+  // Foto vem do listener único de users/{uid} (useMeStore), sem onSnapshot aqui.
+  const photoB64 = useMeStore(s => s.me?.photoB64 ?? null);
 
   // Verifica se há serviços cadastrados e notifica o owner na primeira abertura
   const { items: services, loading: loadingServices } = useShopServices({

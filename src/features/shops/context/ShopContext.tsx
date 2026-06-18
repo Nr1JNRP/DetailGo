@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
-import { useAuth } from '@features/auth';
+import { useAuth, useMeStore, type MeDoc } from '@features/auth';
 
 import {
   useShopStore,
@@ -12,11 +12,6 @@ import {
 
 export type { ShopDoc, UserRole, SubscriptionStatus };
 
-type UserDoc = {
-  shopId?: string;
-  role?: UserRole;
-};
-
 /**
  * Inicializador da estética vinculada: assina users/{uid} (role + shopId) e
  * shops/{shopId} (doc do shop) e grava no useShopStore. Mantido como "Provider"
@@ -26,27 +21,34 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const db = getFirestore();
 
-  // users/{uid} → shopId + role
+  // users/{uid} → único listener do doc do próprio usuário. Alimenta o
+  // useShopStore (shopId + role, p/ navegação) e o useMeStore (perfil + foto),
+  // substituindo os listeners duplicados que viviam nas telas.
   useEffect(() => {
-    const store = useShopStore.getState();
-
     if (!user?.uid) {
-      store.reset();
+      useShopStore.getState().reset();
+      useMeStore.getState().reset();
       return;
     }
 
-    store.setLoadingUser(true);
+    const uid = user.uid;
+    useShopStore.getState().setLoadingUser(true);
+    useMeStore.getState().setLoadingMe(true);
 
     const unsub = onSnapshot(
-      doc(db, 'users', user.uid),
+      doc(db, 'users', uid),
       snap => {
-        const data = (snap.data() ?? {}) as UserDoc;
+        const data = (snap.data() ?? {}) as Partial<MeDoc>;
         useShopStore.getState().setUserSnapshot({
           shopId: data.shopId ?? null,
           userRole: data.role ?? null,
         });
+        useMeStore.getState().setMe({ ...data, uid });
       },
-      () => useShopStore.getState().setLoadingUser(false),
+      () => {
+        useShopStore.getState().setLoadingUser(false);
+        useMeStore.getState().setLoadingMe(false);
+      },
     );
 
     return unsub;

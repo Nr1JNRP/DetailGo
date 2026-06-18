@@ -35,14 +35,13 @@ import {
   setDoc,
   updateDoc,
   deleteField,
-  onSnapshot,
 } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import type { RootStackParamList } from '@app/types';
 import { formatUtils } from '@shared/utils/format.utils';
-import { useAuth } from '@features/auth';
+import { useAuth, useMeStore } from '@features/auth';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -157,40 +156,37 @@ export default function ProfileScreen() {
     }
   };
 
+  // Perfil vem do listener único de users/{uid} (useMeStore), sem onSnapshot aqui.
+  const me = useMeStore(s => s.me);
   useEffect(() => {
-    if (!userRef || !user) {
+    if (!user) {
       setLoading(false);
       return;
     }
+    if (!me) return;
 
-    const unsubscribe = onSnapshot(userRef, snap => {
-      const data = (snap.data() as UserProfile | undefined) ?? {};
+    const authEmail = user.email || '';
+    const pendingFromFirestore = me.pendingEmail || '';
 
-      const authEmail = user.email || '';
-      const pendingFromFirestore = data.pendingEmail || '';
+    const shouldClearPending =
+      pendingFromFirestore && normalizeEmail(authEmail) === normalizeEmail(pendingFromFirestore);
 
-      const shouldClearPending =
-        pendingFromFirestore && normalizeEmail(authEmail) === normalizeEmail(pendingFromFirestore);
+    const phoneValue = me.phone || '';
 
-      const phoneValue = data.phone || '';
-
-      setProfile({
-        firstName: data.firstName || '',
-        lastName: data.lastName || '',
-        phone: phoneValue,
-        email: authEmail || data.email || '',
-        pendingEmail: shouldClearPending ? '' : pendingFromFirestore,
-        photoURL: data.photoURL || user.photoURL || undefined,
-        photoB64: data.photoB64,
-      });
-
-      setNewPhone(phoneValue);
-      setDisplayPhone(formatUtils.phoneMask(phoneValue));
-      setLoading(false);
+    setProfile({
+      firstName: me.firstName || '',
+      lastName: me.lastName || '',
+      phone: phoneValue,
+      email: authEmail || me.email || '',
+      pendingEmail: shouldClearPending ? '' : pendingFromFirestore,
+      photoURL: me.photoURL || user.photoURL || undefined,
+      photoB64: me.photoB64,
     });
 
-    return () => unsubscribe();
-  }, [userRef, user]);
+    setNewPhone(phoneValue);
+    setDisplayPhone(formatUtils.phoneMask(phoneValue));
+    setLoading(false);
+  }, [me, user]);
 
   const handleSave = async () => {
     if (!userRef) return;

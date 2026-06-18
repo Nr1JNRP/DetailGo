@@ -40,7 +40,7 @@ import {
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { UI } from '@shared/constants/app.constants';
-import { useAuth } from '@features/auth';
+import { useAuth, useMeStore } from '@features/auth';
 import { useShop, useShopServices, getShopServiceIcon } from '@features/shops';
 import { getShopSettings } from '@features/settings';
 import { useRegisterPushToken, useUserNotifications } from '@features/notifications';
@@ -155,18 +155,18 @@ export default function DashboardScreen() {
     clearShopFavoriteIfNoActive(uid, shopId);
   }, [loadingAppointments, shopId, uid, activeAppointments.length]);
 
+  // Perfil vem do listener único de users/{uid} (useMeStore), sem onSnapshot aqui.
+  const me = useMeStore(s => s.me);
   useEffect(() => {
-    const db = getFirestore();
-    const unsub = onSnapshot(
-      doc(db, 'users', uid),
-      snap => {
-        const data = snap?.data() as UserProfile | undefined;
-        if (data) setProfile(p => ({ ...p, ...data }));
-      },
-      () => {},
-    );
-    return () => unsub();
-  }, [uid]);
+    if (!me) return;
+    setProfile(p => ({
+      ...p,
+      firstName: me.firstName,
+      lastName: me.lastName,
+      photoB64: me.photoB64,
+      photoURL: me.photoURL ?? p.photoURL,
+    }));
+  }, [me]);
 
   const initials = useMemo(() => {
     if (profile.firstName) {
