@@ -15,5 +15,8 @@ export {
 } from './services/auth.service';
 export type { RegisterInput, AuthResult, UserRole } from './services/auth.service';
 
+// State
+export { useMeStore, type MeDoc } from './state/me.store';
+
 // Utils
 export { isOwner, isCustomer } from './utils/roles';

@@ -51,6 +51,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { updateAppointmentStatus } from '@features/admin';
+import { useMeStore } from '@features/auth';
 import { useShop } from '@features/shops';
 import { useShopNotifications, useRegisterPushToken } from '@features/notifications';
 import { NO_SHOW_GRACE_MS } from '@features/appointments';
@@ -120,7 +121,8 @@ export default function AdminDashboardScreen() {
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
 
   // ── Perfil do proprietário ──
-  const [ownerPhotoB64, setOwnerPhotoB64] = useState<string | null>(null);
+  // Foto vem do listener único de users/{uid} (useMeStore), sem onSnapshot aqui.
+  const ownerPhotoB64 = useMeStore(s => s.me?.photoB64 ?? null);
   const [savingOwnerPhoto, setSavingOwnerPhoto] = useState(false);
   const ownerName = user?.displayName ?? 'Proprietário';
   const ownerInitials = ownerName
@@ -164,16 +166,6 @@ export default function AdminDashboardScreen() {
 
   const { fetchCustomerName } = useCustomerName();
 
-  // Carrega foto do proprietário em tempo real
-  useEffect(() => {
-    if (!user?.uid) return;
-    const unsub = onSnapshot(doc(db, 'users', user.uid), snap => {
-      const data = snap.data() as { photoB64?: string } | undefined;
-      setOwnerPhotoB64(data?.photoB64 ?? null);
-    });
-    return () => unsub();
-  }, [user?.uid, db]);
-
   const saveAvatar = async () => {
     try {
       const res = await launchImageLibrary({
@@ -193,7 +185,7 @@ export default function AdminDashboardScreen() {
       }`;
       const { setDoc } = await import('@react-native-firebase/firestore');
       await setDoc(doc(db, 'users', user.uid), { photoB64: b64 }, { merge: true });
-      setOwnerPhotoB64(b64);
+      // Sem update otimista: o listener único de users/{uid} atualiza o store.
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar a foto');
     } finally {
