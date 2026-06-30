@@ -16,8 +16,10 @@ import { ArrowLeft } from 'lucide-react-native';
 
 import type { RootStackParamList } from '@app/types';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
+import { useNowTick } from '@shared/hooks/useNowTick';
 import { HISTORY_APPOINTMENT_SET } from '../domain/appointment.constants';
-import type { AppointmentStatus, UserAppointment } from '../domain/appointment.types';
+import { isExpiredScheduled } from '../domain/appointment.helpers';
+import type { UserAppointment } from '../domain/appointment.types';
 import { useUserAppointments } from '../hooks/useUserAppointments';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -36,10 +38,16 @@ const FILTER_OPTIONS: { id: FilterId; label: string }[] = [
   { id: 'no_show', label: 'Não realizados' },
 ];
 
-function getFilteredItems(items: UserAppointment[], filter: FilterId) {
+function isMissed(item: UserAppointment, now: number = Date.now()) {
+  // Não realizado = o estabelecimento marcou no_show, OU o horário passou
+  // (+ tolerância) e ainda está scheduled (vencido, aguardando baixa do dono).
+  return item.status === 'no_show' || isExpiredScheduled(item.status, item.startAtMs, now);
+}
+
+function getFilteredItems(items: UserAppointment[], filter: FilterId, now: number) {
   if (filter === 'done') return items.filter(item => item.status === 'done');
   if (filter === 'cancelled') return items.filter(item => item.status === 'cancelled');
-  if (filter === 'no_show') return items.filter(item => item.status === 'no_show');
+  if (filter === 'no_show') return items.filter(item => isMissed(item, now));
   return items;
 }
 
@@ -73,9 +81,9 @@ function getVehicleLabel(item: UserAppointment) {
   return item.vehicleType;
 }
 
-function getStatusLabel(status: AppointmentStatus) {
-  if (status === 'done') return 'Concluído';
-  if (status === 'no_show') return 'Não realizado';
+function getStatusLabel(item: UserAppointment) {
+  if (item.status === 'done') return 'Concluído';
+  if (isMissed(item)) return 'Não realizado';
   return 'Cancelado';
 }
 
@@ -117,18 +125,33 @@ export default function HistoryScreen() {
   const auth = getAuth();
   const uid = auth.currentUser?.uid;
   const [filter, setFilter] = useState<FilterId>('all');
+  const now = useNowTick();
 
   const { loading, items } = useUserAppointments({
     uid,
-    statusIn: HISTORY_APPOINTMENT_SET,
     limitN: 50,
   });
 
-  const filteredItems = useMemo(() => getFilteredItems(items, filter), [filter, items]);
+  // Inclui no histórico os vencidos (scheduled que passaram do horário + tolerância):
+  // pro cliente já são "Não realizado", mesmo antes do estabelecimento dar baixa.
+  const historyItems = useMemo(
+    () =>
+      items.filter(
+        item =>
+          (HISTORY_APPOINTMENT_SET as readonly string[]).includes(item.status) ||
+          isMissed(item, now),
+      ),
+    [items, now],
+  );
+
+  const filteredItems = useMemo(
+    () => getFilteredItems(historyItems, filter, now),
+    [filter, historyItems, now],
+  );
   const groups = useMemo(() => groupByMonth(filteredItems), [filteredItems]);
 
-  const totalDone = items.filter(item => item.status === 'done').length;
-  const totalSpent = items
+  const totalDone = historyItems.filter(item => item.status === 'done').length;
+  const totalSpent = historyItems
     .filter(item => item.status === 'done')
     .reduce((acc, item) => acc + (item.price ?? 0), 0);
 
@@ -224,7 +247,7 @@ function HistoryRow({ item, last }: { item: UserAppointment; last: boolean }) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
   const isDone = item.status === 'done';
-  const isNoShow = item.status === 'no_show';
+  const missed = isMissed(item);
   const price = getRowCurrency(item.price);
 
   return (
@@ -248,11 +271,11 @@ function HistoryRow({ item, last }: { item: UserAppointment; last: boolean }) {
           style={[
             styles.status,
             isDone && styles.statusDone,
-            isNoShow && styles.statusNoShow,
+            missed && styles.statusNoShow,
             item.status === 'cancelled' && styles.statusCancelled,
           ]}
         >
-          {getStatusLabel(item.status)}
+          {getStatusLabel(item)}
         </Text>
       </View>
     </View>

@@ -10,7 +10,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Bell, CalendarCheck, CheckCircle2, Clock } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Bell,
+  CalendarCheck,
+  CalendarX2,
+  CheckCircle2,
+  Clock,
+} from 'lucide-react-native';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 
@@ -107,6 +114,8 @@ function NotificationRow({
       ? Clock
       : item.type === 'appointment_done'
       ? CheckCircle2
+      : item.type === 'appointment_expired'
+      ? CalendarX2
       : CalendarCheck;
   return (
     <View style={[styles.row, !item.read && styles.rowUnread]}>

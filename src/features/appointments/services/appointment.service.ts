@@ -13,20 +13,32 @@ import {
 import { getAuth } from '@react-native-firebase/auth';
 import type { AppointmentStatus } from '../domain/appointment.types';
 import { ACTIVE_APPOINTMENT_SET } from '../domain/appointment.constants';
+import { isExpiredScheduled } from '../domain/appointment.helpers';
 import { mapFirestoreError } from '@shared/utils/firebase.utils';
 
 export type CancelAppointmentResult =
   | { ok: true; message: string; data?: any }
   | { ok: false; message: string; code?: string };
 
-export function getAppointmentRules(appointment: { status: AppointmentStatus }): {
+export function getAppointmentRules(appointment: {
+  status: AppointmentStatus;
+  startAtMs: number;
+}): {
   canCancel: boolean;
+  isExpired: boolean;
   message?: string;
 } {
-  // O cliente pode cancelar a qualquer momento enquanto o serviço está agendado,
-  // inclusive depois do horário marcado (libera o slot e o card).
   if (appointment.status === 'scheduled') {
-    return { canCancel: true };
+    // Passou do horário (+ tolerância) e o estabelecimento ainda não deu baixa:
+    // não é cancelamento. O cliente só cancela enquanto o agendamento é futuro.
+    if (isExpiredScheduled(appointment.status, appointment.startAtMs)) {
+      return {
+        canCancel: false,
+        isExpired: true,
+        message: 'Este horário já passou. Aguarde a confirmação do estabelecimento.',
+      };
+    }
+    return { canCancel: true, isExpired: false };
   }
 
   const messages: Record<Exclude<AppointmentStatus, 'scheduled'>, string> = {
@@ -36,7 +48,7 @@ export function getAppointmentRules(appointment: { status: AppointmentStatus }):
     in_progress: 'Serviço em andamento não pode ser cancelado.',
   };
 
-  return { canCancel: false, message: messages[appointment.status] };
+  return { canCancel: false, isExpired: false, message: messages[appointment.status] };
 }
 
 export async function cancelAppointment(
@@ -136,8 +148,10 @@ export async function clearShopFavoriteIfNoActive(
     const activeStatuses = new Set<AppointmentStatus>(ACTIVE_APPOINTMENT_SET);
 
     const hasActive = snap.docs.some((d: { data: () => unknown }) => {
-      const data = d.data() as { status?: AppointmentStatus };
-      return data.status ? activeStatuses.has(data.status) : false;
+      const data = d.data() as { status?: AppointmentStatus; startAtMs?: number };
+      if (!data.status || !activeStatuses.has(data.status)) return false;
+      // Vencido (scheduled que passou do horário + tolerância) não segura o vínculo.
+      return !isExpiredScheduled(data.status, data.startAtMs ?? 0);
     });
 
     if (hasActive) return;

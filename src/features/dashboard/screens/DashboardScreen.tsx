@@ -48,12 +48,14 @@ import {
   ACTIVE_APPOINTMENT_SET,
   clearShopFavoriteIfNoActive,
   getAppointmentStatusConfig,
+  isExpiredScheduled,
   useDashboardAppointments,
 } from '@features/appointments';
 import type { RootStackParamList } from '@app/types';
 import type { UserAppointment } from '@features/appointments';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
+import { useNowTick } from '@shared/hooks/useNowTick';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -141,19 +143,32 @@ export default function DashboardScreen() {
       ),
     [appointments],
   );
-  const nextAppointment = activeAppointments[0] ?? null;
-  const upcomingAppointments = activeAppointments.slice(0, 3);
+  // Tick de relógio: força recalcular "vencido" com o tempo passando (o dado no
+  // banco não muda quando o agendamento expira). Sem isso o card ficaria preso.
+  const now = useNowTick();
+
+  // "Próximos" só mostra agendamentos futuros: os vencidos (passou do horário e o
+  // estabelecimento ainda não deu baixa) saem daqui — viram pendentes no histórico.
+  const upcomingActive = useMemo(
+    () => activeAppointments.filter(a => !isExpiredScheduled(a.status, a.startAtMs, now)),
+    [activeAppointments, now],
+  );
+  const nextAppointment = upcomingActive[0] ?? null;
+  const upcomingAppointments = upcomingActive.slice(0, 3);
   const homeServices = shopServices;
   const appointmentCardWidth = Math.max(280, windowWidth - 72);
 
-  // Limpa a estetica favorita quando o cliente nao tem mais proximos servicos.
+  // Desvincula a estética favorita quando não há mais serviços ativos NÃO vencidos.
+  // Um agendamento vencido (passou do horário) não segura mais o vínculo: o
+  // Dashboard volta ao estado de "encontrar uma estética" em vez de ficar preso
+  // ligado ao shop sem nenhum próximo serviço.
   useEffect(() => {
     if (loadingAppointments) return;
     if (!shopId || !uid) return;
-    if (activeAppointments.length > 0) return;
+    if (upcomingActive.length > 0) return;
 
     clearShopFavoriteIfNoActive(uid, shopId);
-  }, [loadingAppointments, shopId, uid, activeAppointments.length]);
+  }, [loadingAppointments, shopId, uid, upcomingActive.length]);
 
   // Perfil vem do listener único de users/{uid} (useMeStore), sem onSnapshot aqui.
   const me = useMeStore(s => s.me);
