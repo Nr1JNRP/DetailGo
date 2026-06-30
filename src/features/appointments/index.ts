@@ -21,7 +21,7 @@ export {
   STATUS,
   VEHICLE_TYPES,
 } from './domain/appointment.constants';
-export { getAppointmentStatusConfig } from './domain/appointment.helpers';
+export { getAppointmentStatusConfig, isExpiredScheduled } from './domain/appointment.helpers';
 
 // Services
 export {

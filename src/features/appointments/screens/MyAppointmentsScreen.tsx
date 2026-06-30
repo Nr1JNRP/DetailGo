@@ -18,9 +18,11 @@ import { ArrowLeft } from 'lucide-react-native';
 import type { RootStackParamList } from '@app/types';
 import { useShop } from '@features/shops';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
+import { useNowTick } from '@shared/hooks/useNowTick';
 import { useUserAppointments } from '../hooks/useUserAppointments';
 import type { UserAppointment } from '../domain/appointment.types';
 import { ACTIVE_APPOINTMENT_SET } from '../domain/appointment.constants';
+import { isExpiredScheduled } from '../domain/appointment.helpers';
 import { cancelAppointment, getAppointmentRules } from '../services/appointment.service';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -96,9 +98,20 @@ export default function MyAppointmentsScreen() {
     limitN: 50,
   });
 
+  // Tick de relógio: recalcula "vencido" com o tempo passando, mesmo sem mudança
+  // nos dados (senão o item ficaria preso na lista até remontar a tela).
+  const now = useNowTick();
+
+  // Vencidos (passou do horário + tolerância) saem da lista de ativos — viram
+  // "Não realizado" no Histórico. Aqui ficam só os realmente próximos/em andamento.
+  const activeItems = useMemo(
+    () => items.filter(item => !isExpiredScheduled(item.status, item.startAtMs, now)),
+    [items, now],
+  );
+
   const inProgressCount = useMemo(
-    () => items.filter(item => item.status === 'in_progress').length,
-    [items],
+    () => activeItems.filter(item => item.status === 'in_progress').length,
+    [activeItems],
   );
 
   const handleCancel = (item: UserAppointment) => {
@@ -161,7 +174,7 @@ export default function MyAppointmentsScreen() {
           <View style={styles.headerCopy}>
             <Text style={styles.headerTitle}>Agendamentos</Text>
             <Text style={styles.headerMeta} numberOfLines={1}>
-              {String(items.length).padStart(2, '0')} ativos · {inProgressCount} em andamento
+              {String(activeItems.length).padStart(2, '0')} ativos · {inProgressCount} em andamento
             </Text>
           </View>
         </View>
@@ -173,7 +186,7 @@ export default function MyAppointmentsScreen() {
             </View>
           ) : (
             <FlatList
-              data={items}
+              data={activeItems}
               keyExtractor={item => item.id}
               renderItem={({ item }) => (
                 <AppointmentCard

@@ -9,4 +9,5 @@ export { checkSubscriptionExpiry } from './scheduled/checkSubscriptionExpiry';
 export { geocode, reverseGeocode } from './geo/geocode';
 export { onAppointmentCreated } from './notifications/onAppointmentCreated';
 export { sendAppointmentReminders } from './notifications/sendAppointmentReminders';
+export { notifyExpiredAppointments } from './notifications/notifyExpiredAppointments';
 export { onAppointmentStatusChanged } from './appointments/onAppointmentStatusChanged';
