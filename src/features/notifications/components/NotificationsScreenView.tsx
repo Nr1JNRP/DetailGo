@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -100,7 +100,7 @@ export default function NotificationsScreenView({ items, loading, subtitle, onOp
   );
 }
 
-function NotificationRow({
+const NotificationRow = memo(function NotificationRow({
   item,
   styles,
   D,
@@ -130,7 +130,7 @@ function NotificationRow({
       {!item.read && <View style={styles.unreadDot} />}
     </View>
   );
-}
+});
 
 function createStyles(D: AppColors) {
   return StyleSheet.create({

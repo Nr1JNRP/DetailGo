@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -243,7 +243,13 @@ export default function HistoryScreen() {
   );
 }
 
-function HistoryRow({ item, last }: { item: UserAppointment; last: boolean }) {
+const HistoryRow = memo(function HistoryRow({
+  item,
+  last,
+}: {
+  item: UserAppointment;
+  last: boolean;
+}) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
   const isDone = item.status === 'done';
@@ -280,7 +286,7 @@ function HistoryRow({ item, last }: { item: UserAppointment; last: boolean }) {
       </View>
     </View>
   );
-}
+});
 
 function createStyles(D: AppColors) {
   return StyleSheet.create({
