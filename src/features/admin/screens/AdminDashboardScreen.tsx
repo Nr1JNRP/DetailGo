@@ -48,7 +48,7 @@ import { formatUtils } from '@shared/utils/format.utils';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
 import PremiumStar from '@shared/components/PremiumStar';
 
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { updateAppointmentStatus } from '@features/admin';
@@ -227,63 +227,69 @@ export default function AdminDashboardScreen() {
     [db, fetchCustomerName, shopId],
   );
 
-  // Active appointments (scheduled + in_progress) for the week → agenda list
-  useEffect(() => {
-    if (!user?.uid || !shopId) return;
-    setLoadingWeek(true);
+  // Active appointments (scheduled + in_progress) for the week → agenda list.
+  // useFocusEffect: só escuta enquanto a tela está em foco (desassina ao sair),
+  // evitando leituras/re-render em segundo plano.
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.uid || !shopId) return;
+      setLoadingWeek(true);
 
-    const q = query(
-      collection(db, 'shops', shopId, 'appointments'),
-      where('status', 'in', ['scheduled', 'in_progress']),
-      where('startAtMs', '>=', weekStartMs),
-      where('startAtMs', '<=', weekEndMs),
-      orderBy('startAtMs', 'asc'),
-    );
+      const q = query(
+        collection(db, 'shops', shopId, 'appointments'),
+        where('status', 'in', ['scheduled', 'in_progress']),
+        where('startAtMs', '>=', weekStartMs),
+        where('startAtMs', '<=', weekEndMs),
+        orderBy('startAtMs', 'asc'),
+      );
 
-    const unsub = onSnapshot(
-      q,
-      async snap => {
-        const base = snap.docs
-          .map((d: QDoc) => normalizeAdminAppointmentFromGlobal(d))
-          .filter(Boolean) as AdminAppointment[];
+      const unsub = onSnapshot(
+        q,
+        async snap => {
+          const base = snap.docs
+            .map((d: QDoc) => normalizeAdminAppointmentFromGlobal(d))
+            .filter(Boolean) as AdminAppointment[];
 
-        // Agendamentos expirados ficam como "aguardando baixa" ate o owner dar
-        // baixa manualmente (Nao realizado). Sem marcacao automatica.
-        const finalList = await fillMissingNamesAndUpdate(base);
-        setAppointmentsWeek(finalList);
-        setLoadingWeek(false);
-      },
-      () => setLoadingWeek(false),
-    );
+          // Agendamentos expirados ficam como "aguardando baixa" ate o owner dar
+          // baixa manualmente (Nao realizado). Sem marcacao automatica.
+          const finalList = await fillMissingNamesAndUpdate(base);
+          setAppointmentsWeek(finalList);
+          setLoadingWeek(false);
+        },
+        () => setLoadingWeek(false),
+      );
 
-    return () => unsub();
-  }, [db, user?.uid, shopId, weekStartMs, weekEndMs, fillMissingNamesAndUpdate]);
+      return () => unsub();
+    }, [db, user?.uid, shopId, weekStartMs, weekEndMs, fillMissingNamesAndUpdate]),
+  );
 
-  // Done appointments for KPI stats
-  useEffect(() => {
-    if (!shopId) return;
+  // Done appointments for KPI stats (também pausado fora de foco)
+  useFocusEffect(
+    useCallback(() => {
+      if (!shopId) return;
 
-    const q = query(
-      collection(db, 'shops', shopId, 'appointments'),
-      where('status', '==', 'done'),
-      where('startAtMs', '>=', weekStartMs),
-      where('startAtMs', '<=', weekEndMs),
-      orderBy('startAtMs', 'asc'),
-    );
+      const q = query(
+        collection(db, 'shops', shopId, 'appointments'),
+        where('status', '==', 'done'),
+        where('startAtMs', '>=', weekStartMs),
+        where('startAtMs', '<=', weekEndMs),
+        orderBy('startAtMs', 'asc'),
+      );
 
-    const unsub = onSnapshot(
-      q,
-      snap => {
-        const list = snap.docs
-          .map((d: QDoc) => normalizeAdminAppointmentFromGlobal(d))
-          .filter(Boolean) as AdminAppointment[];
-        setDoneThisWeek(list);
-      },
-      () => {},
-    );
+      const unsub = onSnapshot(
+        q,
+        snap => {
+          const list = snap.docs
+            .map((d: QDoc) => normalizeAdminAppointmentFromGlobal(d))
+            .filter(Boolean) as AdminAppointment[];
+          setDoneThisWeek(list);
+        },
+        () => {},
+      );
 
-    return () => unsub();
-  }, [db, shopId, weekStartMs, weekEndMs]);
+      return () => unsub();
+    }, [db, shopId, weekStartMs, weekEndMs]),
+  );
 
   // Contagem da semana anterior (para o delta). A semana passada não muda, então
   // usamos getCountFromServer (1 leitura) em vez de um onSnapshot que leria todos
