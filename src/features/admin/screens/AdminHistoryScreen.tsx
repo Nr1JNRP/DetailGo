@@ -11,7 +11,7 @@ import {
   SectionList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native';
 
 import {
@@ -137,47 +137,50 @@ export default function AdminHistoryScreen() {
     [fetchCustomerName],
   );
 
-  useEffect(() => {
-    if (!user?.uid || !shopId) return;
+  // useFocusEffect: só escuta o histórico enquanto a tela está em foco.
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.uid || !shopId) return;
 
-    setLoading(true);
-    setItems([]);
-    lastDocRef.current = null;
-    canLoadMoreRef.current = true;
+      setLoading(true);
+      setItems([]);
+      lastDocRef.current = null;
+      canLoadMoreRef.current = true;
 
-    const qy = query(
-      collection(db, 'shops', shopId, 'appointments'),
-      where('status', 'in', statusSet),
-      orderBy('startAtMs', 'desc'),
-      limit(PAGE_SIZE),
-    );
+      const qy = query(
+        collection(db, 'shops', shopId, 'appointments'),
+        where('status', 'in', statusSet),
+        orderBy('startAtMs', 'desc'),
+        limit(PAGE_SIZE),
+      );
 
-    const unsub = onSnapshot(
-      qy,
-      async snap => {
-        const base = snap.docs
-          .map((d: QDoc) => normalizeAdminAppointmentFromGlobal(d))
-          .filter(Boolean) as AdminAppointment[];
+      const unsub = onSnapshot(
+        qy,
+        async snap => {
+          const base = snap.docs
+            .map((d: QDoc) => normalizeAdminAppointmentFromGlobal(d))
+            .filter(Boolean) as AdminAppointment[];
 
-        lastDocRef.current = (snap.docs[snap.docs.length - 1] as QDoc | undefined) ?? null;
-        canLoadMoreRef.current = snap.docs.length >= PAGE_SIZE;
+          lastDocRef.current = (snap.docs[snap.docs.length - 1] as QDoc | undefined) ?? null;
+          canLoadMoreRef.current = snap.docs.length >= PAGE_SIZE;
 
-        const withNames = await enrichWithNames(base);
-        setItems(withNames);
-        setLoading(false);
-      },
-      (error: FirebaseError) => {
-        if (error.code === 'failed-precondition') {
-          Alert.alert('Índice necessário', 'Crie um índice composto no Firebase Console.');
-        } else {
-          Alert.alert('Erro', 'Falha ao carregar histórico.');
-        }
-        setLoading(false);
-      },
-    );
+          const withNames = await enrichWithNames(base);
+          setItems(withNames);
+          setLoading(false);
+        },
+        (error: FirebaseError) => {
+          if (error.code === 'failed-precondition') {
+            Alert.alert('Índice necessário', 'Crie um índice composto no Firebase Console.');
+          } else {
+            Alert.alert('Erro', 'Falha ao carregar histórico.');
+          }
+          setLoading(false);
+        },
+      );
 
-    return () => unsub();
-  }, [user?.uid, shopId, statusSet, enrichWithNames]);
+      return () => unsub();
+    }, [user?.uid, shopId, statusSet, enrichWithNames]),
+  );
 
   const loadMore = async () => {
     if (loadingMore || !canLoadMoreRef.current || !lastDocRef.current || !shopId) return;

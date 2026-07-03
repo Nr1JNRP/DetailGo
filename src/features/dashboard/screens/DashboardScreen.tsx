@@ -16,7 +16,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { launchImageLibrary, type ImageLibraryOptions } from 'react-native-image-picker';
@@ -111,30 +111,33 @@ export default function DashboardScreen() {
   const [shopPhone, setShopPhone] = useState<string | null>(null);
   const [shopHours, setShopHours] = useState<{ open: number; close: number } | null>(null);
 
-  useEffect(() => {
-    if (!shop?.ownerId || !shopId) {
-      setShopPhone(null);
-      setShopHours(null);
-      return;
-    }
-    const db = getFirestore();
-    // Busca telefone do owner. O cliente pode não ter permissão de ler o doc de
-    // outro usuário (regras do Firestore) — nesse caso o erro é tratado e o
-    // telefone fica indisponível, sem quebrar o app.
-    const unsub = onSnapshot(
-      doc(db, 'users', shop.ownerId),
-      snap => {
-        const data = snap?.data() as { phone?: string } | undefined;
-        setShopPhone(data?.phone ?? null);
-      },
-      () => setShopPhone(null),
-    );
-    // Busca horários reais do shop
-    getShopSettings(shopId)
-      .then(s => setShopHours({ open: s.openHour, close: s.closeHour }))
-      .catch(() => {});
-    return () => unsub();
-  }, [shop?.ownerId, shopId]);
+  // useFocusEffect: só escuta o telefone do owner enquanto o Dashboard está em foco.
+  useFocusEffect(
+    useCallback(() => {
+      if (!shop?.ownerId || !shopId) {
+        setShopPhone(null);
+        setShopHours(null);
+        return;
+      }
+      const db = getFirestore();
+      // Busca telefone do owner. O cliente pode não ter permissão de ler o doc de
+      // outro usuário (regras do Firestore) — nesse caso o erro é tratado e o
+      // telefone fica indisponível, sem quebrar o app.
+      const unsub = onSnapshot(
+        doc(db, 'users', shop.ownerId),
+        snap => {
+          const data = snap?.data() as { phone?: string } | undefined;
+          setShopPhone(data?.phone ?? null);
+        },
+        () => setShopPhone(null),
+      );
+      // Busca horários reais do shop
+      getShopSettings(shopId)
+        .then(s => setShopHours({ open: s.openHour, close: s.closeHour }))
+        .catch(() => {});
+      return () => unsub();
+    }, [shop?.ownerId, shopId]),
+  );
 
   const activeAppointments = useMemo(
     () =>
