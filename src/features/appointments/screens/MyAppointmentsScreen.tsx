@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -29,9 +29,9 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const appointmentSeparatorStyle = { height: 20 };
 
-function AppointmentSeparator() {
+const AppointmentSeparator = memo(function AppointmentSeparator() {
   return <View style={appointmentSeparatorStyle} />;
-}
+});
 
 function getDuration(item: UserAppointment) {
   if (item.durationMin) return `${item.durationMin} min`;
@@ -114,38 +114,55 @@ export default function MyAppointmentsScreen() {
     [activeItems],
   );
 
-  const handleCancel = (item: UserAppointment) => {
-    const rules = getAppointmentRules(item);
+  const executeCancel = useCallback(
+    async (item: UserAppointment) => {
+      setCancellingId(item.id);
 
-    if (!rules.canCancel) {
-      Alert.alert('Não é possível cancelar', rules.message || 'Cancelamento não permitido.');
-      return;
-    }
+      const result = await cancelAppointment(item.id, uid!, shopId ?? '');
 
-    Alert.alert('Cancelar agendamento', 'Tem certeza que deseja cancelar este agendamento?', [
-      { text: 'Não', style: 'cancel' },
-      {
-        text: 'Sim, cancelar',
-        style: 'destructive',
-        onPress: () => executeCancel(item),
-      },
-    ]);
-  };
+      if (result.ok) {
+        Alert.alert('Sucesso', result.message);
+        mutate();
+      } else {
+        Alert.alert('Erro', result.message);
+      }
 
-  const executeCancel = async (item: UserAppointment) => {
-    setCancellingId(item.id);
+      setCancellingId(null);
+    },
+    [uid, shopId, mutate],
+  );
 
-    const result = await cancelAppointment(item.id, uid!, shopId ?? '');
+  const handleCancel = useCallback(
+    (item: UserAppointment) => {
+      const rules = getAppointmentRules(item);
 
-    if (result.ok) {
-      Alert.alert('Sucesso', result.message);
-      mutate();
-    } else {
-      Alert.alert('Erro', result.message);
-    }
+      if (!rules.canCancel) {
+        Alert.alert('Não é possível cancelar', rules.message || 'Cancelamento não permitido.');
+        return;
+      }
 
-    setCancellingId(null);
-  };
+      Alert.alert('Cancelar agendamento', 'Tem certeza que deseja cancelar este agendamento?', [
+        { text: 'Não', style: 'cancel' },
+        {
+          text: 'Sim, cancelar',
+          style: 'destructive',
+          onPress: () => executeCancel(item),
+        },
+      ]);
+    },
+    [executeCancel],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: UserAppointment }) => (
+      <AppointmentCard
+        item={item}
+        isCancelling={cancellingId === item.id}
+        onCancel={handleCancel}
+      />
+    ),
+    [cancellingId, handleCancel],
+  );
 
   if (!uid) {
     return (
@@ -188,13 +205,7 @@ export default function MyAppointmentsScreen() {
             <FlatList
               data={activeItems}
               keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <AppointmentCard
-                  item={item}
-                  isCancelling={cancellingId === item.id}
-                  onCancel={() => handleCancel(item)}
-                />
-              )}
+              renderItem={renderItem}
               ItemSeparatorComponent={AppointmentSeparator}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
@@ -221,14 +232,14 @@ export default function MyAppointmentsScreen() {
   );
 }
 
-function AppointmentCard({
+const AppointmentCard = memo(function AppointmentCard({
   item,
   isCancelling,
   onCancel,
 }: {
   item: UserAppointment;
   isCancelling: boolean;
-  onCancel: () => void;
+  onCancel: (item: UserAppointment) => void;
 }) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
@@ -270,7 +281,7 @@ function AppointmentCard({
               styles.cancelButton,
               (!rules.canCancel || isCancelling) && styles.disabled,
             ]}
-            onPress={onCancel}
+            onPress={() => onCancel(item)}
             disabled={!rules.canCancel || isCancelling}
             activeOpacity={0.75}
           >
@@ -284,7 +295,7 @@ function AppointmentCard({
       </View>
     </View>
   );
-}
+});
 
 function createStyles(D: AppColors) {
   return StyleSheet.create({

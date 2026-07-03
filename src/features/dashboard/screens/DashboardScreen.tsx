@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -157,6 +157,20 @@ export default function DashboardScreen() {
   const upcomingAppointments = upcomingActive.slice(0, 3);
   const homeServices = shopServices;
   const appointmentCardWidth = Math.max(280, windowWidth - 72);
+
+  // Callbacks estáveis p/ a lista de próximos: sem isso, o React.memo do card não
+  // segura o re-render a cada tick de relógio (useNowTick).
+  const goToMyAppointments = useCallback(() => navigation.navigate('MyAppointments'), [navigation]);
+  const renderAppointment = useCallback(
+    ({ item }: { item: UserAppointment }) => (
+      <AppointmentCard appt={item} width={appointmentCardWidth} onPress={goToMyAppointments} />
+    ),
+    [appointmentCardWidth, goToMyAppointments],
+  );
+  const renderAppointmentSeparator = useCallback(
+    () => <View style={styles.appointmentCardGap} />,
+    [styles],
+  );
 
   // Desvincula a estética favorita quando não há mais serviços ativos NÃO vencidos.
   // Um agendamento vencido (passou do horário) não segura mais o vínculo: o
@@ -465,14 +479,8 @@ export default function DashboardScreen() {
                   data={upcomingAppointments}
                   keyExtractor={item => item.id}
                   contentContainerStyle={styles.appointmentsRail}
-                  ItemSeparatorComponent={() => <View style={styles.appointmentCardGap} />}
-                  renderItem={({ item }) => (
-                    <AppointmentCard
-                      appt={item}
-                      width={appointmentCardWidth}
-                      onPress={() => navigation.navigate('MyAppointments')}
-                    />
-                  )}
+                  ItemSeparatorComponent={renderAppointmentSeparator}
+                  renderItem={renderAppointment}
                 />
               ) : (
                 <View style={styles.emptyCard}>
@@ -583,7 +591,7 @@ export default function DashboardScreen() {
   );
 }
 
-function AppointmentCard({
+const AppointmentCard = memo(function AppointmentCard({
   appt,
   width,
   onPress,
@@ -638,7 +646,7 @@ function AppointmentCard({
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 function BottomNavItem({
   icon,
