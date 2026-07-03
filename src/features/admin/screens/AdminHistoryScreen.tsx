@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -75,8 +75,10 @@ function monthLabel(ms: number): string {
   return `${MONTHS_PT[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function groupByMonth(items: AdminAppointment[]) {
-  const groups: Record<string, { title: string; data: AdminAppointment[] }> = {};
+type AdminHistorySection = { title: string; data: AdminAppointment[] };
+
+function groupByMonth(items: AdminAppointment[]): AdminHistorySection[] {
+  const groups: Record<string, AdminHistorySection> = {};
   items.forEach(item => {
     const key = monthLabel(item.startAtMs);
     if (!groups[key]) groups[key] = { title: key, data: [] };
@@ -206,8 +208,30 @@ export default function AdminHistoryScreen() {
     }
   };
 
-  const displayItems = filter === 'all' ? items : items.filter(i => i.status === filter);
-  const sections = groupByMonth(displayItems);
+  const displayItems = useMemo(
+    () => (filter === 'all' ? items : items.filter(i => i.status === filter)),
+    [items, filter],
+  );
+  const sections = useMemo(() => groupByMonth(displayItems), [displayItems]);
+
+  const renderHistoryItem = useCallback(
+    ({
+      item,
+      index,
+      section,
+    }: {
+      item: AdminAppointment;
+      index: number;
+      section: AdminHistorySection;
+    }) => <HistoryRow item={item} isLast={index === section.data.length - 1} />,
+    [],
+  );
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: AdminHistorySection }) => (
+      <Text style={styles.monthLabel}>{section.title}</Text>
+    ),
+    [styles],
+  );
 
   return (
     <>
@@ -271,13 +295,8 @@ export default function AdminHistoryScreen() {
             showsVerticalScrollIndicator={false}
             onEndReached={loadMore}
             onEndReachedThreshold={0.4}
-            renderSectionHeader={({ section }) => (
-              <Text style={styles.monthLabel}>{section.title}</Text>
-            )}
-            renderItem={({ item, index, section }) => {
-              const isLast = index === section.data.length - 1;
-              return <HistoryRow item={item} isLast={isLast} />;
-            }}
+            renderSectionHeader={renderSectionHeader}
+            renderItem={renderHistoryItem}
             ListFooterComponent={
               loadingMore ? (
                 <View style={styles.loadingMore}>
@@ -293,7 +312,13 @@ export default function AdminHistoryScreen() {
 }
 
 // ── Row component ────────────────────────────────────────────
-function HistoryRow({ item, isLast }: { item: AdminAppointment; isLast: boolean }) {
+const HistoryRow = memo(function HistoryRow({
+  item,
+  isLast,
+}: {
+  item: AdminAppointment;
+  isLast: boolean;
+}) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
   const d = new Date(item.startAtMs);
@@ -350,7 +375,7 @@ function HistoryRow({ item, isLast }: { item: AdminAppointment; isLast: boolean 
       {!isLast && <View style={styles.separator} />}
     </View>
   );
-}
+});
 
 // ── Styles ───────────────────────────────────────────────────
 function createStyles(D: AppColors) {

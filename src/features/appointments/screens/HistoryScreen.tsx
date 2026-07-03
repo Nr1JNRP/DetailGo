@@ -1,7 +1,8 @@
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
+  SectionList,
   StatusBar,
   StyleSheet,
   Text,
@@ -25,10 +26,10 @@ import { useUserAppointments } from '../hooks/useUserAppointments';
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterId = 'all' | 'done' | 'cancelled' | 'no_show';
 
-type HistoryGroup = {
+type HistorySection = {
   key: string;
   label: string;
-  items: UserAppointment[];
+  data: UserAppointment[];
 };
 
 const FILTER_OPTIONS: { id: FilterId; label: string }[] = [
@@ -96,22 +97,22 @@ function getRowCurrency(value: number | null) {
   return `R$${value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
 }
 
-function groupByMonth(items: UserAppointment[]) {
-  const groups = new Map<string, HistoryGroup>();
+function groupByMonth(items: UserAppointment[]): HistorySection[] {
+  const groups = new Map<string, HistorySection>();
 
   items.forEach(item => {
     const key = getMonthKey(item.startAtMs);
     const current = groups.get(key);
 
     if (current) {
-      current.items.push(item);
+      current.data.push(item);
       return;
     }
 
     groups.set(key, {
       key,
       label: getMonthLabel(item.startAtMs),
-      items: [item],
+      data: [item],
     });
   });
 
@@ -148,7 +149,26 @@ export default function HistoryScreen() {
     () => getFilteredItems(historyItems, filter, now),
     [filter, historyItems, now],
   );
-  const groups = useMemo(() => groupByMonth(filteredItems), [filteredItems]);
+  const sections = useMemo(() => groupByMonth(filteredItems), [filteredItems]);
+
+  const renderHistoryItem = useCallback(
+    ({
+      item,
+      index,
+      section,
+    }: {
+      item: UserAppointment;
+      index: number;
+      section: HistorySection;
+    }) => <HistoryRow item={item} last={index === section.data.length - 1} />,
+    [],
+  );
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: HistorySection }) => (
+      <Text style={styles.monthLabel}>{section.label}</Text>
+    ),
+    [styles],
+  );
 
   const totalDone = historyItems.filter(item => item.status === 'done').length;
   const totalSpent = historyItems
@@ -216,17 +236,15 @@ export default function HistoryScreen() {
             <ActivityIndicator size="large" color={D.primary} />
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            {groups.length > 0 ? (
-              groups.map(group => (
-                <View key={group.key} style={styles.monthGroup}>
-                  <Text style={styles.monthLabel}>{group.label}</Text>
-                  {group.items.map((item, index) => (
-                    <HistoryRow key={item.id} item={item} last={index === group.items.length - 1} />
-                  ))}
-                </View>
-              ))
-            ) : (
+          <SectionList
+            sections={sections}
+            keyExtractor={item => item.id}
+            renderItem={renderHistoryItem}
+            renderSectionHeader={renderSectionHeader}
+            stickySectionHeadersEnabled={false}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Text style={styles.emptyTitle}>Nenhum registro</Text>
                 <Text style={styles.emptyText}>
@@ -235,8 +253,8 @@ export default function HistoryScreen() {
                     : 'Nenhum registro para este filtro.'}
                 </Text>
               </View>
-            )}
-          </ScrollView>
+            }
+          />
         )}
       </SafeAreaView>
     </>
@@ -375,15 +393,14 @@ function createStyles(D: AppColors) {
       paddingTop: 11,
       paddingBottom: 42,
     },
-    monthGroup: {
-      marginBottom: 24,
-    },
     monthLabel: {
       color: D.ink2,
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
       fontFamily: T.family.bold,
+      marginTop: 24,
       marginBottom: 20,
+      backgroundColor: D.bg,
     },
     row: {
       minHeight: 54,
