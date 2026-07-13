@@ -28,7 +28,7 @@ import { radii, spacing, typography as T, useAppTheme, type AppColors } from '@s
 import { useShop } from '@features/shops';
 import { useAuth } from '@features/auth';
 
-const PLAN_PRICE = 'R$ 0,01/m\u00eas';
+const PLAN_PRICE = 'R$ 89,00/m\u00eas';
 const WHATSAPP_NUMBER = '5511996784399';
 const CREATE_PIX_URL = 'https://us-central1-magic-auto.cloudfunctions.net/createPixCharge';
 
