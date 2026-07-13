@@ -36,6 +36,7 @@ import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import type { RootStackParamList } from '@app/types';
 import { formatUtils } from '@shared/utils/format.utils';
 import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
+import SuccessModal from '@shared/components/SuccessModal';
 import { useAuth, useMeStore } from '@features/auth';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
@@ -73,6 +74,7 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [savingPhoto, setSavingPhoto] = useState(false);
   const [checkingConfirm, setCheckingConfirm] = useState(false);
+  const [success, setSuccess] = useState<{ title: string; message: string } | null>(null);
 
   const [profile, setProfile] = useState<UserProfile>({
     firstName: '',
@@ -199,7 +201,7 @@ export default function ProfileScreen() {
       });
 
       setEditingName(false);
-      Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+      setSuccess({ title: 'Perfil atualizado', message: 'Suas informações foram salvas.' });
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar o perfil');
     } finally {
@@ -224,7 +226,7 @@ export default function ProfileScreen() {
 
       setProfile(prev => ({ ...prev, phone: cleanPhone }));
       setEditingPhone(false);
-      Alert.alert('Sucesso', 'Telefone atualizado com sucesso!');
+      setSuccess({ title: 'Telefone atualizado', message: 'Seu telefone foi salvo.' });
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar o telefone');
     } finally {
@@ -705,6 +707,14 @@ export default function ProfileScreen() {
             <View style={styles.footerSpace} />
           </ScrollView>
         </KeyboardAvoidingView>
+
+        <SuccessModal
+          visible={!!success}
+          title={success?.title ?? ''}
+          message={success?.message ?? ''}
+          primaryLabel="Ok"
+          onPrimary={() => setSuccess(null)}
+        />
       </SafeAreaView>
     </>
   );

@@ -57,6 +57,7 @@ import {
 import { spacing, radii, typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { formatUtils } from '@shared/utils/format.utils';
 import { dateUtils } from '@shared/utils/date.utils';
+import SuccessModal from '@shared/components/SuccessModal';
 
 const { height } = Dimensions.get('window');
 
@@ -361,6 +362,7 @@ export default function AppointmentScreen() {
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [serviceDetailsOpen, setServiceDetailsOpen] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
 
   const [day, setDay] = useState<Date>(() => {
     const d = new Date();
@@ -521,12 +523,7 @@ export default function AppointmentScreen() {
         });
       }
 
-      Alert.alert('Sucesso!', 'Seu agendamento foi confirmado.', [
-        {
-          text: 'Ver agendamentos',
-          onPress: () => navigation.replace('Dashboard'),
-        },
-      ]);
+      setSuccessVisible(true);
     } catch (error: any) {
       if (error?.code === 'SLOT_FULL') {
         Alert.alert('Horário indisponível', 'Selecione outro horário.');
@@ -589,6 +586,17 @@ export default function AppointmentScreen() {
           service={selectedService}
           price={finalPrice}
           onClose={() => setServiceDetailsOpen(false)}
+        />
+
+        <SuccessModal
+          visible={successVisible}
+          title="Agendamento confirmado!"
+          message="Seu horário foi reservado com sucesso."
+          primaryLabel="Ver agendamentos"
+          onPrimary={() => {
+            setSuccessVisible(false);
+            navigation.replace('Dashboard');
+          }}
         />
 
         <ScrollView
