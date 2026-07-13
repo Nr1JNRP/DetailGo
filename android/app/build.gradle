@@ -20,7 +20,9 @@ android {
 
     namespace "com.testapp"
     defaultConfig {
-        applicationId "com.testapp"
+        // applicationId = identidade do app na Play Store / Firebase (imutável
+        // após publicar). O namespace interno segue "com.testapp" (código Kotlin).
+        applicationId "com.jnrpalma.detailgo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
@@ -75,6 +77,6 @@ dependencies {
 }
 
 // Certifique-se de que o arquivo android/app/google-services.json exista
-// e que o package_name nele bata com applicationId ("com.testapp").
+// e que o package_name nele bata com applicationId ("com.jnrpalma.detailgo").
 
 apply plugin: 'com.google.gms.google-services'
