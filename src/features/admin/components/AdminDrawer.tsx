@@ -39,7 +39,7 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
   const user = auth.currentUser;
 
   // Foto vem do listener único de users/{uid} (useMeStore), sem onSnapshot aqui.
-  const photoB64 = useMeStore(s => s.me?.photoB64 ?? null);
+  const photoB64 = useMeStore(s => s.me?.photoURL ?? s.me?.photoB64 ?? null);
 
   // Verifica se há serviços cadastrados e notifica o owner na primeira abertura
   const { items: services, loading: loadingServices } = useShopServices({

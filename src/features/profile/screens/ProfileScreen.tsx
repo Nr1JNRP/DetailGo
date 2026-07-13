@@ -29,18 +29,13 @@ import {
 import { launchImageLibrary, type ImageLibraryOptions } from 'react-native-image-picker';
 
 import { getAuth } from '@react-native-firebase/auth';
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteField,
-} from '@react-native-firebase/firestore';
+import { getFirestore, doc, updateDoc, deleteField } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import type { RootStackParamList } from '@app/types';
 import { formatUtils } from '@shared/utils/format.utils';
+import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
 import { useAuth, useMeStore } from '@features/auth';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
@@ -119,36 +114,36 @@ export default function ProfileScreen() {
       .toUpperCase();
   }, [displayName, user?.email]);
 
-  const avatarSource = profile.photoB64
-    ? { uri: profile.photoB64 }
-    : profile.photoURL
+  // Prefere a foto do Storage (photoURL); cai pro base64 legado só como fallback.
+  const avatarSource = profile.photoURL
     ? { uri: profile.photoURL }
+    : profile.photoB64
+    ? { uri: profile.photoB64 }
     : null;
 
   const handleAvatarChange = async () => {
-    if (!userRef) return;
+    if (!uid) return;
 
     try {
       const res = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: 1,
-        includeBase64: true,
         quality: 0.7,
-        maxWidth: 500,
-        maxHeight: 500,
+        maxWidth: 800,
+        maxHeight: 800,
       } as ImageLibraryOptions);
 
       if (res.didCancel) return;
       const asset = res.assets?.[0];
-      if (!asset?.base64) return;
+      if (!asset?.uri) return;
 
       setSavingPhoto(true);
-      const photoB64 = `data:${
-        asset.type?.startsWith('image/') ? asset.type : 'image/jpeg'
-      };base64,${asset.base64}`;
-
-      await setDoc(userRef, { photoB64 }, { merge: true });
-      setProfile(prev => ({ ...prev, photoB64 }));
+      const result = await uploadProfilePhoto(uid, asset.uri);
+      if (!result.ok) {
+        Alert.alert('Erro', result.message);
+        return;
+      }
+      setProfile(prev => ({ ...prev, photoURL: result.url, photoB64: undefined }));
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar a foto');
     } finally {

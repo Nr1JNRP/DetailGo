@@ -46,6 +46,7 @@ import { UI } from '@shared/constants/app.constants';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
+import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
 import PremiumStar from '@shared/components/PremiumStar';
 
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -122,8 +123,9 @@ export default function AdminDashboardScreen() {
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
 
   // ── Perfil do proprietário ──
-  // Foto vem do listener único de users/{uid} (useMeStore), sem onSnapshot aqui.
-  const ownerPhotoB64 = useMeStore(s => s.me?.photoB64 ?? null);
+  // Foto vem do listener único de users/{uid} (useMeStore). Prefere a URL do
+  // Storage e cai pro base64 legado só como fallback.
+  const ownerPhotoB64 = useMeStore(s => s.me?.photoURL ?? s.me?.photoB64 ?? null);
   const [savingOwnerPhoto, setSavingOwnerPhoto] = useState(false);
   const ownerName = user?.displayName ?? 'Proprietário';
   const ownerInitials = ownerName
@@ -172,21 +174,19 @@ export default function AdminDashboardScreen() {
       const res = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: 1,
-        includeBase64: true,
         quality: 0.7,
-        maxWidth: 500,
-        maxHeight: 500,
+        maxWidth: 800,
+        maxHeight: 800,
       } as ImageLibraryOptions);
       if (res.didCancel) return;
       const asset = res.assets?.[0];
-      if (!asset?.base64 || !user?.uid) return;
+      if (!asset?.uri || !user?.uid) return;
       setSavingOwnerPhoto(true);
-      const b64 = `data:${asset.type?.startsWith('image/') ? asset.type : 'image/jpeg'};base64,${
-        asset.base64
-      }`;
-      const { setDoc } = await import('@react-native-firebase/firestore');
-      await setDoc(doc(db, 'users', user.uid), { photoB64: b64 }, { merge: true });
-      // Sem update otimista: o listener único de users/{uid} atualiza o store.
+      // Upload no Storage; o listener único de users/{uid} atualiza o store.
+      const result = await uploadProfilePhoto(user.uid, asset.uri);
+      if (!result.ok) {
+        Alert.alert('Erro', result.message);
+      }
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar a foto');
     } finally {
