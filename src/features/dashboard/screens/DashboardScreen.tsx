@@ -21,7 +21,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { launchImageLibrary, type ImageLibraryOptions } from 'react-native-image-picker';
 import { getAuth } from '@react-native-firebase/auth';
-import { doc, getFirestore, onSnapshot, setDoc } from '@react-native-firebase/firestore';
+import { doc, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 import {
   ArrowRight,
   Bell,
@@ -56,6 +56,7 @@ import type { UserAppointment } from '@features/appointments';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useNowTick } from '@shared/hooks/useNowTick';
+import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -225,20 +226,20 @@ export default function DashboardScreen() {
       const res = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: 1,
-        includeBase64: true,
         quality: 0.7,
-        maxWidth: 500,
-        maxHeight: 500,
+        maxWidth: 800,
+        maxHeight: 800,
       } as ImageLibraryOptions);
       if (res.didCancel) return;
       const asset = res.assets?.[0];
-      if (!asset?.base64) return;
+      if (!asset?.uri) return;
       setSaving(true);
-      const b64 = `data:${asset.type?.startsWith('image/') ? asset.type : 'image/jpeg'};base64,${
-        asset.base64
-      }`;
-      await setDoc(doc(getFirestore(), 'users', uid), { photoB64: b64 }, { merge: true });
-      setProfile(p => ({ ...p, photoB64: b64 }));
+      const result = await uploadProfilePhoto(uid, asset.uri);
+      if (!result.ok) {
+        Alert.alert('Erro', result.message);
+        return;
+      }
+      setProfile(p => ({ ...p, photoURL: result.url, photoB64: undefined }));
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar a foto');
     } finally {
@@ -338,8 +339,11 @@ export default function DashboardScreen() {
                 activeOpacity={0.8}
                 disabled={saving}
               >
-                {profile.photoB64 ? (
-                  <Image source={{ uri: profile.photoB64 }} style={styles.avatarImg} />
+                {profile.photoURL || profile.photoB64 ? (
+                  <Image
+                    source={{ uri: profile.photoURL ?? profile.photoB64 }}
+                    style={styles.avatarImg}
+                  />
                 ) : (
                   <View style={styles.avatarInitials}>
                     <Text style={styles.avatarInitialsText}>{initials}</Text>
