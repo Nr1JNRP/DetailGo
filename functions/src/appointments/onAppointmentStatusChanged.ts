@@ -3,6 +3,8 @@ import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 
 import { notifyCustomer } from '../notifications/notifyCustomer';
+import { notifyOwner } from '../notifications/notifyOwner';
+import { formatWhen } from '../notifications/format';
 
 /**
  * Quando o status de um agendamento muda em shops/{shopId}/appointments/{id}
@@ -18,8 +20,10 @@ import { notifyCustomer } from '../notifications/notifyCustomer';
 
 type AppointmentData = {
   customerUid?: string;
+  customerName?: string;
   status?: string;
   serviceLabel?: string;
+  startAtMs?: number;
 };
 
 export const onAppointmentStatusChanged = onDocumentUpdated(
@@ -32,7 +36,10 @@ export const onAppointmentStatusChanged = onDocumentUpdated(
     // Só age quando o status realmente mudou.
     if (before.status === after.status) return;
 
-    const { appointmentId } = event.params as { appointmentId: string };
+    const { shopId, appointmentId } = event.params as {
+      shopId: string;
+      appointmentId: string;
+    };
     const customerUid = after.customerUid;
     if (!customerUid || !after.status) return;
 
@@ -72,6 +79,29 @@ export const onAppointmentStatusChanged = onDocumentUpdated(
         });
       } catch (err) {
         logger.error(`Falha ao notificar conclusao do agendamento ${appointmentId}`, err);
+      }
+    }
+
+    // Cliente cancelou → avisa o owner (o horario abriu de novo na agenda).
+    // Só o cliente gera status 'cancelled'; o owner marca done/no_show/in_progress.
+    if (after.status === 'cancelled') {
+      const service = after.serviceLabel || 'um serviço';
+      const customer = after.customerName || 'Um cliente';
+      const when = formatWhen(after.startAtMs);
+      try {
+        await notifyOwner(shopId, {
+          type: 'appointment_cancelled',
+          title: 'Agendamento cancelado',
+          body: when
+            ? `${customer} cancelou ${service} de ${when}.`
+            : `${customer} cancelou ${service}.`,
+          appointmentId,
+          customerName: after.customerName ?? null,
+          serviceLabel: after.serviceLabel ?? null,
+          startAtMs: after.startAtMs ?? null,
+        });
+      } catch (err) {
+        logger.error(`Falha ao notificar cancelamento ao owner ${appointmentId}`, err);
       }
     }
   },

@@ -2,7 +2,8 @@ export type AppNotificationType =
   | 'appointment_created'
   | 'appointment_reminder'
   | 'appointment_done'
-  | 'appointment_expired';
+  | 'appointment_expired'
+  | 'appointment_cancelled';
 
 export type AppNotification = {
   id: string;
