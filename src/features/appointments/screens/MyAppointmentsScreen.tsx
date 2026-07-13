@@ -19,6 +19,9 @@ import type { RootStackParamList } from '@app/types';
 import { useShop } from '@features/shops';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useNowTick } from '@shared/hooks/useNowTick';
+import { FadeInUp } from '@shared/components/FadeInUp';
+import SuccessModal from '@shared/components/SuccessModal';
+import ConfirmModal from '@shared/components/ConfirmModal';
 import { useUserAppointments } from '../hooks/useUserAppointments';
 import type { UserAppointment } from '../domain/appointment.types';
 import { ACTIVE_APPOINTMENT_SET } from '../domain/appointment.constants';
@@ -90,6 +93,8 @@ export default function MyAppointmentsScreen() {
   const { shopId } = useShop();
 
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [confirmItem, setConfirmItem] = useState<UserAppointment | null>(null);
 
   const { loading, items, mutate } = useUserAppointments({
     uid,
@@ -121,7 +126,7 @@ export default function MyAppointmentsScreen() {
       const result = await cancelAppointment(item.id, uid!, shopId ?? '');
 
       if (result.ok) {
-        Alert.alert('Sucesso', result.message);
+        setSuccessMsg(result.message);
         mutate();
       } else {
         Alert.alert('Erro', result.message);
@@ -132,26 +137,16 @@ export default function MyAppointmentsScreen() {
     [uid, shopId, mutate],
   );
 
-  const handleCancel = useCallback(
-    (item: UserAppointment) => {
-      const rules = getAppointmentRules(item);
+  const handleCancel = useCallback((item: UserAppointment) => {
+    const rules = getAppointmentRules(item);
 
-      if (!rules.canCancel) {
-        Alert.alert('Não é possível cancelar', rules.message || 'Cancelamento não permitido.');
-        return;
-      }
+    if (!rules.canCancel) {
+      Alert.alert('Não é possível cancelar', rules.message || 'Cancelamento não permitido.');
+      return;
+    }
 
-      Alert.alert('Cancelar agendamento', 'Tem certeza que deseja cancelar este agendamento?', [
-        { text: 'Não', style: 'cancel' },
-        {
-          text: 'Sim, cancelar',
-          style: 'destructive',
-          onPress: () => executeCancel(item),
-        },
-      ]);
-    },
-    [executeCancel],
-  );
+    setConfirmItem(item);
+  }, []);
 
   const renderItem = useCallback(
     ({ item }: { item: UserAppointment }) => (
@@ -202,31 +197,56 @@ export default function MyAppointmentsScreen() {
               <ActivityIndicator size="large" color={D.primary} />
             </View>
           ) : (
-            <FlatList
-              data={activeItems}
-              keyExtractor={item => item.id}
-              renderItem={renderItem}
-              ItemSeparatorComponent={AppointmentSeparator}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateTitle}>Nenhum agendamento ativo</Text>
-                  <Text style={styles.emptyStateText}>
-                    Você não tem serviços agendados no momento.
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.emptyStateButton}
-                    onPress={() => navigation.navigate('Appointment', {})}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.emptyStateButtonText}>Agendar serviço</Text>
-                  </TouchableOpacity>
-                </View>
-              }
-            />
+            <FadeInUp style={styles.flexFill}>
+              <FlatList
+                data={activeItems}
+                keyExtractor={item => item.id}
+                renderItem={renderItem}
+                ItemSeparatorComponent={AppointmentSeparator}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateTitle}>Nenhum agendamento ativo</Text>
+                    <Text style={styles.emptyStateText}>
+                      Você não tem serviços agendados no momento.
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.emptyStateButton}
+                      onPress={() => navigation.navigate('Appointment', {})}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.emptyStateButtonText}>Agendar serviço</Text>
+                    </TouchableOpacity>
+                  </View>
+                }
+              />
+            </FadeInUp>
           )}
         </View>
+
+        <SuccessModal
+          visible={!!successMsg}
+          title="Tudo certo!"
+          message={successMsg ?? ''}
+          primaryLabel="Ok"
+          onPrimary={() => setSuccessMsg(null)}
+        />
+
+        <ConfirmModal
+          visible={!!confirmItem}
+          title="Cancelar agendamento"
+          message="Tem certeza que deseja cancelar este agendamento?"
+          confirmLabel="Sim, cancelar"
+          cancelLabel="Não"
+          destructive
+          onConfirm={() => {
+            const item = confirmItem;
+            setConfirmItem(null);
+            if (item) executeCancel(item);
+          }}
+          onCancel={() => setConfirmItem(null)}
+        />
       </SafeAreaView>
     </>
   );
@@ -352,6 +372,9 @@ function createStyles(D: AppColors) {
       flex: 1,
       paddingHorizontal: 16,
       paddingTop: 18,
+    },
+    flexFill: {
+      flex: 1,
     },
     listContent: {
       paddingBottom: 40,

@@ -50,6 +50,7 @@ import {
   WEEK_DAY_LABELS,
 } from '@features/settings';
 import SelectModal from '@shared/components/SelectModal';
+import ConfirmModal from '@shared/components/ConfirmModal';
 
 const NEW_SERVICE_DRAFT = '__new_service__';
 
@@ -147,21 +148,28 @@ export default function AdminManageScreen() {
   const { shopId, shop } = useShop();
   const auth = getAuth();
 
-  const handleSignOut = async () => {
-    Alert.alert('Sair da conta', 'Deseja realmente sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut(auth);
-          } catch {
-            Alert.alert('Erro', 'Falha ao sair da conta.');
-          }
-        },
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const handleSignOut = () => {
+    setConfirm({
+      title: 'Sair da conta',
+      message: 'Deseja realmente sair?',
+      confirmLabel: 'Sair',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await signOut(auth);
+        } catch {
+          Alert.alert('Erro', 'Falha ao sair da conta.');
+        }
       },
-    ]);
+    });
   };
 
   const [settings, setSettings] = useState<ShopSettings | null>(null);
@@ -434,25 +442,20 @@ export default function AdminManageScreen() {
   const handleDeleteService = (service: ShopService) => {
     if (!shopId) return;
 
-    Alert.alert(
-      'Excluir serviço',
-      `Deseja excluir "${service.name}"? Clientes não verão mais este serviço para novos agendamentos.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteShopService(shopId, service.id);
-              setEditingServiceId(current => (current === service.id ? null : current));
-            } catch {
-              Alert.alert('Erro', 'Falha ao excluir serviço.');
-            }
-          },
-        },
-      ],
-    );
+    setConfirm({
+      title: 'Excluir serviço',
+      message: `Deseja excluir "${service.name}"? Clientes não verão mais este serviço para novos agendamentos.`,
+      confirmLabel: 'Excluir',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteShopService(shopId, service.id);
+          setEditingServiceId(current => (current === service.id ? null : current));
+        } catch {
+          Alert.alert('Erro', 'Falha ao excluir serviço.');
+        }
+      },
+    });
   };
 
   const stepHour = (field: 'openHour' | 'closeHour', dir: 1 | -1) => {
@@ -981,6 +984,20 @@ export default function AdminManageScreen() {
         onSelect={value => {
           if (durationPickerFor) updateServiceDraft(durationPickerFor, 'durationMin', value);
         }}
+      />
+
+      <ConfirmModal
+        visible={!!confirm}
+        title={confirm?.title ?? ''}
+        message={confirm?.message ?? ''}
+        confirmLabel={confirm?.confirmLabel ?? ''}
+        destructive={confirm?.destructive}
+        onConfirm={() => {
+          const c = confirm;
+          setConfirm(null);
+          c?.onConfirm();
+        }}
+        onCancel={() => setConfirm(null)}
       />
     </>
   );

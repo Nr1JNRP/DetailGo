@@ -57,6 +57,7 @@ import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useNowTick } from '@shared/hooks/useNowTick';
 import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
+import { FadeInUp } from '@shared/components/FadeInUp';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -391,45 +392,47 @@ export default function DashboardScreen() {
           ) : (
             <>
               {shop && (
-                <View style={styles.shopActionCard}>
-                  <TouchableOpacity
-                    style={styles.shopActionMain}
-                    onPress={goToAppointment}
-                    activeOpacity={0.88}
-                  >
-                    <View style={styles.scheduleIcon}>
-                      <Calendar size={22} color={D.primary} strokeWidth={2.1} />
-                    </View>
-                    <View style={styles.shopActionScheduleCopy}>
-                      <Text style={styles.shopActionScheduleText}>Agendar serviço</Text>
-                      <Text style={styles.shopActionScheduleSub} numberOfLines={1}>
-                        em {shop.name}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <View style={styles.shopActionButtons}>
+                <FadeInUp delay={0}>
+                  <View style={styles.shopActionCard}>
                     <TouchableOpacity
-                      style={styles.shopActionIconButton}
-                      onPress={showShopInfo}
-                      activeOpacity={0.75}
-                    >
-                      <Info size={18} color={D.primary} strokeWidth={2.2} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.shopActionArrow}
+                      style={styles.shopActionMain}
                       onPress={goToAppointment}
-                      activeOpacity={0.75}
+                      activeOpacity={0.88}
                     >
-                      <ArrowRight size={18} color={D.primary} strokeWidth={2.1} />
+                      <View style={styles.scheduleIcon}>
+                        <Calendar size={22} color={D.primary} strokeWidth={2.1} />
+                      </View>
+                      <View style={styles.shopActionScheduleCopy}>
+                        <Text style={styles.shopActionScheduleText}>Agendar serviço</Text>
+                        <Text style={styles.shopActionScheduleSub} numberOfLines={1}>
+                          em {shop.name}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
+
+                    <View style={styles.shopActionButtons}>
+                      <TouchableOpacity
+                        style={styles.shopActionIconButton}
+                        onPress={showShopInfo}
+                        activeOpacity={0.75}
+                      >
+                        <Info size={18} color={D.primary} strokeWidth={2.2} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.shopActionArrow}
+                        onPress={goToAppointment}
+                        activeOpacity={0.75}
+                      >
+                        <ArrowRight size={18} color={D.primary} strokeWidth={2.1} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
+                </FadeInUp>
               )}
 
-              <View style={styles.sectionHeader}>
+              <FadeInUp delay={150} style={styles.sectionHeader}>
                 <Text style={styles.sectionKicker}>Serviços oferecidos pela estética</Text>
-              </View>
+              </FadeInUp>
 
               {loadingServices ? (
                 <View style={styles.servicesLoading}>
@@ -467,49 +470,51 @@ export default function DashboardScreen() {
                 </View>
               )}
 
-              <View style={styles.upcomingHeader}>
-                <Text style={styles.upcomingTitle}>Próximos serviços</Text>
-                <Text style={styles.upcomingCount}>{upcomingAppointments.length} ativos</Text>
-              </View>
+              <FadeInUp delay={340}>
+                <View style={styles.upcomingHeader}>
+                  <Text style={styles.upcomingTitle}>Próximos serviços</Text>
+                  <Text style={styles.upcomingCount}>{upcomingAppointments.length} ativos</Text>
+                </View>
 
-              {loadingAppointments ? (
-                <View style={styles.loadingWrap}>
-                  <ActivityIndicator color={D.primary} size="small" />
-                </View>
-              ) : nextAppointment ? (
-                <FlatList
-                  horizontal
-                  pagingEnabled
-                  snapToInterval={appointmentCardWidth + 12}
-                  decelerationRate="fast"
-                  showsHorizontalScrollIndicator={false}
-                  data={upcomingAppointments}
-                  keyExtractor={item => item.id}
-                  contentContainerStyle={styles.appointmentsRail}
-                  ItemSeparatorComponent={renderAppointmentSeparator}
-                  renderItem={renderAppointment}
-                />
-              ) : (
-                <View style={styles.emptyCard}>
-                  <View style={styles.emptyIconWrap}>
-                    <Calendar size={32} color={D.primary} strokeWidth={2.1} />
-                    <View style={styles.emptyPlus}>
-                      <Plus size={12} color={D.onPrimary} strokeWidth={3} />
-                    </View>
+                {loadingAppointments ? (
+                  <View style={styles.loadingWrap}>
+                    <ActivityIndicator color={D.primary} size="small" />
                   </View>
-                  <Text style={styles.emptyTitle}>Sem agendamentos</Text>
-                  <Text style={styles.emptyText}>Que tal cuidar do seu carro hoje?</Text>
-                  <Text style={styles.emptyText}>Em 30 segundos você marca o primeiro.</Text>
-                  <TouchableOpacity
-                    style={styles.emptyButton}
-                    onPress={goToAppointment}
-                    activeOpacity={0.82}
-                  >
-                    <Text style={styles.emptyButtonText}>Começar</Text>
-                    <ArrowRight size={19} color={D.primary} strokeWidth={2.4} />
-                  </TouchableOpacity>
-                </View>
-              )}
+                ) : nextAppointment ? (
+                  <FlatList
+                    horizontal
+                    pagingEnabled
+                    snapToInterval={appointmentCardWidth + 12}
+                    decelerationRate="fast"
+                    showsHorizontalScrollIndicator={false}
+                    data={upcomingAppointments}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.appointmentsRail}
+                    ItemSeparatorComponent={renderAppointmentSeparator}
+                    renderItem={renderAppointment}
+                  />
+                ) : (
+                  <View style={styles.emptyCard}>
+                    <View style={styles.emptyIconWrap}>
+                      <Calendar size={32} color={D.primary} strokeWidth={2.1} />
+                      <View style={styles.emptyPlus}>
+                        <Plus size={12} color={D.onPrimary} strokeWidth={3} />
+                      </View>
+                    </View>
+                    <Text style={styles.emptyTitle}>Sem agendamentos</Text>
+                    <Text style={styles.emptyText}>Que tal cuidar do seu carro hoje?</Text>
+                    <Text style={styles.emptyText}>Em 30 segundos você marca o primeiro.</Text>
+                    <TouchableOpacity
+                      style={styles.emptyButton}
+                      onPress={goToAppointment}
+                      activeOpacity={0.82}
+                    >
+                      <Text style={styles.emptyButtonText}>Começar</Text>
+                      <ArrowRight size={19} color={D.primary} strokeWidth={2.4} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </FadeInUp>
             </>
           )}
 

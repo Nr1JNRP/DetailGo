@@ -20,6 +20,7 @@ import {
 } from 'lucide-react-native';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
+import { FadeInUp } from '@shared/components/FadeInUp';
 
 import type { AppNotification } from '../domain/notification.types';
 
@@ -87,13 +88,15 @@ export default function NotificationsScreenView({ items, loading, subtitle, onOp
             <Text style={styles.emptyText}>Nenhuma notificação por aqui.</Text>
           </View>
         ) : (
-          <FlatList
-            data={items}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => <NotificationRow item={item} styles={styles} D={D} />}
-          />
+          <FadeInUp style={styles.flexFill}>
+            <FlatList
+              data={items}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => <NotificationRow item={item} styles={styles} D={D} />}
+            />
+          </FadeInUp>
         )}
       </SafeAreaView>
     </>
@@ -135,6 +138,7 @@ const NotificationRow = memo(function NotificationRow({
 function createStyles(D: AppColors) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: D.bg },
+    flexFill: { flex: 1 },
 
     header: {
       flexDirection: 'row',

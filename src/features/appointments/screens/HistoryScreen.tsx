@@ -18,6 +18,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import type { RootStackParamList } from '@app/types';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useNowTick } from '@shared/hooks/useNowTick';
+import { FadeInUp } from '@shared/components/FadeInUp';
 import { HISTORY_APPOINTMENT_SET } from '../domain/appointment.constants';
 import { isExpiredScheduled } from '../domain/appointment.helpers';
 import type { UserAppointment } from '../domain/appointment.types';
@@ -236,25 +237,27 @@ export default function HistoryScreen() {
             <ActivityIndicator size="large" color={D.primary} />
           </View>
         ) : (
-          <SectionList
-            sections={sections}
-            keyExtractor={item => item.id}
-            renderItem={renderHistoryItem}
-            renderSectionHeader={renderSectionHeader}
-            stickySectionHeadersEnabled={false}
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyTitle}>Nenhum registro</Text>
-                <Text style={styles.emptyText}>
-                  {filter === 'all'
-                    ? 'Seus serviços finalizados aparecerão aqui.'
-                    : 'Nenhum registro para este filtro.'}
-                </Text>
-              </View>
-            }
-          />
+          <FadeInUp style={styles.flexFill}>
+            <SectionList
+              sections={sections}
+              keyExtractor={item => item.id}
+              renderItem={renderHistoryItem}
+              renderSectionHeader={renderSectionHeader}
+              stickySectionHeadersEnabled={false}
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyTitle}>Nenhum registro</Text>
+                  <Text style={styles.emptyText}>
+                    {filter === 'all'
+                      ? 'Seus serviços finalizados aparecerão aqui.'
+                      : 'Nenhum registro para este filtro.'}
+                  </Text>
+                </View>
+              }
+            />
+          </FadeInUp>
         )}
       </SafeAreaView>
     </>
@@ -311,6 +314,9 @@ function createStyles(D: AppColors) {
     safe: {
       flex: 1,
       backgroundColor: D.bg,
+    },
+    flexFill: {
+      flex: 1,
     },
     centered: {
       flex: 1,
