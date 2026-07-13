@@ -17,6 +17,7 @@ import {
   CalendarX2,
   CheckCircle2,
   Clock,
+  XCircle,
 } from 'lucide-react-native';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
@@ -116,6 +117,8 @@ const NotificationRow = memo(function NotificationRow({
       ? CheckCircle2
       : item.type === 'appointment_expired'
       ? CalendarX2
+      : item.type === 'appointment_cancelled'
+      ? XCircle
       : CalendarCheck;
   return (
     <View style={[styles.row, !item.read && styles.rowUnread]}>
