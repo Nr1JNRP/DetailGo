@@ -48,6 +48,8 @@ import { formatUtils } from '@shared/utils/format.utils';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
 import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
 import PremiumStar from '@shared/components/PremiumStar';
+import ConfirmModal from '@shared/components/ConfirmModal';
+import SuccessModal from '@shared/components/SuccessModal';
 
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -65,6 +67,15 @@ import { normalizeAdminAppointmentFromGlobal } from '../data/adminAppointment.no
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type QDoc = FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.DocumentData>;
+
+type StatusConfirm = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  item: AdminAppointment;
+  next: AppointmentStatus;
+};
 
 const WEEK_DAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
 
@@ -118,6 +129,11 @@ export default function AdminDashboardScreen() {
   const [donePrevWeekCount, setDonePrevWeekCount] = useState(0);
   const [loadingWeek, setLoadingWeek] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [statusConfirm, setStatusConfirm] = useState<StatusConfirm | null>(null);
+  const [successFeedback, setSuccessFeedback] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
 
   const [weekAnchor, setWeekAnchor] = useState<Date>(() => new Date());
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
@@ -381,7 +397,10 @@ export default function AdminDashboardScreen() {
           : next === 'done'
           ? 'Serviço concluído.'
           : 'Atendimento iniciado.';
-      Alert.alert('Pronto', successMsg);
+      setSuccessFeedback({
+        title: 'Pronto',
+        message: successMsg,
+      });
     } catch (e: any) {
       Alert.alert(
         'Erro',
@@ -414,20 +433,15 @@ export default function AdminDashboardScreen() {
 
     const onActionPress = () => {
       if (isExpiredScheduled) {
-        Alert.alert(
-          'Marcar não realizado',
-          'Esse horário já passou. Deseja dar baixa como serviço não realizado?',
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-              text: 'Marcar',
-              style: 'destructive',
-              onPress: () => {
-                doUpdate(item, 'no_show');
-              },
-            },
-          ],
-        );
+        setStatusConfirm({
+          title: 'Marcar n\u00e3o realizado',
+          message:
+            'Esse hor\u00e1rio j\u00e1 passou. Deseja dar baixa como servi\u00e7o n\u00e3o realizado?',
+          confirmLabel: 'Marcar',
+          destructive: true,
+          item,
+          next: 'no_show',
+        });
         return;
       }
 
@@ -437,15 +451,13 @@ export default function AdminDashboardScreen() {
       }
 
       if (item.status === 'in_progress') {
-        Alert.alert('Concluir serviço', `Finalizar ${item.serviceLabel ?? 'este serviço'}?`, [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Concluir',
-            onPress: () => {
-              doUpdate(item, 'done');
-            },
-          },
-        ]);
+        setStatusConfirm({
+          title: 'Concluir servi\u00e7o',
+          message: `Finalizar ${item.serviceLabel ?? 'este servi\u00e7o'}?`,
+          confirmLabel: 'Concluir',
+          item,
+          next: 'done',
+        });
         return;
       }
     };
@@ -723,6 +735,28 @@ export default function AdminDashboardScreen() {
 
       {/* ── Drawer lateral — igual ao cliente ── */}
       <AdminDrawer visible={drawerVisible} slideAnim={slideAnim} onClose={toggleDrawer} />
+      <ConfirmModal
+        visible={!!statusConfirm}
+        title={statusConfirm?.title ?? ''}
+        message={statusConfirm?.message ?? ''}
+        confirmLabel={statusConfirm?.confirmLabel ?? ''}
+        destructive={statusConfirm?.destructive}
+        onCancel={() => setStatusConfirm(null)}
+        onConfirm={() => {
+          const action = statusConfirm;
+          setStatusConfirm(null);
+          if (action) {
+            doUpdate(action.item, action.next);
+          }
+        }}
+      />
+      <SuccessModal
+        visible={!!successFeedback}
+        title={successFeedback?.title ?? ''}
+        message={successFeedback?.message ?? ''}
+        primaryLabel="Ok"
+        onPrimary={() => setSuccessFeedback(null)}
+      />
     </>
   );
 }

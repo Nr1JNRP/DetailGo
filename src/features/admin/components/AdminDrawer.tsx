@@ -15,6 +15,7 @@ import { Calendar, History, LogOut, Settings, Store, User } from 'lucide-react-n
 import { getAuth, signOut } from '@react-native-firebase/auth';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
+import ConfirmModal from '@shared/components/ConfirmModal';
 import { UI } from '@shared/constants/app.constants';
 import { useMeStore } from '@features/auth';
 import { useShop, useShopServices } from '@features/shops';
@@ -47,6 +48,8 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
     ensureDefaults: false,
   });
   const alertedRef = useRef(false);
+  const [servicesConfirmVisible, setServicesConfirmVisible] = React.useState(false);
+  const [signOutConfirmVisible, setSignOutConfirmVisible] = React.useState(false);
 
   useEffect(() => {
     if (!visible) {
@@ -56,20 +59,7 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
     if (loadingServices) return;
     if (services.length === 0 && !alertedRef.current) {
       alertedRef.current = true;
-      Alert.alert(
-        'Sem serviços cadastrados',
-        'Sua estética ainda não tem serviços cadastrados. Acesse "Gerenciamento da loja" para adicionar os serviços que você oferece.',
-        [
-          { text: 'Agora não', style: 'cancel' },
-          {
-            text: 'Ir para gerenciamento',
-            onPress: () => {
-              onClose();
-              navigation.navigate('AdminManage');
-            },
-          },
-        ],
-      );
+      setServicesConfirmVisible(true);
     }
   }, [visible, loadingServices, services.length, navigation, onClose]);
 
@@ -89,21 +79,17 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
   };
 
   const handleSignOut = () => {
-    Alert.alert('Sair da conta', 'Deseja realmente sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            onClose();
-            await signOut(auth);
-          } catch {
-            Alert.alert('Erro', 'Falha ao sair da conta.');
-          }
-        },
-      },
-    ]);
+    setSignOutConfirmVisible(true);
+  };
+
+  const confirmSignOut = async () => {
+    setSignOutConfirmVisible(false);
+    try {
+      onClose();
+      await signOut(auth);
+    } catch {
+      Alert.alert('Erro', 'Falha ao sair da conta.');
+    }
   };
 
   if (!visible) return null;
@@ -170,6 +156,30 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
           />
         </View>
       </Animated.View>
+      <ConfirmModal
+        visible={servicesConfirmVisible}
+        title="Sem servi\u00e7os cadastrados"
+        message={
+          'Sua est\u00e9tica ainda n\u00e3o tem servi\u00e7os cadastrados. Acesse "Gerenciamento da loja" para adicionar os servi\u00e7os que voc\u00ea oferece.'
+        }
+        confirmLabel="Ir para gerenciamento"
+        cancelLabel="Agora n\u00e3o"
+        onCancel={() => setServicesConfirmVisible(false)}
+        onConfirm={() => {
+          setServicesConfirmVisible(false);
+          onClose();
+          navigation.navigate('AdminManage');
+        }}
+      />
+      <ConfirmModal
+        visible={signOutConfirmVisible}
+        title="Sair da conta"
+        message="Deseja realmente sair?"
+        confirmLabel="Sair"
+        destructive
+        onCancel={() => setSignOutConfirmVisible(false)}
+        onConfirm={confirmSignOut}
+      />
     </>
   );
 }
