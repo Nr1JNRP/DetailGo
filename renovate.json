@@ -3,10 +3,12 @@
   "extends": ["config:recommended"],
   "timezone": "America/Sao_Paulo",
   "dependencyDashboard": true,
+  "dependencyDashboardApproval": true,
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
-  "prConcurrentLimit": 5,
-  "prHourlyLimit": 2,
+  "minimumReleaseAge": "7 days",
+  "prConcurrentLimit": 2,
+  "prHourlyLimit": 1,
   "semanticCommits": "enabled",
   "semanticCommitType": "build",
   "semanticCommitScope": "deps",
@@ -17,25 +19,97 @@
   },
   "packageRules": [
     {
-      "description": "Agrupa updates patch e minor de dependencias npm",
-      "matchManagers": ["npm"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "groupName": "npm minor and patch dependencies"
-    },
-    {
-      "description": "Mantem major updates separados para revisao manual",
+      "description": "Majors sempre separados e aprovados manualmente",
       "matchUpdateTypes": ["major"],
       "labels": ["major-update", "dependencies"]
     },
     {
-      "description": "Agrupa GitHub Actions",
+      "description": "GitHub Actions patch/minor em um grupo seguro",
       "matchManagers": ["github-actions"],
-      "groupName": "github actions"
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "github actions minor and patch",
+      "labels": ["ci", "dependencies"]
     },
     {
-      "description": "Agrupa dependencias Gradle/Android",
-      "matchManagers": ["gradle"],
-      "groupName": "gradle dependencies"
+      "description": "Tooling JS patch/minor em um grupo",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchPackageNames": [
+        "@babel/**",
+        "@commitlint/**",
+        "@react-native/babel-preset",
+        "@react-native/eslint-config",
+        "@react-native/metro-config",
+        "@react-native/typescript-config",
+        "@types/**",
+        "babel-plugin-module-resolver",
+        "eslint",
+        "jest",
+        "lint-staged",
+        "metro",
+        "prettier",
+        "react-test-renderer",
+        "standard-version",
+        "typescript"
+      ],
+      "groupName": "javascript tooling minor and patch",
+      "labels": ["tooling", "dependencies"]
+    },
+    {
+      "description": "Ecossistema React Native patch/minor agrupado, mas revisado separado do tooling",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchPackageNames": [
+        "@react-native-async-storage/async-storage",
+        "@react-native-community/**",
+        "@react-native-masked-view/masked-view",
+        "@react-navigation/**",
+        "lucide-react-native",
+        "react",
+        "react-native",
+        "react-native-bootsplash",
+        "react-native-device-info",
+        "react-native-image-picker",
+        "react-native-linear-gradient",
+        "react-native-maps",
+        "react-native-safe-area-context",
+        "react-native-screens",
+        "react-native-svg",
+        "zustand"
+      ],
+      "groupName": "react native app minor and patch",
+      "labels": ["app", "dependencies"]
+    },
+    {
+      "description": "Firebase, Notifee e Functions patch/minor agrupados",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchPackageNames": [
+        "@notifee/react-native",
+        "@react-native-firebase/**",
+        "firebase-admin",
+        "firebase-functions",
+        "mercadopago"
+      ],
+      "groupName": "firebase and functions minor and patch",
+      "labels": ["firebase", "dependencies"]
+    },
+    {
+      "description": "Android e Gradle patch/minor agrupados",
+      "matchManagers": ["gradle", "gradle-wrapper"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "android gradle minor and patch",
+      "labels": ["android", "dependencies"]
+    },
+    {
+      "description": "Dependencias Ruby/iOS ficam organizadas e manuais",
+      "matchManagers": ["bundler"],
+      "labels": ["ios", "dependencies"]
+    },
+    {
+      "description": "Node runtime fica isolado para decisao manual",
+      "matchPackageNames": ["node"],
+      "labels": ["runtime", "dependencies"]
     }
   ]
 }
