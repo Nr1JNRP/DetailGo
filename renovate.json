@@ -1,0 +1,41 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "America/Sao_Paulo",
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "semanticCommits": "enabled",
+  "semanticCommitType": "build",
+  "semanticCommitScope": "deps",
+  "rebaseWhen": "behind-base-branch",
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "dependencies"]
+  },
+  "packageRules": [
+    {
+      "description": "Agrupa updates patch e minor de dependencias npm",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "npm minor and patch dependencies"
+    },
+    {
+      "description": "Mantem major updates separados para revisao manual",
+      "matchUpdateTypes": ["major"],
+      "labels": ["major-update", "dependencies"]
+    },
+    {
+      "description": "Agrupa GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions"
+    },
+    {
+      "description": "Agrupa dependencias Gradle/Android",
+      "matchManagers": ["gradle"],
+      "groupName": "gradle dependencies"
+    }
+  ]
+}
