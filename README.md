@@ -1,93 +1,162 @@
-# 🚗 DetailGo
+<p align="center">
+  <img src="docs/detailgo-logo.png" alt="Logo do DetailGo" width="140" />
+</p>
 
-![React Native](https://img.shields.io/badge/React%20Native-0.7x-blue?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)
-![Firebase](https://img.shields.io/badge/Firebase-Backend-orange?logo=firebase)
-![License](https://img.shields.io/badge/license-MIT-green)
+<h1 align="center">🚗 DetailGo</h1>
 
-Plataforma mobile de **gestão e agendamento para estética automotiva**, desenvolvida em **React Native**, com foco em otimizar a operação de serviços e a experiência do cliente.
+<p align="center">
+  Plataforma mobile de gestão e agendamento para estética automotiva, construída em React Native.
+</p>
 
-O **DetailGo** funciona como um **SaaS (Software as a Service)** que conecta **empresas de estética automotiva** e seus **clientes**, centralizando toda a jornada de agendamento e atendimento em um único lugar.
+<p align="center">
+  <img src="https://img.shields.io/badge/React%20Native-0.7x-blue?logo=react" alt="React Native" />
+  <img src="https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Firebase-Backend-orange?logo=firebase" alt="Firebase" />
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="Licença MIT" />
+</p>
 
 ---
+
+## 📑 Sumário
+
+- [Sobre o projeto](#-sobre-o-projeto)
+- [Proposta](#-proposta)
+- [Funcionalidades](#-funcionalidades)
+- [Tecnologias utilizadas](#️-tecnologias-utilizadas)
+- [Arquitetura](#-arquitetura)
+- [Backend](#-backend)
+- [Como executar](#️-como-executar)
+- [Roadmap](#️-roadmap)
+- [Contribuindo](#-contribuindo)
+- [Licença](#-licença)
+- [Autor](#-autor)
+
+---
+
+## 📱 Sobre o projeto
+
+O **DetailGo** é um SaaS mobile voltado para o mercado de estética automotiva. A proposta central é unir, em um só aplicativo, a rotina de quem presta o serviço e a experiência de quem contrata, eliminando trocas de mensagens soltas e planilhas para organizar horários.
+
+Com ele, estéticas automotivas ganham uma central única para cadastrar seus serviços, montar a agenda e acompanhar clientes, enquanto os clientes finais conseguem agendar, consultar horários e gerenciar seus próprios atendimentos direto do celular.
 
 ## 🚀 Proposta
 
-O DetailGo permite que o usuário atue em dois perfis:
+O aplicativo trabalha com dois perfis de uso:
 
-### 🧑‍💼 Para empresas (estéticas automotivas)
+### 🧑‍💼 Empresas (estéticas automotivas)
 - Cadastro da estética
-- Gestão de serviços oferecidos
+- Gestão dos serviços oferecidos
 - Controle de agenda e atendimentos
-- Organização de clientes
-- Acompanhamento operacional
+- Organização da carteira de clientes
+- Acompanhamento operacional do negócio
 
-### 🚗 Para clientes
+### 🚘 Clientes
 - Cadastro e login
 - Agendamento de serviços
-- Visualização de horários disponíveis
-- Gestão dos próprios agendamentos
-- Experiência simplificada e digital
-
----
+- Consulta de horários disponíveis
+- Gerenciamento dos próprios agendamentos
+- Experiência de atendimento simplificada e digital
 
 ## ✨ Funcionalidades
 
-* 📅 Agendamento de serviços
-* 👤 Autenticação de usuários
-* 🧑‍💼 Gestão de clientes e atendimentos
-* 📊 Controle de agenda
-* 🔄 Fluxo cliente ↔ empresa integrado
-* 🔔 Notificações e lembretes (em evolução)
+| Funcionalidade | Descrição |
+| --- | --- |
+| 📅 Agendamento | Marcação de serviços integrada à agenda da estética |
+| 👤 Autenticação | Login e cadastro de usuários |
+| 🧑‍💼 Gestão de clientes | Organização de clientes e atendimentos |
+| 📊 Controle de agenda | Visão consolidada dos horários da estética |
+| 🔄 Fluxo integrado | Comunicação direta entre cliente e empresa |
+| 🔔 Notificações | Lembretes de agendamento (em evolução) |
 
----
+## 🛠️ Tecnologias utilizadas
 
-## 🛠️ Stack Tecnológica
+Este projeto foi construído com:
 
-* React Native
-* TypeScript
-* React Navigation
-* Firebase
-
----
+- [React Native](https://reactnative.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [React Navigation](https://reactnavigation.org/)
+- [Firebase](https://firebase.google.com/) (Authentication, Firestore e Storage)
 
 ## 🧱 Arquitetura
-/src
-/components
-/screens
-/services
-/navigation
-/utils
 
----
+A estrutura de pastas principal do app segue o padrão abaixo:
+
+```
+src/
+├── components/
+├── screens/
+├── services/
+├── navigation/
+└── utils/
+```
 
 ## 🔐 Backend
 
-O projeto utiliza **Firebase** como backend BaaS:
+O DetailGo utiliza o **Firebase** como backend (BaaS), através dos seguintes recursos:
 
-* Authentication
-* Firestore (database)
-* Storage
+- **Authentication** — autenticação de usuários
+- **Firestore** — banco de dados em tempo real
+- **Storage** — armazenamento de arquivos e imagens
 
----
+## ▶️ Como executar
 
-## 🚀 Roadmap
+### Pré-requisitos
 
-* [ ] Notificações push (OneSignal ou FCM)
-* [ ] Multi-tenant (SaaS completo)
-* [ ] Dashboard web administrativo
-* [ ] Integração com pagamentos
-* [ ] Controle de planos e assinaturas
+Antes de começar, tenha instalado em sua máquina:
 
----
+- [Node.js](https://nodejs.org/) (LTS)
+- [React Native CLI](https://reactnative.dev/docs/environment-setup)
+- Android Studio (para rodar no Android) e/ou Xcode (para rodar no iOS)
+
+### Instalação
+
+Clone o repositório e instale as dependências:
+
+```bash
+git clone https://github.com/Nr1JNRP/DetailGo.git
+cd DetailGo
+npm install
+```
+
+Para o ambiente iOS, instale também os pods:
+
+```bash
+cd ios
+bundle install
+bundle exec pod install
+```
+
+### Executando o projeto
+
+```bash
+# Android
+npm run android
+
+# iOS
+npm run ios
+```
+
+> É necessário configurar as credenciais do Firebase (`google-services.json` e/ou `GoogleService-Info.plist`) para que a autenticação e o backend funcionem corretamente.
+
+## 🗺️ Roadmap
+
+- [ ] Notificações push (OneSignal ou FCM)
+- [ ] Multi-tenant (SaaS completo)
+- [ ] Dashboard web administrativo
+- [ ] Integração com pagamentos
+- [ ] Controle de planos e assinaturas
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Sinta-se à vontade para abrir uma issue relatando bugs ou sugestões, ou enviar um pull request com melhorias.
 
 ## 📄 Licença
 
-MIT
-
----
+Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ## 👨‍💻 Autor
 
-**Jorge N. Ribeiro**  
+**Jorge N. Ribeiro**
 Front-end Developer | Angular | React Native
+
+[GitHub](https://github.com/Nr1JNRP)
