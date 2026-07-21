@@ -1,19 +1,21 @@
 <p align="center">
-  <img src="docs/detailgo-logo.png" alt="Logo do DetailGo" width="140" />
+  <a href="https://github.com/Nr1JNRP/DetailGo">
+    <img width="250" src="docs/detailgo-logo.png" alt="Logo do DetailGo" />
+  </a>
 </p>
 
 <h1 align="center">🚗 DetailGo</h1>
 
-<p align="center">
-  Plataforma mobile de gestão e agendamento para estética automotiva, construída em React Native.
-</p>
+<div align="center">
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React%20Native-0.7x-blue?logo=react" alt="React Native" />
-  <img src="https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Firebase-Backend-orange?logo=firebase" alt="Firebase" />
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="Licença MIT" />
-</p>
+Plataforma mobile de gestão e agendamento para estética automotiva, construída em React Native.
+
+![React Native](https://img.shields.io/badge/React%20Native-0.7x-blue?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)
+![Firebase](https://img.shields.io/badge/Firebase-Backend-orange?style=flat-square&logo=firebase)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+
+</div>
 
 ---
 
