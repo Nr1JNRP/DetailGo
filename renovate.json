@@ -48,7 +48,6 @@
         "lint-staged",
         "metro",
         "prettier",
-        "react-test-renderer",
         "standard-version",
         "typescript"
       ],
@@ -65,8 +64,6 @@
         "@react-native-masked-view/masked-view",
         "@react-navigation/**",
         "lucide-react-native",
-        "react",
-        "react-native",
         "react-native-bootsplash",
         "react-native-device-info",
         "react-native-image-picker",
@@ -110,6 +107,12 @@
       "description": "Node runtime fica isolado para decisao manual",
       "matchPackageNames": ["node"],
       "labels": ["runtime", "dependencies"]
+    },
+    {
+      "description": "Nucleo React/RN travado por versao: react e react-test-renderer precisam casar exato e react-native e acoplado a eles. Auto-update desabilitado (upgrade so manual/planejado, junto). Continua visivel no Dependency Dashboard. Evita o ERESOLVE que quebrou o CI.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["react", "react-native", "react-test-renderer"],
+      "enabled": false
     }
   ]
 }
