@@ -37,10 +37,6 @@
       "matchPackageNames": [
         "@babel/**",
         "@commitlint/**",
-        "@react-native/babel-preset",
-        "@react-native/eslint-config",
-        "@react-native/metro-config",
-        "@react-native/typescript-config",
         "@types/**",
         "babel-plugin-module-resolver",
         "eslint",
@@ -109,9 +105,17 @@
       "labels": ["runtime", "dependencies"]
     },
     {
-      "description": "Nucleo React/RN travado por versao: react e react-test-renderer precisam casar exato e react-native e acoplado a eles. Auto-update desabilitado (upgrade so manual/planejado, junto). Continua visivel no Dependency Dashboard. Evita o ERESOLVE que quebrou o CI.",
+      "description": "Nucleo React/RN travado por versao. react, react-native, react-test-renderer e o toolchain @react-native/* (babel-preset, eslint-config, metro-config, typescript-config) + o CLI sao publicados junto com cada release do RN e precisam casar exato. Auto-update desabilitado — upgrade so manual/planejado, junto. Visivel no Dependency Dashboard. Evita ERESOLVE e quebra de lint/babel no CI.",
       "matchManagers": ["npm"],
-      "matchPackageNames": ["react", "react-native", "react-test-renderer"],
+      "matchPackageNames": [
+        "react",
+        "react-native",
+        "react-test-renderer",
+        "@react-native/**",
+        "@react-native-community/cli",
+        "@react-native-community/cli-platform-android",
+        "@react-native-community/cli-platform-ios"
+      ],
       "enabled": false
     }
   ]
