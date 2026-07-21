@@ -245,7 +245,10 @@ jobs:
       - name: Instala dependencias
         run: npm ci
 
+      # Commits de bot (Renovate) sao auto-gerados como "chore(deps): ..." e nao
+      # seguem o enum de tipos do projeto. A convecao vale so para commits humanos.
       - name: Valida commits do PR
+        if: ${{ !contains(github.event.pull_request.user.login, 'renovate') }}
         run: |
           npx commitlint \
             --from ${{ github.event.pull_request.base.sha }} \
