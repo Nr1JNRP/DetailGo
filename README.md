@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h1 align="center">🚗 DetailGo</h1>
+<h1 align="center">DetailGo</h1>
 
 <div align="center">
 
@@ -140,14 +140,6 @@ npm run ios
 
 > É necessário configurar as credenciais do Firebase (`google-services.json` e/ou `GoogleService-Info.plist`) para que a autenticação e o backend funcionem corretamente.
 
-## 🗺️ Roadmap
-
-- [ ] Notificações push (OneSignal ou FCM)
-- [ ] Multi-tenant (SaaS completo)
-- [ ] Dashboard web administrativo
-- [ ] Integração com pagamentos
-- [ ] Controle de planos e assinaturas
-
 ## 🤝 Contribuindo
 
 Contribuições são bem-vindas! Sinta-se à vontade para abrir uma issue relatando bugs ou sugestões, ou enviar um pull request com melhorias.
@@ -155,10 +147,3 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir uma issue relata
 ## 📄 Licença
 
 Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## 👨‍💻 Autor
-
-**Jorge N. Ribeiro**
-Front-end Developer | Angular | React Native
-
-[GitHub](https://github.com/Nr1JNRP)
