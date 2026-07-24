@@ -163,7 +163,10 @@ export default function LoginScreen() {
                 <Text style={styles.forgotText}>Esqueceu?</Text>
               </TouchableOpacity>
             </View>
-            <View style={[styles.field, touched.password && !isValidPassword && styles.fieldError]}>
+            <View
+              testID="password-field"
+              style={[styles.field, touched.password && !isValidPassword && styles.fieldError]}
+            >
               <Lock size={18} color={D.ink3} />
               <TextInput
                 style={styles.fieldInput}
@@ -181,7 +184,7 @@ export default function LoginScreen() {
                 onSubmitEditing={handleLogin}
                 editable={!loading}
               />
-              <TouchableOpacity onPress={() => setShowPassword(v => !v)}>
+              <TouchableOpacity testID="toggle-password" onPress={() => setShowPassword(v => !v)}>
                 {showPassword ? (
                   <EyeOff size={18} color={D.ink3} />
                 ) : (
