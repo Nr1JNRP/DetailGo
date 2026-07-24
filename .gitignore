@@ -93,8 +93,6 @@ yarn-error.log
 .metro-health-check*
 metro.log
 metro.err.log
-metro.log
-metro.err.log
 
 # Testing
 /coverage
