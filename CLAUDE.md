@@ -169,3 +169,50 @@ Customer        → Dashboard, Appointment, MyAppointments, History, Profile
 - Mensagens de erro e UI **sempre em português**
 - Textos de validação e alertas em português
 - Datas no formato brasileiro (`dd/MM/yyyy`, `HH:mm`)
+
+## Testes
+
+Stack: **Jest** + **@testing-library/react-native** (RNTL). Coverage via Istanbul.
+
+- **Arquivo `.spec.tsx` colocado ao lado do componente** (ex.:
+  `LoginScreen.spec.tsx` na mesma pasta da tela) — estilo `.spec.ts` do Angular.
+- **`jest.setup.js`** mocka os módulos nativos globais (AsyncStorage, safe-area,
+  linear-gradient, lucide, bootsplash). Cada teste mocka só o que é específico
+  dele (services, `useNavigation`, hooks de feature).
+- **`testID`** em elementos sem texto estável (toggles, botões de ícone) — padrão
+  de testabilidade, não afeta produção.
+- Rodar cobertura: `npm run test:cov` → relatório HTML em `coverage/index.html`.
+
+### Filosofia — o que testar (IMPORTANTE)
+
+- **Testar COMPORTAMENTO/lógica:** render dos campos, validações, ações (chama o
+  service certo com os args certos), navegação, feedback (alertas), estados
+  (mostrar/ocultar senha, touched/blur).
+- **NÃO perseguir cosmético/ambiental:** variação de tema claro/escuro,
+  `Platform.OS`, cor exata de borda, spinner de loading. Testar estilo é frágil e
+  não protege regra.
+- **Coverage é um mapa, não uma meta.** Ele mostra o buraco; você decide se é
+  comportamento (cobre) ou cosmético (ignora). **Não caçar 100%** — uma tela com a
+  lógica coberta (~90%+ de linhas) já é saúde de sobra.
+
+## Fluxo de trabalho (Git / entrega)
+
+Ler estas regras ANTES de começar qualquer entrega.
+
+- **Sempre branchar da `main` atualizada** (`git checkout main && git pull`),
+  nunca commitar direto na main. Nome da branch: `jnrp/<descritivo>`.
+- **Validar antes de commitar:** `tsc --noEmit`, `eslint`, `prettier --check`,
+  `jest` — tudo verde.
+- Mudança de UI → **gerar o APK e instalar no aparelho** para validar visual antes
+  do commit.
+- **1 commit por feature** — se surgirem vários, dar squash para 1 só antes do
+  push final.
+- **Commitlint (husky no `commit-msg`):**
+  - Formato `type(scope): subject` — **scope é obrigatório**.
+  - **subject em minúsculo** (sem camelCase/PascalCase — `SectionList`,
+    `useNowTick`, `FCM` etc. são rejeitados).
+  - Corpo com **linhas ≤ 72 caracteres**.
+  - **type** só: `build, docs, feat, fix, perf, refactor, test`.
+  - Terminar com `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
+- **Renovate:** o núcleo React/RN e o toolchain `@react-native/*` são travados
+  (upgrade manual/planejado, em conjunto); o resto atualiza sozinho.
