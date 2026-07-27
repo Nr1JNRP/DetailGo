@@ -2,6 +2,69 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/jnrpalma/DetailGo/compare/v1.0.1...v1.1.0) (2026-07-27)
+
+### ♻️ Refatorações
+
+- **state:** consolida leitura de users/{uid} num unico listener ([ddfd136](https://github.com/jnrpalma/DetailGo/commit/ddfd1362a3671f36c010d2cae894211e8c712df5))
+- **state:** migra sessao e tema para zustand ([37d33a5](https://github.com/jnrpalma/DetailGo/commit/37d33a5382ce81df6887ec878b3a251cceb92497))
+
+### ⚡ Melhorias de performance
+
+- **admin:** conta semana anterior via agregacao (count) ([208241a](https://github.com/jnrpalma/DetailGo/commit/208241ac3d22890eac6f78f220c64c5de03f5fc6))
+- **historico:** virtualiza a lista de meses e memoiza as linhas ([1ce3303](https://github.com/jnrpalma/DetailGo/commit/1ce3303ab23ed6841401a74bc10fdd0114ce5017))
+- **telas:** memoiza linhas de lista p/ evitar re-render no tick ([b474c2e](https://github.com/jnrpalma/DetailGo/commit/b474c2eb87741c59ee783fbf68854becd79ad155))
+- **telas:** pausa os listeners de tela fora de foco ([6e34605](https://github.com/jnrpalma/DetailGo/commit/6e346051d8b3d9eeefe31d987a24fcf9ad382acd))
+
+### 📝 Documentação
+
+- adiciona logo do projeto ([add0c78](https://github.com/jnrpalma/DetailGo/commit/add0c785156a1bb09a1bebb51e98974c1da7293d))
+- ajusta logo do README no padrão po-angular ([64c0639](https://github.com/jnrpalma/DetailGo/commit/64c0639445b4e19ebf86607d6a70489591e632e4))
+- melhora README com logo, sumário e guia de uso ([fff0348](https://github.com/jnrpalma/DetailGo/commit/fff0348efd99a79765a37cbcf00bab42eb89dd8f))
+
+### 🔧 Build e configuração
+
+- **android:** troca o package do app para com.jnrpalma.detailgo ([8815603](https://github.com/jnrpalma/DetailGo/commit/8815603f96f418c05cca29cf6cdff7e9a674b028))
+- **ci:** ajusta configuracao do renovate ([59a9f4c](https://github.com/jnrpalma/DetailGo/commit/59a9f4c7a8e1003d71c8bdc08ddad802c2354816))
+- **ci:** commitlint ignora commits de bot (renovate) ([04459a1](https://github.com/jnrpalma/DetailGo/commit/04459a1849ef3c1d13440a39303670c4283abcaf)), closes [#67](https://github.com/jnrpalma/DetailGo/issues/67)
+- **ci:** renovate para de auto-atualizar o nucleo react/rn ([c870c93](https://github.com/jnrpalma/DetailGo/commit/c870c9366066038d9cb823fdfd37ce0eaae890ae)), closes [#63](https://github.com/jnrpalma/DetailGo/issues/63)
+- **ci:** renovate segura tambem o toolchain @react-native/\* ([96d85f0](https://github.com/jnrpalma/DetailGo/commit/96d85f02d1314fd2650564bd29eccf60d0362698)), closes [#64](https://github.com/jnrpalma/DetailGo/issues/64)
+- **gitignore:** ignora metro.log e metro.err.log ([234857f](https://github.com/jnrpalma/DetailGo/commit/234857fc2a92570757fbaa8bcc1e4ff3a3377d54))
+- **gitignore:** ignora os logs locais do metro ([965296c](https://github.com/jnrpalma/DetailGo/commit/965296c898d13f6e4072ef905899fdd0b73ce5ee))
+- **gitignore:** remove entradas duplicadas de metro.log ([b779fba](https://github.com/jnrpalma/DetailGo/commit/b779fba250d41fd03aa0fa72856b44eb67ac88e8))
+
+### 🐛 Correções de bugs
+
+- **admin:** baixa de agendamento com feedback e sem travar offline ([045f227](https://github.com/jnrpalma/DetailGo/commit/045f22770bf19d4097ce27264bbc06bf6c217eab))
+- **admin:** melhora card da agenda e alinha botao criar servico ([6cdfc06](https://github.com/jnrpalma/DetailGo/commit/6cdfc0691e488d85475cbbc802b9a6453177cf08))
+- **notifications:** registra token push mesmo sem permissao ([2876ca8](https://github.com/jnrpalma/DetailGo/commit/2876ca843cfe7341ffb89a4a00a92c3960860359))
+- **seguranca:** corta cancelamento no horario e fecha rules multi-tenant ([22de0b9](https://github.com/jnrpalma/DetailGo/commit/22de0b9cc29357e5006672a0d58095e9defe32ee))
+
+### ✅ Testes
+
+- **auth:** adiciona base de testes e cobre a tela de login ([670c362](https://github.com/jnrpalma/DetailGo/commit/670c3623a29a9fddfdd4e931d2311c45fcdecae0))
+- **rules:** adiciona suite das firestore rules no emulador e no ci ([956381f](https://github.com/jnrpalma/DetailGo/commit/956381f6ab28c2da2ca3e0c546d6eecd13aa4dbe))
+
+### ✨ Novas funcionalidades
+
+- **admin:** exibe badge premium para owner com assinatura ativa ([2513037](https://github.com/jnrpalma/DetailGo/commit/25130371d173b218fa51c3e48879276c9065c930))
+- **agendamento:** avisa o owner quando o cliente cancela ([bc64713](https://github.com/jnrpalma/DetailGo/commit/bc647130b78d9055f4afc0f3478994fded393750))
+- **appointments:** agendamento vencido vira nao realizado no cliente ([d393c0d](https://github.com/jnrpalma/DetailGo/commit/d393c0d01461a06e01a394e7a99dd1b41c8bd796))
+- **appointments:** cancelamento livre, lembrete 5min e sync de status ([2dc08f4](https://github.com/jnrpalma/DetailGo/commit/2dc08f48efbf8bddd968d7761857801b23cbb69d))
+- **assets:** atualiza icones forward ([b15feae](https://github.com/jnrpalma/DetailGo/commit/b15feae7d6cc126ba09450ed18b99de688ba6c1d))
+- **assinatura:** define o preco de lancamento do plano ([b5b6914](https://github.com/jnrpalma/DetailGo/commit/b5b6914dd92101e8b114cefa0ac0e25c956b5fd3))
+- **ci:** adiciona renovate e codeql ([ce22695](https://github.com/jnrpalma/DetailGo/commit/ce226953dfdc197a3c1b46e364308298befafa86))
+- **crashlytics:** adiciona monitoramento de crashes e error boundary ([a9864ed](https://github.com/jnrpalma/DetailGo/commit/a9864edb7b1f6545ac2be99edb9e6d5d1de956ef))
+- **notifications:** lembrete de agendamento proximo para o cliente ([0eced1f](https://github.com/jnrpalma/DetailGo/commit/0eced1f6cd0570ec15d355374ffd53dc9c9a3e86))
+- **notifications:** notifica cliente quando o servico e concluido ([b7b97db](https://github.com/jnrpalma/DetailGo/commit/b7b97db9f37ab700f621cb25e6d714bc0da97433))
+- **notifications:** notifica owner ao receber novo agendamento ([e002697](https://github.com/jnrpalma/DetailGo/commit/e002697008c3b64405c30e631feeba4e02be7837))
+- **perfil:** foto de perfil vai pro firebase storage (sai o base64) ([f09bc90](https://github.com/jnrpalma/DetailGo/commit/f09bc90aa7a45d151466dadab691f20aed3ad2d0))
+- **release:** ajusta identidade e assinatura ([d0e233a](https://github.com/jnrpalma/DetailGo/commit/d0e233aaaa2df2557e97d606777e62b9986568ec))
+- **scheduling:** owner controla horarios, capacidade e duracao ([ac35372](https://github.com/jnrpalma/DetailGo/commit/ac35372b2148bc513172871578e781b4726168f5))
+- **subscription:** ajusta ciclo mensal ([5b6c64f](https://github.com/jnrpalma/DetailGo/commit/5b6c64f4c5ff3f62b9b54d68a28a077543791394))
+- **ui:** animacoes de entrada e modais na identidade do app ([0916c13](https://github.com/jnrpalma/DetailGo/commit/0916c13b76e19b84660278e065a65c07d9727935))
+- **ui:** padroniza modais do owner ([0515d8c](https://github.com/jnrpalma/DetailGo/commit/0515d8c44f3d9177a5e2a663fcc462383972605f))
+
 ### [1.0.1](https://github.com/jnrpalma/DetailGo/compare/v1.0.0...v1.0.1) (2026-05-28)
 
 ### 🔧 Build e configuração
