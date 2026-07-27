@@ -2,36 +2,94 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Shops — leitura pública para o mapa, escrita apenas pelo dono
+    // ── Helpers ────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Dono do shop: compara o uid autenticado com shops/{shopId}.ownerId.
+    function isShopOwner(shopId) {
+      return isSignedIn()
+        && request.auth.uid == get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId;
+    }
+
+    // ── Shops ──────────────────────────────────────────────────────────────
+    // Leitura pública (mapa). Escrita só do dono. No create, o ownerId tem que
+    // ser o próprio uid (ninguém cria shop no nome de outro).
     match /shops/{shopId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == resource.data.ownerId;
-      allow create: if request.auth != null;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
 
-      // Subcoleções do shop
-      match /{document=**} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null;
+      // Config do shop (horários, capacidade): cliente lê p/ montar os slots,
+      // só o dono escreve.
+      match /settings/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isShopOwner(shopId);
+      }
+
+      // Serviços oferecidos: cliente lê p/ agendar, só o dono escreve (impede
+      // que um cliente altere preço/serviço de outra estética).
+      match /services/{serviceId} {
+        allow read: if isSignedIn();
+        allow write: if isShopOwner(shopId);
+      }
+
+      // Agendamentos do shop.
+      // - read: qualquer logado (o cálculo de disponibilidade precisa contar os
+      //   agendamentos do dia; não dá p/ restringir só aos do próprio cliente).
+      // - create: o cliente cria o SEU agendamento (customerUid == uid) já como
+      //   'scheduled'; o dono também pode criar (encaixe/walk-in).
+      // - update: o dono muda status (in_progress/done/no_show); o cliente só
+      //   pode CANCELAR o próprio agendamento e apenas ANTES do horário marcado
+      //   (request.time < startAtMs) — a tolerância do no_show não estende isso.
+      // - delete: só o dono.
+      match /appointments/{appointmentId} {
+        function isCustomerCancel() {
+          return isSignedIn()
+            && request.auth.uid == resource.data.customerUid
+            && resource.data.status == 'scheduled'
+            && request.resource.data.status == 'cancelled'
+            && request.resource.data.customerUid == resource.data.customerUid
+            && request.resource.data.startAtMs == resource.data.startAtMs
+            && request.time.toMillis() < resource.data.startAtMs;
+        }
+
+        allow read: if isSignedIn();
+        allow create: if isShopOwner(shopId)
+          || (isSignedIn()
+              && request.resource.data.customerUid == request.auth.uid
+              && request.resource.data.status == 'scheduled');
+        allow update: if isShopOwner(shopId) || isCustomerCancel();
+        allow delete: if isShopOwner(shopId);
+      }
+
+      // Sino do dono: escrito pelas Cloud Functions (Admin SDK, ignora estas
+      // regras). O dono lê e pode marcar como lida.
+      match /notifications/{notificationId} {
+        allow read, write: if isShopOwner(shopId);
       }
     }
 
-    // Usuários — só o próprio usuário acessa
+    // ── Usuários ───────────────────────────────────────────────────────────
+    // Só o próprio usuário acessa o seu documento e subcoleções.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
 
       match /appointments/{appointmentId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
 
-      // Notificações do cliente (escritas pela Cloud Function, lidas pelo dono)
+      // Sino do cliente: escrito pela Cloud Function, lido/marcado pelo próprio.
       match /notifications/{notificationId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
     }
 
-    // Pagamentos — apenas backend (Cloud Functions)
+    // ── Pagamentos ─────────────────────────────────────────────────────────
+    // Só o backend (Cloud Functions) escreve. Leitura autenticada.
     match /payments/{paymentId} {
-      allow read: if request.auth != null;
+      allow read: if isSignedIn();
       allow write: if false;
     }
   }
