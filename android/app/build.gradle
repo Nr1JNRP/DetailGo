@@ -80,3 +80,7 @@ dependencies {
 // e que o package_name nele bata com applicationId ("com.jnrpalma.detailgo").
 
 apply plugin: 'com.google.gms.google-services'
+// Crashlytics: o SDK nativo vem pelo autolinking do
+// @react-native-firebase/crashlytics; aqui só aplicamos o plugin Gradle, que
+// cuida do upload do mapping (R8) nos builds release.
+apply plugin: 'com.google.firebase.crashlytics'

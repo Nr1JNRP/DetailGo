@@ -39,3 +39,13 @@ jest.mock('react-native-bootsplash', () => ({
   hide: jest.fn().mockResolvedValue(undefined),
   isVisible: jest.fn().mockResolvedValue(false),
 }));
+
+// Crashlytics — API modular vira no-op (não há módulo nativo no Jest)
+jest.mock('@react-native-firebase/crashlytics', () => ({
+  getCrashlytics: jest.fn(() => ({})),
+  setCrashlyticsCollectionEnabled: jest.fn(),
+  setUserId: jest.fn(),
+  recordError: jest.fn(),
+  log: jest.fn(),
+  crash: jest.fn(),
+}));
