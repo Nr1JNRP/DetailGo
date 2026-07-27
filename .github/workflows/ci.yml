@@ -106,6 +106,40 @@ jobs:
       - name: Executa testes
         run: npm test -- --runInBand --watchAll=false
 
+  rules-tests:
+    name: Testes das regras Firestore
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Configura Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # O emulador do Firestore exige Java 21+ (firebase-tools 15+).
+      - name: Configura Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Instala dependencias
+        run: npm ci
+
+      - name: Instala firebase-tools
+        run: npm i -g firebase-tools@15.7.0
+
+      - name: Executa testes das regras
+        run: npm run test:rules
+
   android-debug:
     name: Android debug build
     runs-on: ubuntu-latest

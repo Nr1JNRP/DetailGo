@@ -97,6 +97,13 @@ metro.err.log
 # Testing
 /coverage
 
+# Firebase emulator logs (gerados por firebase emulators:exec)
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+pglite-debug.log
+firebase-export-*
+
 # Generated APKs
 /dist/apk/
 
