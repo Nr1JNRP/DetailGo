@@ -25,8 +25,8 @@ android {
         applicationId "com.jnrpalma.detailgo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.1.0"
         manifestPlaceholders = [
             GOOGLE_MAPS_API_KEY: secrets.getProperty("GOOGLE_MAPS_API_KEY", "")
         ]

@@ -229,3 +229,33 @@ Ler estas regras ANTES de começar qualquer entrega.
   - Terminar com `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 - **Renovate:** o núcleo React/RN e o toolchain `@react-native/*` são travados
   (upgrade manual/planejado, em conjunto); o resto atualiza sozinho.
+
+## Releases
+
+A `main` é **protegida** — release entra por **branch → PR → merge → tag**
+(nunca commit/tag direto na main). Ferramenta: `standard-version` (config em
+`.versionrc.js`, que mapeia os tipos pro `CHANGELOG.md`).
+
+**Versão (semver):** houve `feat(` desde a última tag → **minor**; só `fix`/
+`build`/`docs` → **patch**. Conferir com `git log <ultima-tag>..main --oneline`.
+
+**Passo a passo:**
+
+1. Branch `jnrp/release-vX.Y.Z` a partir da main atualizada.
+2. Bump + changelog **sem commitar** (controlamos o commit):
+   `npx standard-version --release-as <minor|patch> --skip.commit --skip.tag`
+   → atualiza `package.json`, `package-lock.json` e `CHANGELOG.md`.
+3. **Bump manual do Android** (o standard-version NÃO mexe no gradle):
+   em `android/app/build.gradle`, subir `versionName` (igual ao package.json) e
+   `versionCode` (+1). **Esquecer isso = APK com versão errada.**
+4. **1 commit** `build(release): X.Y.Z` — **nunca `chore`** (o commitlint
+   rejeita; por isso `.versionrc.js` já força `releaseCommitMessageFormat` com
+   `build`).
+5. Push → abrir PR → esperar o CI verde → merge.
+6. Depois do merge, na main atualizada: `git tag vX.Y.Z && git push origin
+vX.Y.Z`.
+7. `gh release create vX.Y.Z --title "DetailGo vX.Y.Z" --notes "..."` com os
+   destaques (pode anexar o APK release com `--attach`).
+
+**Pegadinhas já resolvidas:** commit de release usa `build(` (não `chore`);
+Android é bump manual; `.versionrc.js` esconde `chore/style/ci` do changelog.
