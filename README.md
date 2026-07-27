@@ -17,24 +17,6 @@ Plataforma mobile de gestão e agendamento para estética automotiva, construíd
 
 </div>
 
----
-
-## 📑 Sumário
-
-- [Sobre o projeto](#-sobre-o-projeto)
-- [Proposta](#-proposta)
-- [Funcionalidades](#-funcionalidades)
-- [Tecnologias utilizadas](#️-tecnologias-utilizadas)
-- [Arquitetura](#-arquitetura)
-- [Backend](#-backend)
-- [Como executar](#️-como-executar)
-- [Roadmap](#️-roadmap)
-- [Contribuindo](#-contribuindo)
-- [Licença](#-licença)
-- [Autor](#-autor)
-
----
-
 ## 📱 Sobre o projeto
 
 O **DetailGo** é um SaaS mobile voltado para o mercado de estética automotiva. A proposta central é unir, em um só aplicativo, a rotina de quem presta o serviço e a experiência de quem contrata, eliminando trocas de mensagens soltas e planilhas para organizar horários.
@@ -45,32 +27,21 @@ Com ele, estéticas automotivas ganham uma central única para cadastrar seus se
 
 O aplicativo trabalha com dois perfis de uso:
 
-### 🧑‍💼 Empresas (estéticas automotivas)
+### Empresas (estéticas automotivas)
 - Cadastro da estética
 - Gestão dos serviços oferecidos
 - Controle de agenda e atendimentos
 - Organização da carteira de clientes
 - Acompanhamento operacional do negócio
 
-### 🚘 Clientes
+### Clientes
 - Cadastro e login
 - Agendamento de serviços
 - Consulta de horários disponíveis
 - Gerenciamento dos próprios agendamentos
 - Experiência de atendimento simplificada e digital
 
-## ✨ Funcionalidades
-
-| Funcionalidade | Descrição |
-| --- | --- |
-| 📅 Agendamento | Marcação de serviços integrada à agenda da estética |
-| 👤 Autenticação | Login e cadastro de usuários |
-| 🧑‍💼 Gestão de clientes | Organização de clientes e atendimentos |
-| 📊 Controle de agenda | Visão consolidada dos horários da estética |
-| 🔄 Fluxo integrado | Comunicação direta entre cliente e empresa |
-| 🔔 Notificações | Lembretes de agendamento (em evolução) |
-
-## 🛠️ Tecnologias utilizadas
+## Tecnologias utilizadas
 
 Este projeto foi construído com:
 
@@ -79,28 +50,8 @@ Este projeto foi construído com:
 - [React Navigation](https://reactnavigation.org/)
 - [Firebase](https://firebase.google.com/) (Authentication, Firestore e Storage)
 
-## 🧱 Arquitetura
 
-A estrutura de pastas principal do app segue o padrão abaixo:
-
-```
-src/
-├── components/
-├── screens/
-├── services/
-├── navigation/
-└── utils/
-```
-
-## 🔐 Backend
-
-O DetailGo utiliza o **Firebase** como backend (BaaS), através dos seguintes recursos:
-
-- **Authentication** — autenticação de usuários
-- **Firestore** — banco de dados em tempo real
-- **Storage** — armazenamento de arquivos e imagens
-
-## ▶️ Como executar
+## Como executar
 
 ### Pré-requisitos
 
