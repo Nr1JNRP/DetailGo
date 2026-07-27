@@ -183,6 +183,19 @@ Stack: **Jest** + **@testing-library/react-native** (RNTL). Coverage via Istanbu
   de testabilidade, não afeta produção.
 - Rodar cobertura: `npm run test:cov` → relatório HTML em `coverage/index.html`.
 
+### Testes das `firestore.rules`
+
+- Suíte separada em `firestore-tests/*.test.js` (JS puro, ambiente Node) com
+  `@firebase/rules-unit-testing` — sobe o emulador do Firestore e prova o modelo
+  multi-tenant (cliente/dono não escreve em shop de outro) e o corte de
+  cancelamento (só antes do horário).
+- Rodar: `npm run test:rules` (dispara `firebase emulators:exec`).
+- **Requer Java 21+** (firebase-tools 15+). Se o `java` do PATH for 17 (o do
+  Gradle), aponte o JBR do Android Studio: `JAVA_HOME` para
+  `.../Android Studio/jbr`.
+- Roda isolado do jest do app (o `jest.config.js` ignora `firestore-tests/`) e
+  tem job próprio no CI (`Testes das regras Firestore`).
+
 ### Filosofia — o que testar (IMPORTANTE)
 
 - **Testar COMPORTAMENTO/lógica:** render dos campos, validações, ações (chama o

@@ -10,5 +10,14 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "singleProjectMode": true,
+    "ui": {
+      "enabled": false
+    }
   }
 }
