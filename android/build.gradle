@@ -19,6 +19,9 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
         // Plugin do Google Services (processa google-services.json)
         classpath("com.google.gms:google-services:4.4.3")
+        // Plugin do Crashlytics — sobe o mapa de deobfuscação (R8) para que os
+        // stack traces do build release cheguem legíveis no console.
+        classpath("com.google.firebase:firebase-crashlytics-gradle:3.0.3")
     }
 }
 
