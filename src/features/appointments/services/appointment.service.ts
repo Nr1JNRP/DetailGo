@@ -29,12 +29,15 @@ export function getAppointmentRules(appointment: {
   message?: string;
 } {
   if (appointment.status === 'scheduled') {
-    // Passou do horário (+ tolerância) e o estabelecimento ainda não deu baixa:
-    // não é cancelamento. O cliente só cancela enquanto o agendamento é futuro.
-    if (isExpiredScheduled(appointment.status, appointment.startAtMs)) {
+    const now = Date.now();
+    // O cliente só cancela enquanto o horário marcado ainda não chegou. Passou
+    // do horário, não cancela mais. A tolerância (NO_SHOW_GRACE_MS) NÃO estende
+    // a janela de cancelamento — ela serve só para decidir quando o agendamento
+    // vira "não realizado" (isExpired) e dispara a notificação.
+    if (now >= appointment.startAtMs) {
       return {
         canCancel: false,
-        isExpired: true,
+        isExpired: isExpiredScheduled(appointment.status, appointment.startAtMs, now),
         message: 'Este horário já passou. Aguarde a confirmação do estabelecimento.',
       };
     }
