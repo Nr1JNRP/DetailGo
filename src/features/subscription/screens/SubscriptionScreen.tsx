@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Linking,
   Share,
@@ -25,6 +24,7 @@ import {
 import { getAuth } from '@react-native-firebase/auth';
 
 import { radii, spacing, typography as T, useAppTheme, type AppColors } from '@shared/theme';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 import { useShop } from '@features/shops';
 import { useAuth } from '@features/auth';
 
@@ -47,6 +47,7 @@ export default function SubscriptionScreen() {
 
   const { shop, trialDaysLeft } = useShop();
   const { signOut } = useAuth();
+  const { showError } = useFeedback();
 
   const [pixData, setPixData] = useState<PixData | null>(null);
   const [loadingPix, setLoadingPix] = useState(false);
@@ -81,7 +82,7 @@ export default function SubscriptionScreen() {
 
       setPixData(result as PixData);
     } catch (e: any) {
-      Alert.alert('Erro', e?.message ?? 'N\u00e3o foi poss\u00edvel gerar o PIX. Tente novamente.');
+      showError(e?.message ?? 'N\u00e3o foi poss\u00edvel gerar o PIX. Tente novamente.');
     } finally {
       setLoadingPix(false);
     }
@@ -104,7 +105,7 @@ export default function SubscriptionScreen() {
     if (canOpen) {
       await Linking.openURL(url);
     } else {
-      Alert.alert('WhatsApp n\u00e3o encontrado', `Entre em contato: ${WHATSAPP_NUMBER}`);
+      showError(`Entre em contato: ${WHATSAPP_NUMBER}`, { title: 'WhatsApp n\u00e3o encontrado' });
     }
   };
 

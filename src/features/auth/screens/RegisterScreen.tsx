@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   PermissionsAndroid,
   Platform,
@@ -40,6 +39,7 @@ import { useForm } from '@shared/hooks/useForm';
 import { validationUtils, validationMessages } from '@shared/utils/validation.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 import { generateGeohash, geocodeAddress, reverseGeocode } from '@shared/utils/geo.utils';
 import { cepMask, cepOnlyDigits, fetchCep, formatCepAddress } from '@shared/utils/cep.utils';
 
@@ -83,6 +83,7 @@ export default function RegisterScreen() {
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
   const styles = useMemo(() => createStyles(D, bottomInset), [D, bottomInset]);
   const { register } = useAuth();
+  const { showError, showSuccess } = useFeedback();
 
   const [accountType, setAccountType] = useState<UserRole | null>(null);
   const [displayPhone, setDisplayPhone] = useState('');
@@ -129,7 +130,12 @@ export default function RegisterScreen() {
         message: validationMessages.required,
       },
     ],
-    confirmPassword: [] as { validate: (v: string) => boolean; message: string }[],
+    confirmPassword: [
+      {
+        validate: (v: string) => validationUtils.required(v),
+        message: validationMessages.required,
+      },
+    ],
     shopName: [],
     shopCep: [],
     shopAddress: [],
@@ -164,21 +170,13 @@ export default function RegisterScreen() {
     validationRules,
   );
 
-  React.useEffect(() => {
-    if (validationRules.confirmPassword.length === 0) {
-      validationRules.confirmPassword.push({
-        validate: (v: string) => validationUtils.confirmPassword(values.password, v),
-        message: validationMessages.confirmPassword,
-      });
-    }
-    // Mantem o comportamento existente do useForm: registrar a regra apenas uma vez.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.password]);
-
+  // Habilita o botão quando os campos obrigatórios estão preenchidos. A
+  // validação (incl. senhas conferem) roda no clique — não travamos o botão por
+  // causa de erros, senão ele "morre" (o useForm mantém chaves de erro com
+  // valor undefined, e o disabled bloquearia o próximo toque).
   const canSubmit = useMemo(() => {
     if (!accountType) return false;
     const baseOk =
-      Object.keys(errors).length === 0 &&
       values.firstName &&
       values.lastName &&
       values.email &&
@@ -186,7 +184,19 @@ export default function RegisterScreen() {
       values.confirmPassword &&
       !isSubmitting;
     return !!baseOk;
-  }, [errors, values, isSubmitting, accountType]);
+  }, [values, isSubmitting, accountType]);
+
+  // Checagem explícita de senhas iguais — lê os valores atuais (o handler é
+  // recriado a cada render) e dá feedback garantido por modal.
+  const ensurePasswordsMatch = (): boolean => {
+    if (values.password !== values.confirmPassword) {
+      showError('As senhas não conferem. Verifique e tente de novo.', {
+        title: 'Senhas diferentes',
+      });
+      return false;
+    }
+    return true;
+  };
 
   const handlePhoneChange = (text: string) => {
     setDisplayPhone(formatUtils.phoneMask(text));
@@ -209,7 +219,9 @@ export default function RegisterScreen() {
         handleChange('shopAddress', address);
         handleChange('shopCity', city);
       } else {
-        Alert.alert('CEP não encontrado', 'Verifique o CEP e preencha o endereço manualmente.');
+        showError('Verifique o CEP e preencha o endereço manualmente.', {
+          title: 'CEP não encontrado',
+        });
       }
     }
   };
@@ -247,7 +259,7 @@ export default function RegisterScreen() {
     const hasPermission = await ensureLocationPermission();
     if (!hasPermission) {
       setLoadingLocation(false);
-      Alert.alert('Permissão negada', 'Não foi possível acessar sua localização.');
+      showError('Não foi possível acessar sua localização.', { title: 'Permissão negada' });
       return;
     }
 
@@ -277,14 +289,15 @@ export default function RegisterScreen() {
           geohash,
         });
         setLoadingLocation(false);
-        Alert.alert('Localização obtida!', `${addressLabel}${cityLabel ? `\n${cityLabel}` : ''}`);
+        showSuccess(`${addressLabel}${cityLabel ? `\n${cityLabel}` : ''}`, {
+          title: 'Localização obtida!',
+        });
       },
       err => {
         setLoadingLocation(false);
-        Alert.alert(
-          'GPS indisponível',
-          `${err?.message ?? 'Erro desconhecido'}\n\nVerifique se o GPS está ativado.`,
-        );
+        showError(`${err?.message ?? 'Erro desconhecido'}\n\nVerifique se o GPS está ativado.`, {
+          title: 'GPS indisponível',
+        });
       },
       { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 },
     );
@@ -301,7 +314,7 @@ export default function RegisterScreen() {
     const city = values.shopCity.trim();
 
     if (!address && !city) {
-      Alert.alert('Atenção', 'Preencha o CEP ou o endereço da estética.');
+      showError('Preencha o CEP ou o endereço da estética.', { title: 'Atenção' });
       return;
     }
 
@@ -338,26 +351,27 @@ export default function RegisterScreen() {
         geohash: generateGeohash(coords.lat, coords.lng),
       });
       setLoadingLocation(false);
-      Alert.alert('Localização confirmada', `${addressWithNumber}\n${city}`);
+      showSuccess(`${addressWithNumber}\n${city}`, { title: 'Localização confirmada' });
       return;
     }
 
     setLoadingLocation(false);
-    Alert.alert(
-      'Endereço não encontrado',
+    showError(
       'Não foi possível localizar o endereço. Verifique os dados ou use "Usar minha localização atual" estando no local da estética.',
+      { title: 'Endereço não encontrado' },
     );
   };
 
   const handleSubmit = async () => {
-    if (!accountType || !validateForm()) return;
+    if (!accountType) return;
+    if (!ensurePasswordsMatch()) return;
+    if (!validateForm()) return;
 
     // Owner precisa de localização
     if (accountType === 'owner' && !shopLocation) {
-      Alert.alert(
-        'Localização necessária',
-        'Informe onde fica sua estética para aparecer no mapa.',
-      );
+      showError('Informe onde fica sua estética para aparecer no mapa.', {
+        title: 'Localização necessária',
+      });
       return;
     }
 
@@ -377,7 +391,7 @@ export default function RegisterScreen() {
     setIsSubmitting(false);
 
     if (!res.ok) {
-      Alert.alert('Erro', res.message ?? 'Falha ao cadastrar');
+      showError(res.message ?? 'Falha ao cadastrar');
       return;
     }
 
@@ -388,16 +402,14 @@ export default function RegisterScreen() {
     setAccountType(null);
 
     if (accountType === 'owner') {
-      Alert.alert(
-        'Estética criada!',
+      showSuccess(
         'Sua estética foi cadastrada com sucesso!\n\nVocê tem 7 dias grátis para usar o app. Após isso, ative sua assinatura para continuar visível no mapa.',
-        [{ text: 'Entendido!' }],
+        { title: 'Estética criada!', primaryLabel: 'Entendido!' },
       );
     } else {
-      Alert.alert(
-        '🎉 Conta criada!',
+      showSuccess(
         'Bem-vindo ao DetailGo!\n\nExplore as estéticas parceiras no mapa e agende seu serviço.',
-        [{ text: 'Vamos lá!' }],
+        { title: '🎉 Conta criada!', primaryLabel: 'Vamos lá!' },
       );
     }
   };
@@ -764,11 +776,12 @@ export default function RegisterScreen() {
         {/* CTA */}
         <View style={styles.cta}>
           <TouchableOpacity
+            testID="register-submit"
             style={[styles.btn, (!canSubmit || isSubmitting) && styles.btnDisabled]}
             onPress={
               isOwner
                 ? () => {
-                    if (validateForm()) setLocationStep(true);
+                    if (ensurePasswordsMatch() && validateForm()) setLocationStep(true);
                   }
                 : handleSubmit
             }

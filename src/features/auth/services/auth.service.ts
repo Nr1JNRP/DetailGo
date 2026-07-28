@@ -151,7 +151,9 @@ export async function register(data: RegisterInput): Promise<AuthResult> {
   } catch (e: any) {
     return {
       ok: false,
-      message: e?.message ?? mapFirebaseAuthError(e?.code, 'Erro ao criar conta.'),
+      // Traduz o código do Firebase — nunca expor a mensagem crua em inglês
+      // (ex.: "[auth/unknown] ... Connection reset").
+      message: mapFirebaseAuthError(e?.code, 'Erro ao criar conta.'),
       code: e?.code,
     };
   }

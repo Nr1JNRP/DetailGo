@@ -1,5 +1,4 @@
 import React from 'react';
-import { Alert } from 'react-native';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { darkColors } from '@shared/theme';
 
@@ -8,6 +7,8 @@ import LoginScreen from './LoginScreen';
 // Mocks especificos desta tela (o resto — nativos — vem do jest.setup.js).
 const mockSignIn = jest.fn();
 const mockNavigate = jest.fn();
+const mockShowError = jest.fn();
+const mockShowSuccess = jest.fn();
 
 jest.mock('@features/auth', () => ({
   useAuth: () => ({ signIn: mockSignIn }),
@@ -15,6 +16,14 @@ jest.mock('@features/auth', () => ({
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
+}));
+
+jest.mock('@shared/components/FeedbackProvider', () => ({
+  useFeedback: () => ({
+    showError: mockShowError,
+    showSuccess: mockShowSuccess,
+    showConfirm: jest.fn(),
+  }),
 }));
 
 const VALID_EMAIL = 'jorge@detailgo.com';
@@ -58,8 +67,7 @@ describe('LoginScreen', () => {
     });
   });
 
-  it('mostra alerta de erro quando o login falha', async () => {
-    const alertSpy = jest.spyOn(Alert, 'alert');
+  it('mostra modal de erro quando o login falha', async () => {
     mockSignIn.mockResolvedValueOnce({ ok: false, message: 'Email ou senha incorretos' });
     render(<LoginScreen />);
 
@@ -67,10 +75,9 @@ describe('LoginScreen', () => {
     fireEvent.press(screen.getByText('Entrar'));
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith(
-        'Erro ao acessar',
+      expect(mockShowError).toHaveBeenCalledWith(
         'Email ou senha incorretos',
-        expect.anything(),
+        expect.objectContaining({ title: 'Erro ao acessar' }),
       );
     });
   });
@@ -83,15 +90,14 @@ describe('LoginScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Register');
   });
 
-  it('abre o alerta de recuperar senha ao tocar em "Esqueceu?"', () => {
-    const alertSpy = jest.spyOn(Alert, 'alert');
+  it('abre o modal de recuperar senha ao tocar em "Esqueceu?"', () => {
     render(<LoginScreen />);
 
     fireEvent.press(screen.getByText('Esqueceu?'));
 
-    expect(alertSpy).toHaveBeenCalledWith(
-      'Recuperar senha',
+    expect(mockShowSuccess).toHaveBeenCalledWith(
       'Enviaremos um link de recuperação para seu e-mail.',
+      expect.objectContaining({ title: 'Recuperar senha' }),
     );
   });
 

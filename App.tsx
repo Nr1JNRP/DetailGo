@@ -6,6 +6,7 @@ import { ShopProvider, useShop } from '@features/shops/context/ShopContext';
 import { useForegroundNotifications } from '@features/notifications';
 import { ThemeProvider, typography } from '@shared/theme';
 import ErrorBoundary from '@shared/components/ErrorBoundary';
+import { FeedbackProvider } from '@shared/components/FeedbackProvider';
 import { initCrashlytics, setCrashUser, clearCrashUser } from '@shared/services/crashlytics.service';
 import BootSplash from 'react-native-bootsplash';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -80,11 +81,13 @@ export default function App() {
   return (
     <ThemeProvider>
       <ErrorBoundary>
-        <AuthProvider>
-          <ShopProvider>
-            <AppContent />
-          </ShopProvider>
-        </AuthProvider>
+        <FeedbackProvider>
+          <AuthProvider>
+            <ShopProvider>
+              <AppContent />
+            </ShopProvider>
+          </AuthProvider>
+        </FeedbackProvider>
       </ErrorBoundary>
     </ThemeProvider>
   );

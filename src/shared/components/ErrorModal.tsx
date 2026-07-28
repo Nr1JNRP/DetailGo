@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AlertTriangle, HelpCircle } from 'lucide-react-native';
+import { Animated, Modal, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { AlertTriangle } from 'lucide-react-native';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 
@@ -8,74 +8,58 @@ type Props = {
   visible: boolean;
   title: string;
   message: string;
-  confirmLabel: string;
-  cancelLabel?: string;
-  /** Ação perigosa (ex.: excluir): destaca o botão de confirmar em vermelho. */
-  destructive?: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
+  primaryLabel: string;
+  onPrimary: () => void;
 };
 
 /**
- * Modal de confirmação (2 botões) na identidade do app, substituindo o
- * Alert.alert nativo de "tem certeza?". Mesma entrada animada do SuccessModal.
+ * Modal de erro/aviso na identidade do app (card escuro + ícone de alerta em
+ * vermelho), substituindo o Alert.alert nativo cinza. Mesma entrada animada do
+ * SuccessModal (backdrop em fade + card com mola).
  */
-export default function ConfirmModal({
-  visible,
-  title,
-  message,
-  confirmLabel,
-  cancelLabel = 'Cancelar',
-  destructive = false,
-  onConfirm,
-  onCancel,
-}: Props) {
+export default function ErrorModal({ visible, title, message, primaryLabel, onPrimary }: Props) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
-  const accent = destructive ? D.status.error : D.primary;
 
   const backdrop = useRef(new Animated.Value(0)).current;
   const card = useRef(new Animated.Value(0)).current;
+  const icon = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) {
       backdrop.setValue(0);
       card.setValue(0);
+      icon.setValue(0);
       return;
     }
     Animated.parallel([
       Animated.timing(backdrop, { toValue: 1, duration: 180, useNativeDriver: true }),
       Animated.spring(card, { toValue: 1, friction: 7, tension: 80, useNativeDriver: true }),
     ]).start();
-  }, [visible, backdrop, card]);
+    Animated.spring(icon, {
+      toValue: 1,
+      delay: 120,
+      friction: 5,
+      tension: 90,
+      useNativeDriver: true,
+    }).start();
+  }, [visible, backdrop, card, icon]);
 
   const cardScale = card.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] });
-  const Icon = destructive ? AlertTriangle : HelpCircle;
+  const iconScale = icon.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   return (
-    <Modal visible={visible} transparent statusBarTranslucent onRequestClose={onCancel}>
+    <Modal visible={visible} transparent statusBarTranslucent onRequestClose={onPrimary}>
       <Animated.View style={[styles.backdrop, { opacity: backdrop }]}>
         <Animated.View style={[styles.card, { opacity: card, transform: [{ scale: cardScale }] }]}>
-          <View style={[styles.iconWrap, { backgroundColor: accent + '22', borderColor: accent }]}>
-            <Icon size={30} color={accent} strokeWidth={2.3} />
-          </View>
+          <Animated.View style={[styles.iconWrap, { transform: [{ scale: iconScale }] }]}>
+            <AlertTriangle size={32} color={D.status.error} strokeWidth={2.4} />
+          </Animated.View>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
-
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.8}>
-              <Text style={styles.cancelText}>{cancelLabel}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.confirmBtn, { backgroundColor: accent }]}
-              onPress={onConfirm}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.confirmText, destructive && styles.confirmTextOnError]}>
-                {confirmLabel}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.button} onPress={onPrimary} activeOpacity={0.85}>
+            <Text style={styles.buttonText}>{primaryLabel}</Text>
+          </TouchableOpacity>
         </Animated.View>
       </Animated.View>
     </Modal>
@@ -104,10 +88,12 @@ function createStyles(D: AppColors) {
       paddingBottom: 22,
     },
     iconWrap: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: D.status.error + '22',
       borderWidth: 1.5,
+      borderColor: D.status.error,
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 16,
@@ -128,46 +114,18 @@ function createStyles(D: AppColors) {
       marginTop: 8,
       marginBottom: 22,
     },
-    actions: {
-      flexDirection: 'row',
+    button: {
       alignSelf: 'stretch',
-      gap: 12,
-    },
-    cancelBtn: {
-      flex: 1,
       minHeight: 50,
       borderRadius: 14,
-      borderWidth: 1.5,
-      borderColor: D.borderStrong,
-      backgroundColor: D.surface,
+      backgroundColor: D.primary,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
     },
-    cancelText: {
-      fontSize: T.size.body,
-      fontFamily: T.family.bold,
-      color: D.ink,
-      textAlign: 'center',
-    },
-    confirmBtn: {
-      flex: 1,
-      minHeight: 50,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-    },
-    confirmText: {
+    buttonText: {
       fontSize: T.size.body,
       fontFamily: T.family.bold,
       color: D.onPrimary,
-      textAlign: 'center',
-    },
-    confirmTextOnError: {
-      color: '#FFFFFF',
     },
   });
 }

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   FlatList,
   Image,
@@ -50,6 +49,7 @@ import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
 import PremiumStar from '@shared/components/PremiumStar';
 import ConfirmModal from '@shared/components/ConfirmModal';
 import SuccessModal from '@shared/components/SuccessModal';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -112,6 +112,7 @@ function AppointmentSeparator() {
 
 export default function AdminDashboardScreen() {
   const { colors: D, isLight } = useAppTheme();
+  const { showError } = useFeedback();
   const styles = useMemo(() => createStyles(D), [D]);
   const auth = getAuth();
   const user = auth.currentUser;
@@ -201,10 +202,10 @@ export default function AdminDashboardScreen() {
       // Upload no Storage; o listener único de users/{uid} atualiza o store.
       const result = await uploadProfilePhoto(user.uid, asset.uri);
       if (!result.ok) {
-        Alert.alert('Erro', result.message);
+        showError(result.message);
       }
     } catch {
-      Alert.alert('Erro', 'Não foi possível atualizar a foto');
+      showError('Não foi possível atualizar a foto');
     } finally {
       setSavingOwnerPhoto(false);
     }
@@ -402,8 +403,7 @@ export default function AdminDashboardScreen() {
         message: successMsg,
       });
     } catch (e: any) {
-      Alert.alert(
-        'Erro',
+      showError(
         e?.code === 'APPOINTMENT_EXPIRED' ? 'Agendamento expirado.' : 'Não foi possível atualizar.',
       );
     } finally {
