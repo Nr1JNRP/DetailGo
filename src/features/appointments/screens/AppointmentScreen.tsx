@@ -2,7 +2,6 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Dimensions,
   Modal,
@@ -58,6 +57,7 @@ import { spacing, radii, typography as T, useAppTheme, type AppColors } from '@s
 import { formatUtils } from '@shared/utils/format.utils';
 import { dateUtils } from '@shared/utils/date.utils';
 import SuccessModal from '@shared/components/SuccessModal';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 
 const { height } = Dimensions.get('window');
 
@@ -306,6 +306,7 @@ function SelectModal<T extends string>({
 
 export default function AppointmentScreen() {
   const { colors: D, isLight } = useAppTheme();
+  const { showError } = useFeedback();
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
   const styles = useMemo(() => createStyles(D, bottomInset), [D, bottomInset]);
@@ -457,12 +458,12 @@ export default function AppointmentScreen() {
       } catch {
         setSlots([]);
         setSelectedSlot(null);
-        Alert.alert('Erro', 'Não foi possível carregar os horários.');
+        showError('Não foi possível carregar os horários.');
       } finally {
         setLoadingSlots(false);
       }
     },
-    [selectedService, shopId],
+    [selectedService, shopId, showError],
   );
 
   const handleDayChange = async (event: DateTimePickerEvent, selected?: Date) => {
@@ -488,17 +489,17 @@ export default function AppointmentScreen() {
 
   const handleSave = async () => {
     if (!selectedService) {
-      Alert.alert('Atenção', 'Selecione um serviço.');
+      showError('Selecione um serviço.', { title: 'Atenção' });
       return;
     }
 
     if (vehicleType === 'Carro' && !carCategory) {
-      Alert.alert('Atenção', 'Selecione a categoria do veículo.');
+      showError('Selecione a categoria do veículo.', { title: 'Atenção' });
       return;
     }
 
     if (!selectedSlot) {
-      Alert.alert('Atenção', 'Selecione um horário.');
+      showError('Selecione um horário.', { title: 'Atenção' });
       return;
     }
 
@@ -526,15 +527,15 @@ export default function AppointmentScreen() {
       setSuccessVisible(true);
     } catch (error: any) {
       if (error?.code === 'SLOT_FULL') {
-        Alert.alert('Horário indisponível', 'Selecione outro horário.');
+        showError('Selecione outro horário.', { title: 'Horário indisponível' });
         await refreshSlots(day, selectedService);
       } else if (error?.code === 'CUSTOMER_DAILY_SHOP_CONFLICT') {
-        Alert.alert(
-          'Agendamento em outra estética',
+        showError(
           'Você já tem um serviço agendado em outra estética nesta data. Para o mesmo dia, escolha serviços da mesma estética.',
+          { title: 'Agendamento em outra estética' },
         );
       } else {
-        Alert.alert('Erro', 'Não foi possível realizar o agendamento.');
+        showError('Não foi possível realizar o agendamento.');
       }
     } finally {
       setSubmitting(false);

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Switch,
@@ -51,6 +50,7 @@ import {
 } from '@features/settings';
 import SelectModal from '@shared/components/SelectModal';
 import ConfirmModal from '@shared/components/ConfirmModal';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 
 const NEW_SERVICE_DRAFT = '__new_service__';
 
@@ -143,6 +143,7 @@ function createServiceId(name: string, existingIds: string[]): string {
 
 export default function AdminManageScreen() {
   const { colors: D, isLight } = useAppTheme();
+  const { showError } = useFeedback();
   const styles = useMemo(() => createStyles(D), [D]);
   const navigation = useNavigation();
   const { shopId, shop } = useShop();
@@ -166,7 +167,7 @@ export default function AdminManageScreen() {
         try {
           await signOut(auth);
         } catch {
-          Alert.alert('Erro', 'Falha ao sair da conta.');
+          showError('Falha ao sair da conta.');
         }
       },
     });
@@ -205,9 +206,9 @@ export default function AdminManageScreen() {
     setLoadingSettings(true);
     getShopSettings(shopId)
       .then(s => setSettings(s))
-      .catch(() => Alert.alert('Erro', 'Falha ao carregar configurações.'))
+      .catch(() => showError('Falha ao carregar configurações.'))
       .finally(() => setLoadingSettings(false));
-  }, [shopId]);
+  }, [shopId, showError]);
 
   useEffect(() => {
     setServiceDrafts(prev => {
@@ -227,7 +228,7 @@ export default function AdminManageScreen() {
       setSavedName(true);
       setTimeout(() => setSavedName(false), 2000);
     } catch (e: any) {
-      Alert.alert('Erro', e?.message ?? 'Falha ao salvar nome.');
+      showError(e?.message ?? 'Falha ao salvar nome.');
     } finally {
       setSavingName(false);
     }
@@ -236,7 +237,7 @@ export default function AdminManageScreen() {
   const handleSaveSettings = async () => {
     if (!shopId || !settings) return;
     if (settings.openHour >= settings.closeHour) {
-      Alert.alert('Atenção', 'Horário de abertura deve ser anterior ao fechamento.');
+      showError('Horário de abertura deve ser anterior ao fechamento.', { title: 'Atenção' });
       return;
     }
     setSavingSettings(true);
@@ -246,7 +247,7 @@ export default function AdminManageScreen() {
       setSavedSettings(true);
       setTimeout(() => setSavedSettings(false), 2000);
     } catch {
-      Alert.alert('Erro', 'Falha ao salvar configurações.');
+      showError('Falha ao salvar configurações.');
     } finally {
       setSavingSettings(false);
     }
@@ -257,7 +258,7 @@ export default function AdminManageScreen() {
     try {
       await updateShopService(shopId, serviceId, { active });
     } catch {
-      Alert.alert('Erro', 'Falha ao atualizar serviço.');
+      showError('Falha ao atualizar serviço.');
     }
   };
 
@@ -342,27 +343,29 @@ export default function AdminManageScreen() {
     const carCategories = vehicleTypes.includes('Carro') ? draft.carCategories : [];
 
     if (!name) {
-      Alert.alert('Atenção', 'Informe o nome do serviço.');
+      showError('Informe o nome do serviço.', { title: 'Atenção' });
       return null;
     }
 
     if (!durationMin || durationMin < 5) {
-      Alert.alert('Atenção', 'Informe uma duração válida para o serviço.');
+      showError('Informe uma duração válida para o serviço.', { title: 'Atenção' });
       return null;
     }
 
     if (Number.isNaN(price) || price < 0) {
-      Alert.alert('Atenção', 'Informe um preço válido para o serviço.');
+      showError('Informe um preço válido para o serviço.', { title: 'Atenção' });
       return null;
     }
 
     if (vehicleTypes.length === 0) {
-      Alert.alert('Atenção', 'Selecione pelo menos um tipo de veículo para o serviço.');
+      showError('Selecione pelo menos um tipo de veículo para o serviço.', { title: 'Atenção' });
       return null;
     }
 
     if (vehicleTypes.includes('Carro') && carCategories.length === 0) {
-      Alert.alert('Atenção', 'Selecione pelo menos uma categoria de carro para o serviço.');
+      showError('Selecione pelo menos uma categoria de carro para o serviço.', {
+        title: 'Atenção',
+      });
       return null;
     }
 
@@ -403,7 +406,7 @@ export default function AdminManageScreen() {
       setSavedServiceId(serviceId);
       setTimeout(() => setSavedServiceId(null), 2000);
     } catch {
-      Alert.alert('Erro', 'Falha ao criar serviço.');
+      showError('Falha ao criar serviço.');
     } finally {
       setSavingServiceId(null);
     }
@@ -433,7 +436,7 @@ export default function AdminManageScreen() {
       setSavedServiceId(service.id);
       setTimeout(() => setSavedServiceId(null), 2000);
     } catch {
-      Alert.alert('Erro', 'Falha ao salvar serviço.');
+      showError('Falha ao salvar serviço.');
     } finally {
       setSavingServiceId(null);
     }
@@ -452,7 +455,7 @@ export default function AdminManageScreen() {
           await deleteShopService(shopId, service.id);
           setEditingServiceId(current => (current === service.id ? null : current));
         } catch {
-          Alert.alert('Erro', 'Falha ao excluir serviço.');
+          showError('Falha ao excluir serviço.');
         }
       },
     });

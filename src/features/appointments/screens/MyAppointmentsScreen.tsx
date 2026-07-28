@@ -1,7 +1,6 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StatusBar,
   StyleSheet,
@@ -20,8 +19,7 @@ import { useShop } from '@features/shops';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useNowTick } from '@shared/hooks/useNowTick';
 import { FadeInUp } from '@shared/components/FadeInUp';
-import SuccessModal from '@shared/components/SuccessModal';
-import ConfirmModal from '@shared/components/ConfirmModal';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 import { useUserAppointments } from '../hooks/useUserAppointments';
 import type { UserAppointment } from '../domain/appointment.types';
 import { ACTIVE_APPOINTMENT_SET } from '../domain/appointment.constants';
@@ -92,9 +90,8 @@ export default function MyAppointmentsScreen() {
   const uid = auth.currentUser?.uid;
   const { shopId } = useShop();
 
+  const { showSuccess, showError, showConfirm } = useFeedback();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [confirmItem, setConfirmItem] = useState<UserAppointment | null>(null);
 
   const { loading, items, mutate } = useUserAppointments({
     uid,
@@ -126,27 +123,39 @@ export default function MyAppointmentsScreen() {
       const result = await cancelAppointment(item.id, uid!, shopId ?? '');
 
       if (result.ok) {
-        setSuccessMsg(result.message);
+        showSuccess(result.message);
         mutate();
       } else {
-        Alert.alert('Erro', result.message);
+        showError(result.message);
       }
 
       setCancellingId(null);
     },
-    [uid, shopId, mutate],
+    [uid, shopId, mutate, showSuccess, showError],
   );
 
-  const handleCancel = useCallback((item: UserAppointment) => {
-    const rules = getAppointmentRules(item);
+  const handleCancel = useCallback(
+    (item: UserAppointment) => {
+      const rules = getAppointmentRules(item);
 
-    if (!rules.canCancel) {
-      Alert.alert('Não é possível cancelar', rules.message || 'Cancelamento não permitido.');
-      return;
-    }
+      if (!rules.canCancel) {
+        showError(rules.message || 'Cancelamento não permitido.', {
+          title: 'Não é possível cancelar',
+        });
+        return;
+      }
 
-    setConfirmItem(item);
-  }, []);
+      showConfirm({
+        title: 'Cancelar agendamento',
+        message: 'Tem certeza que deseja cancelar este agendamento?',
+        confirmLabel: 'Sim, cancelar',
+        cancelLabel: 'Não',
+        destructive: true,
+        onConfirm: () => executeCancel(item),
+      });
+    },
+    [showError, showConfirm, executeCancel],
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: UserAppointment }) => (
@@ -224,29 +233,6 @@ export default function MyAppointmentsScreen() {
             </FadeInUp>
           )}
         </View>
-
-        <SuccessModal
-          visible={!!successMsg}
-          title="Tudo certo!"
-          message={successMsg ?? ''}
-          primaryLabel="Ok"
-          onPrimary={() => setSuccessMsg(null)}
-        />
-
-        <ConfirmModal
-          visible={!!confirmItem}
-          title="Cancelar agendamento"
-          message="Tem certeza que deseja cancelar este agendamento?"
-          confirmLabel="Sim, cancelar"
-          cancelLabel="Não"
-          destructive
-          onConfirm={() => {
-            const item = confirmItem;
-            setConfirmItem(null);
-            if (item) executeCancel(item);
-          }}
-          onCancel={() => setConfirmItem(null)}
-        />
       </SafeAreaView>
     </>
   );

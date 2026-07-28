@@ -1,7 +1,6 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,6 +27,7 @@ import {
 } from '@react-native-firebase/firestore';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
 import { useShop } from '@features/shops';
 import { getAuth } from '@react-native-firebase/auth';
@@ -46,10 +46,10 @@ const ALL_HISTORY_STATUSES: AppointmentStatus[] = ['done', 'no_show', 'cancelled
 type FilterId = 'all' | 'done' | 'no_show' | 'cancelled';
 
 const FILTERS: { id: FilterId; label: string }[] = [
-  { id: 'all', label: 'TODOS' },
-  { id: 'done', label: 'CONCLUÍDOS' },
-  { id: 'no_show', label: 'NÃO REALIZADOS' },
-  { id: 'cancelled', label: 'CANCELADOS' },
+  { id: 'all', label: 'Todos' },
+  { id: 'done', label: 'Concluídos' },
+  { id: 'no_show', label: 'Não realizados' },
+  { id: 'cancelled', label: 'Cancelados' },
 ];
 
 const PAGE_SIZE = 30;
@@ -105,6 +105,7 @@ export default function AdminHistoryScreen() {
   const [filter, setFilter] = useState<FilterId>('all');
   const [loadingMore, setLoadingMore] = useState(false);
   const [totals, setTotals] = useState({ done: 0, revenue: 0 });
+  const { showError } = useFeedback();
 
   const lastDocRef = useRef<QDoc | null>(null);
   const canLoadMoreRef = useRef(true);
@@ -118,12 +119,17 @@ export default function AdminHistoryScreen() {
   }, [filter]);
 
   useEffect(() => {
+    // O total de concluídos é uma estatística global do cabeçalho. Calcula só a
+    // partir do filtro "Todos" e só DEPOIS de carregar — nunca durante o load
+    // (quando items é esvaziado). Assim o subtítulo não zera/pisca ao trocar de
+    // filtro; nos demais filtros o efeito sai cedo e o total permanece.
+    if (filter !== 'all' || loading) return;
     const doneItems = items.filter(i => i.status === 'done');
     setTotals({
       done: doneItems.length,
       revenue: doneItems.reduce((acc, i) => acc + (i.price ?? 0), 0),
     });
-  }, [items]);
+  }, [items, filter, loading]);
 
   const enrichWithNames = useCallback(
     async (list: AdminAppointment[]): Promise<AdminAppointment[]> =>
@@ -170,16 +176,18 @@ export default function AdminHistoryScreen() {
         },
         (error: FirebaseError) => {
           if (error.code === 'failed-precondition') {
-            Alert.alert('Índice necessário', 'Crie um índice composto no Firebase Console.');
+            showError('Crie um índice composto no Firebase Console.', {
+              title: 'Índice necessário',
+            });
           } else {
-            Alert.alert('Erro', 'Falha ao carregar histórico.');
+            showError('Falha ao carregar histórico.');
           }
           setLoading(false);
         },
       );
 
       return () => unsub();
-    }, [user?.uid, shopId, statusSet, enrichWithNames]),
+    }, [user?.uid, shopId, statusSet, enrichWithNames, showError]),
   );
 
   const loadMore = async () => {
@@ -205,7 +213,7 @@ export default function AdminHistoryScreen() {
       const withNames = await enrichWithNames(base);
       setItems(prev => [...prev, ...withNames]);
     } catch {
-      Alert.alert('Erro', 'Falha ao carregar mais itens.');
+      showError('Falha ao carregar mais itens.');
     } finally {
       setLoadingMore(false);
     }
@@ -259,27 +267,28 @@ export default function AdminHistoryScreen() {
           </View>
         </View>
 
-        {/* ── Filter pills ── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersRow}
-          style={styles.filtersScroll}
-        >
-          {FILTERS.map(f => {
-            const active = filter === f.id;
-            return (
-              <TouchableOpacity
-                key={f.id}
-                style={[styles.pill, active && styles.pillActive]}
-                onPress={() => setFilter(f.id)}
-                activeOpacity={0.75}
-              >
-                <Text style={[styles.pillText, active && styles.pillTextActive]}>{f.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        {/* ── Filter pills (mesma estrutura do histórico do cliente) ── */}
+        <View style={styles.filtersWrap}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filtersContent}
+          >
+            {FILTERS.map(f => {
+              const active = filter === f.id;
+              return (
+                <TouchableOpacity
+                  key={f.id}
+                  style={[styles.pill, active && styles.pillActive]}
+                  onPress={() => setFilter(f.id)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.pillText, active && styles.pillTextActive]}>{f.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* ── Lista ── */}
         {loading && displayItems.length === 0 ? (
@@ -419,17 +428,22 @@ function createStyles(D: AppColors) {
       fontFamily: T.family.medium,
     },
 
-    // Filters
-    filtersScroll: { maxHeight: 44, marginBottom: 16 },
-    filtersRow: {
-      paddingHorizontal: 20,
+    // Filters (mesma estrutura/visual do histórico do cliente)
+    filtersWrap: {
+      paddingVertical: 9,
+      marginBottom: 8,
+    },
+    filtersContent: {
       gap: 8,
-      alignItems: 'center',
+      paddingHorizontal: 20,
     },
     pill: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 999,
+      minHeight: 28,
+      minWidth: 62,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      borderRadius: 14,
       borderWidth: 1.5,
       borderColor: D.border,
       backgroundColor: 'transparent',
@@ -439,13 +453,12 @@ function createStyles(D: AppColors) {
       borderColor: D.primary,
     },
     pillText: {
-      fontSize: 11,
-      fontFamily: T.family.bold,
-      color: D.ink3,
-      letterSpacing: 0.5,
+      color: D.ink2,
+      fontSize: T.size.secondary,
+      fontFamily: T.family.semiBold,
     },
     pillTextActive: {
-      color: '#0B0D0E',
+      color: D.onPrimary,
     },
 
     // List

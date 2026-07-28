@@ -1,7 +1,6 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   FlatList,
   Image,
@@ -39,6 +38,7 @@ import {
 } from 'lucide-react-native';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 import { UI } from '@shared/constants/app.constants';
 import { useAuth, useMeStore } from '@features/auth';
 import { useShop, useShopServices, getShopServiceIcon } from '@features/shops';
@@ -78,6 +78,7 @@ function getGreeting() {
 export default function DashboardScreen() {
   const navigation = useNavigation<NavProp>();
   const { colors: D, isLight } = useAppTheme();
+  const { showError, showSuccess } = useFeedback();
   const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
@@ -237,12 +238,12 @@ export default function DashboardScreen() {
       setSaving(true);
       const result = await uploadProfilePhoto(uid, asset.uri);
       if (!result.ok) {
-        Alert.alert('Erro', result.message);
+        showError(result.message);
         return;
       }
       setProfile(p => ({ ...p, photoURL: result.url, photoB64: undefined }));
     } catch {
-      Alert.alert('Erro', 'Não foi possível atualizar a foto');
+      showError('Não foi possível atualizar a foto');
     } finally {
       setSaving(false);
     }
@@ -293,7 +294,7 @@ export default function DashboardScreen() {
       hoursText ? `🕐 Atendimento: ${hoursText}` : null,
       `📞 Telefone: ${phoneText}`,
     ].filter(Boolean) as string[];
-    Alert.alert(shop.name, lines.join('\n\n'));
+    showSuccess(lines.join('\n\n'), { title: shop.name });
   };
 
   return (

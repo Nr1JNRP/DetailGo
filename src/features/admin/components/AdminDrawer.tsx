@@ -1,14 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import {
-  Alert,
-  Animated,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Animated, Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar, History, LogOut, Settings, Store, User } from 'lucide-react-native';
@@ -16,6 +7,7 @@ import { getAuth, signOut } from '@react-native-firebase/auth';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import ConfirmModal from '@shared/components/ConfirmModal';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 import { UI } from '@shared/constants/app.constants';
 import { useMeStore } from '@features/auth';
 import { useShop, useShopServices } from '@features/shops';
@@ -35,6 +27,7 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
   const navigation = useNavigation<Nav>();
+  const { showError } = useFeedback();
   const { shop, shopId } = useShop();
   const auth = getAuth();
   const user = auth.currentUser;
@@ -88,7 +81,7 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
       onClose();
       await signOut(auth);
     } catch {
-      Alert.alert('Erro', 'Falha ao sair da conta.');
+      showError('Falha ao sair da conta.');
     }
   };
 

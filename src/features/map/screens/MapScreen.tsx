@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   PermissionsAndroid,
   Platform,
   Pressable,
@@ -16,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, MapPin, Navigation, RefreshCw } from 'lucide-react-native';
 
 import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 import {
   discoverNearbyShops,
   type NearbyShop,
@@ -31,6 +31,7 @@ export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
   const navigation = useNavigation();
   const canGoBack = navigation.canGoBack();
+  const { showError } = useFeedback();
 
   const [userLat, setUserLat] = useState<number | null>(null);
   const [userLng, setUserLng] = useState<number | null>(null);
@@ -48,7 +49,7 @@ export default function MapScreen() {
 
         discoverNearbyShops({ lat: latitude, lng: longitude }, DEFAULT_RADIUS_KM)
           .then(setShops)
-          .catch(() => Alert.alert('Erro', 'Não foi possível buscar estéticas próximas.'))
+          .catch(() => showError('Não foi possível buscar estéticas próximas.'))
           .finally(() => setLoading(false));
 
         mapRef.current?.animateToRegion({
@@ -61,15 +62,14 @@ export default function MapScreen() {
       err => {
         setLoading(false);
         if (err.code === 1) {
-          Alert.alert(
-            'Permissão negada',
-            'Precisamos da sua localização para mostrar as estéticas próximas.',
-          );
+          showError('Precisamos da sua localização para mostrar as estéticas próximas.', {
+            title: 'Permissão negada',
+          });
         }
       },
       { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 },
     );
-  }, []);
+  }, [showError]);
 
   const requestLocationAndFetch = useCallback(async () => {
     if (Platform.OS === 'android') {
@@ -89,9 +89,9 @@ export default function MapScreen() {
           fetchLocation();
         } else {
           setLoading(false);
-          Alert.alert(
-            'Localização necessária',
+          showError(
             'Para ver as estéticas próximas, permita o acesso à localização nas configurações do celular.',
+            { title: 'Localização necessária' },
           );
         }
       } catch {
@@ -101,7 +101,7 @@ export default function MapScreen() {
       // iOS — @react-native-community/geolocation pede permissão automaticamente
       fetchLocation();
     }
-  }, [fetchLocation]);
+  }, [fetchLocation, showError]);
 
   useEffect(() => {
     requestLocationAndFetch();

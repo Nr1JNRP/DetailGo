@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +20,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import type { RootStackParamList } from '@app/types';
 import { useAuth } from '@features/auth';
 import { useAppTheme, type AppColors, typography as T } from '@shared/theme';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const HERO_H = Math.round(SCREEN_H * 0.38);
@@ -34,6 +34,7 @@ export default function LoginScreen() {
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
   const styles = useMemo(() => createStyles(D, isLight, bottomInset), [D, isLight, bottomInset]);
   const { signIn } = useAuth();
+  const { showError, showSuccess } = useFeedback();
   const heroGradient = isLight
     ? {
         base: ['#F8FAFB', '#DFE0E2', '#D7EEF3', '#A2AEBB', '#EEF1F3'],
@@ -64,9 +65,10 @@ export default function LoginScreen() {
     const result = await signIn(email, password);
     setLoading(false);
     if (!result.ok) {
-      Alert.alert('Erro ao acessar', result.message || 'Email ou senha incorretos', [
-        { text: 'Tentar novamente' },
-      ]);
+      showError(result.message || 'Email ou senha incorretos', {
+        title: 'Erro ao acessar',
+        primaryLabel: 'Tentar novamente',
+      });
     }
   };
 
@@ -154,10 +156,9 @@ export default function LoginScreen() {
               <Text style={styles.fieldLabel}>Senha</Text>
               <TouchableOpacity
                 onPress={() =>
-                  Alert.alert(
-                    'Recuperar senha',
-                    'Enviaremos um link de recuperação para seu e-mail.',
-                  )
+                  showSuccess('Enviaremos um link de recuperação para seu e-mail.', {
+                    title: 'Recuperar senha',
+                  })
                 }
               >
                 <Text style={styles.forgotText}>Esqueceu?</Text>

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -33,6 +32,7 @@ import { getFirestore, doc, updateDoc, deleteField } from '@react-native-firebas
 import auth from '@react-native-firebase/auth';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
+import { useFeedback } from '@shared/components/FeedbackProvider';
 import type { RootStackParamList } from '@app/types';
 import { formatUtils } from '@shared/utils/format.utils';
 import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
@@ -62,6 +62,7 @@ function toDigits(value: string) {
 export default function ProfileScreen() {
   const navigation = useNavigation<NavProp>();
   const { colors: D, isLight, toggleTheme } = useAppTheme();
+  const { showError, showSuccess, showConfirm } = useFeedback();
   const styles = useMemo(() => createStyles(D), [D]);
   const db = getFirestore();
   const authInstance = getAuth();
@@ -142,12 +143,12 @@ export default function ProfileScreen() {
       setSavingPhoto(true);
       const result = await uploadProfilePhoto(uid, asset.uri);
       if (!result.ok) {
-        Alert.alert('Erro', result.message);
+        showError(result.message);
         return;
       }
       setProfile(prev => ({ ...prev, photoURL: result.url, photoB64: undefined }));
     } catch {
-      Alert.alert('Erro', 'Não foi possível atualizar a foto');
+      showError('Não foi possível atualizar a foto');
     } finally {
       setSavingPhoto(false);
     }
@@ -189,7 +190,7 @@ export default function ProfileScreen() {
     if (!userRef) return;
 
     if (!profile.firstName?.trim() || !profile.lastName?.trim()) {
-      Alert.alert('Atenção', 'Nome e sobrenome são obrigatórios');
+      showError('Nome e sobrenome são obrigatórios', { title: 'Atenção' });
       return;
     }
 
@@ -203,7 +204,7 @@ export default function ProfileScreen() {
       setEditingName(false);
       setSuccess({ title: 'Perfil atualizado', message: 'Suas informações foram salvas.' });
     } catch {
-      Alert.alert('Erro', 'Não foi possível atualizar o perfil');
+      showError('Não foi possível atualizar o perfil');
     } finally {
       setSaving(false);
     }
@@ -214,7 +215,7 @@ export default function ProfileScreen() {
 
     const cleanPhone = toDigits(newPhone || '');
     if (newPhone && cleanPhone.length < 10) {
-      Alert.alert('Atenção', 'Telefone inválido');
+      showError('Telefone inválido', { title: 'Atenção' });
       return;
     }
 
@@ -228,7 +229,7 @@ export default function ProfileScreen() {
       setEditingPhone(false);
       setSuccess({ title: 'Telefone atualizado', message: 'Seu telefone foi salvo.' });
     } catch {
-      Alert.alert('Erro', 'Não foi possível atualizar o telefone');
+      showError('Não foi possível atualizar o telefone');
     } finally {
       setSaving(false);
     }
@@ -251,28 +252,28 @@ export default function ProfileScreen() {
     const currentUser = authInstance.currentUser;
 
     if (!currentUser?.email) {
-      Alert.alert('Erro', 'Usuário não está logado');
+      showError('Usuário não está logado');
       return;
     }
     if (!userRef) {
-      Alert.alert('Erro', 'Referência do usuário inválida');
+      showError('Referência do usuário inválida');
       return;
     }
 
     const nextEmail = normalizeEmail(newEmail);
 
     if (!nextEmail.includes('@') || !nextEmail.includes('.')) {
-      Alert.alert('Erro', 'Email inválido');
+      showError('Email inválido');
       return;
     }
 
     if (normalizeEmail(currentUser.email) === nextEmail) {
-      Alert.alert('Atenção', 'O novo e-mail é igual ao atual.');
+      showError('O novo e-mail é igual ao atual.', { title: 'Atenção' });
       return;
     }
 
     if (!password) {
-      Alert.alert('Erro', 'Digite sua senha para confirmar');
+      showError('Digite sua senha para confirmar');
       return;
     }
 
@@ -280,7 +281,7 @@ export default function ProfileScreen() {
     try {
       const methods = await authInstance.fetchSignInMethodsForEmail(nextEmail);
       if (methods.length > 0) {
-        Alert.alert('Erro', 'Este e-mail já está em uso por outro usuário.');
+        showError('Este e-mail já está em uso por outro usuário.');
         return;
       }
 
@@ -293,35 +294,33 @@ export default function ProfileScreen() {
         pendingEmail: nextEmail,
       });
 
-      Alert.alert(
-        'Link enviado',
+      showSuccess(
         'Verifique seu novo email e clique no link de confirmação. Após confirmar, você precisará fazer login novamente.',
-        [
-          {
-            text: 'Entendi',
-            onPress: () => {
-              setEditingEmail(false);
-              setNewEmail('');
-              setPassword('');
-            },
+        {
+          title: 'Link enviado',
+          primaryLabel: 'Entendi',
+          onClose: () => {
+            setEditingEmail(false);
+            setNewEmail('');
+            setPassword('');
           },
-        ],
+        },
       );
     } catch (error: any) {
       const code = error?.code;
 
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        Alert.alert('Erro', 'Senha incorreta');
+        showError('Senha incorreta');
       } else if (code === 'auth/too-many-requests') {
-        Alert.alert('Erro', 'Muitas tentativas. Aguarde alguns minutos.');
+        showError('Muitas tentativas. Aguarde alguns minutos.');
       } else if (code === 'auth/requires-recent-login') {
-        Alert.alert('Erro', 'Faça login novamente para alterar seu e-mail.');
+        showError('Faça login novamente para alterar seu e-mail.');
       } else if (code === 'auth/email-already-in-use') {
-        Alert.alert('Erro', 'Email já em uso por outro usuário.');
+        showError('Email já em uso por outro usuário.');
       } else if (code === 'auth/invalid-email') {
-        Alert.alert('Erro', 'Email inválido.');
+        showError('Email inválido.');
       } else {
-        Alert.alert('Erro', `Não foi possível alterar.\n${error?.message || ''}`.trim());
+        showError(`Não foi possível alterar.\n${error?.message || ''}`.trim());
       }
     } finally {
       setUpdatingEmail(false);
@@ -341,7 +340,7 @@ export default function ProfileScreen() {
       const authEmail = normalizeEmail(updatedEmail || '');
 
       if (!pending) {
-        Alert.alert('Info', 'Não há e-mail pendente para confirmar.');
+        showSuccess('Não há e-mail pendente para confirmar.', { title: 'Info' });
         return;
       }
 
@@ -357,40 +356,29 @@ export default function ProfileScreen() {
           pendingEmail: '',
         }));
 
-        Alert.alert(
-          'Email confirmado',
-          'Seu email foi atualizado com sucesso. Faça login novamente para continuar.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                authInstance.signOut();
-              },
-            },
-          ],
-        );
+        showSuccess('Seu email foi atualizado com sucesso. Faça login novamente para continuar.', {
+          title: 'Email confirmado',
+          primaryLabel: 'OK',
+          onClose: () => {
+            authInstance.signOut();
+          },
+        });
       } else {
-        Alert.alert(
-          'Ainda não confirmado',
-          'Clique no link que enviamos para seu novo email e tente novamente.',
-        );
+        showError('Clique no link que enviamos para seu novo email e tente novamente.', {
+          title: 'Ainda não confirmado',
+        });
       }
     } catch (error: any) {
       if (error.code === 'auth/user-token-expired') {
-        Alert.alert(
-          'Sessão expirada',
-          'Seu email foi alterado com sucesso. Faça login novamente.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                authInstance.signOut();
-              },
-            },
-          ],
-        );
+        showSuccess('Seu email foi alterado com sucesso. Faça login novamente.', {
+          title: 'Sessão expirada',
+          primaryLabel: 'OK',
+          onClose: () => {
+            authInstance.signOut();
+          },
+        });
       } else {
-        Alert.alert('Erro', 'Não foi possível verificar a confirmação agora.');
+        showError('Não foi possível verificar a confirmação agora.');
       }
     } finally {
       setCheckingConfirm(false);
@@ -410,35 +398,33 @@ export default function ProfileScreen() {
   const handlePasswordReset = () => {
     const email = profile.email || user?.email;
     if (!email) {
-      Alert.alert('Erro', 'Não encontramos um e-mail para enviar a troca de senha.');
+      showError('Não encontramos um e-mail para enviar a troca de senha.');
       return;
     }
 
-    Alert.alert('Trocar senha', `Enviar link de redefinição para ${email}?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Enviar',
-        onPress: async () => {
-          try {
-            await authInstance.sendPasswordResetEmail(email);
-            Alert.alert('Enviado', 'Confira sua caixa de entrada para redefinir a senha.');
-          } catch {
-            Alert.alert('Erro', 'Não foi possível enviar o link agora.');
-          }
-        },
+    showConfirm({
+      title: 'Trocar senha',
+      message: `Enviar link de redefinição para ${email}?`,
+      confirmLabel: 'Enviar',
+      onConfirm: async () => {
+        try {
+          await authInstance.sendPasswordResetEmail(email);
+          showSuccess('Confira sua caixa de entrada para redefinir a senha.', { title: 'Enviado' });
+        } catch {
+          showError('Não foi possível enviar o link agora.');
+        }
       },
-    ]);
+    });
   };
 
   const handleSignOut = () => {
-    Alert.alert('Sair da conta', 'Deseja encerrar sua sessão?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: () => signOut(),
-      },
-    ]);
+    showConfirm({
+      title: 'Sair da conta',
+      message: 'Deseja encerrar sua sessão?',
+      confirmLabel: 'Sair',
+      destructive: true,
+      onConfirm: () => signOut(),
+    });
   };
 
   if (loading) {
@@ -694,11 +680,13 @@ export default function ProfileScreen() {
               <SettingsRow label="Trocar senha" onPress={handlePasswordReset} />
               <SettingsRow
                 label="Notificações"
-                onPress={() => Alert.alert('Notificações', 'Preferências em breve.')}
+                onPress={() => showSuccess('Preferências em breve.', { title: 'Notificações' })}
               />
               <SettingsRow
                 label="Suporte"
-                onPress={() => Alert.alert('Suporte', 'Fale com a equipe DetailGo pelo suporte.')}
+                onPress={() =>
+                  showSuccess('Fale com a equipe DetailGo pelo suporte.', { title: 'Suporte' })
+                }
               />
               <ThemeSettingsRow isLight={isLight} onToggle={toggleTheme} />
               <SettingsRow label="Sair" onPress={handleSignOut} danger last />
