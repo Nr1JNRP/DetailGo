@@ -183,6 +183,30 @@ Stack: **Jest** + **@testing-library/react-native** (RNTL). Coverage via Istanbu
   de testabilidade, não afeta produção.
 - Rodar cobertura: `npm run test:cov` → relatório HTML em `coverage/index.html`.
 
+### Padrões e pegadinhas dos specs (aprendidos na prática)
+
+- **Mock do feedback:** telas que usam `useFeedback` (modais de erro/sucesso)
+  precisam mockar `@shared/components/FeedbackProvider` no spec, senão o hook
+  lança fora do provider:
+  ```ts
+  jest.mock('@shared/components/FeedbackProvider', () => ({
+    useFeedback: () => ({ showError: jest.fn(), showSuccess: jest.fn(), showConfirm: jest.fn() }),
+  }));
+  ```
+  Asserta o comportamento em cima desses mocks (ex.: `showError` chamado com a
+  mensagem certa) em vez do antigo `Alert.alert`.
+- **Mocks padrão da tela:** `@features/auth` (`useAuth`), `@react-navigation/native`
+  (`useNavigation`) e os nativos usados no import (ex.:
+  `@react-native-community/geolocation`). O tema (`useAppTheme`) NÃO precisa de
+  mock — o zustand devolve o tema default.
+- **`testID` quando o texto duplica:** se o mesmo texto aparece no header e no
+  botão (ex.: "Criar conta"), `getByText` quebra por ambiguidade — ponha um
+  `testID` no botão (`register-submit`) e use `getByTestId`.
+- **`clearAllMocks` NÃO limpa a fila do `mockResolvedValueOnce`.** Um valor
+  enfileirado e não consumido (ex.: teste que bloqueia antes de chamar o service)
+  vaza pro próximo teste e desalinha a fila. Use `mock.mockReset()` no
+  `beforeEach` do mock que usa `...Once`.
+
 ### Testes das `firestore.rules`
 
 - Suíte separada em `firestore-tests/*.test.js` (JS puro, ambiente Node) com
