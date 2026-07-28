@@ -659,7 +659,7 @@ export default function AdminManageScreen() {
         <View style={styles.inlineField}>
           <Text style={styles.inputLabel}>Preço</Text>
           <TextInput
-            style={styles.serviceInput}
+            style={[styles.serviceInput, styles.priceInput]}
             value={draft.price}
             onChangeText={value => updateServiceDraft(serviceId, 'price', value)}
             placeholder="80"
@@ -1254,6 +1254,10 @@ function createStyles(D: AppColors) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      paddingVertical: spacing.md,
+    },
+    // Preço fica lado a lado com Duração — mesma altura (paddingVertical md).
+    priceInput: {
       paddingVertical: spacing.md,
     },
     durationSelectText: {

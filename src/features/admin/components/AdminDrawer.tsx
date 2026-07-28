@@ -151,12 +151,12 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
       </Animated.View>
       <ConfirmModal
         visible={servicesConfirmVisible}
-        title="Sem servi\u00e7os cadastrados"
+        title="Sem serviços cadastrados"
         message={
-          'Sua est\u00e9tica ainda n\u00e3o tem servi\u00e7os cadastrados. Acesse "Gerenciamento da loja" para adicionar os servi\u00e7os que voc\u00ea oferece.'
+          'Sua estética ainda não tem serviços cadastrados. Acesse "Gerenciamento da loja" para adicionar os serviços que você oferece.'
         }
-        confirmLabel="Ir para gerenciamento"
-        cancelLabel="Agora n\u00e3o"
+        confirmLabel="Gerenciar loja"
+        cancelLabel="Agora não"
         onCancel={() => setServicesConfirmVisible(false)}
         onConfirm={() => {
           setServicesConfirmVisible(false);

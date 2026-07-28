@@ -142,11 +142,14 @@ function createStyles(D: AppColors) {
       backgroundColor: D.surface,
       alignItems: 'center',
       justifyContent: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
     },
     cancelText: {
       fontSize: T.size.body,
       fontFamily: T.family.bold,
       color: D.ink,
+      textAlign: 'center',
     },
     confirmBtn: {
       flex: 1,
@@ -154,11 +157,14 @@ function createStyles(D: AppColors) {
       borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
     },
     confirmText: {
       fontSize: T.size.body,
       fontFamily: T.family.bold,
       color: D.onPrimary,
+      textAlign: 'center',
     },
     confirmTextOnError: {
       color: '#FFFFFF',
