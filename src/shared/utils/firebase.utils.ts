@@ -12,6 +12,14 @@ export function mapFirebaseAuthError(
       return 'Este e-mail já está em uso.';
     case 'auth/weak-password':
       return 'A senha é muito fraca (mínimo 6 caracteres).';
+    case 'auth/invalid-credential':
+      return 'E-mail ou senha inválidos.';
+    case 'auth/network-request-failed':
+      return 'Sem conexão. Verifique sua internet e tente novamente.';
+    case 'auth/too-many-requests':
+      return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+    case 'auth/user-disabled':
+      return 'Esta conta foi desativada.';
     case 'permission-denied':
       return 'Sem permissão para acessar o banco de dados.';
     default:
