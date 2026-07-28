@@ -130,7 +130,12 @@ export default function RegisterScreen() {
         message: validationMessages.required,
       },
     ],
-    confirmPassword: [] as { validate: (v: string) => boolean; message: string }[],
+    confirmPassword: [
+      {
+        validate: (v: string) => validationUtils.required(v),
+        message: validationMessages.required,
+      },
+    ],
     shopName: [],
     shopCep: [],
     shopAddress: [],
@@ -165,21 +170,13 @@ export default function RegisterScreen() {
     validationRules,
   );
 
-  React.useEffect(() => {
-    if (validationRules.confirmPassword.length === 0) {
-      validationRules.confirmPassword.push({
-        validate: (v: string) => validationUtils.confirmPassword(values.password, v),
-        message: validationMessages.confirmPassword,
-      });
-    }
-    // Mantem o comportamento existente do useForm: registrar a regra apenas uma vez.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.password]);
-
+  // Habilita o botão quando os campos obrigatórios estão preenchidos. A
+  // validação (incl. senhas conferem) roda no clique — não travamos o botão por
+  // causa de erros, senão ele "morre" (o useForm mantém chaves de erro com
+  // valor undefined, e o disabled bloquearia o próximo toque).
   const canSubmit = useMemo(() => {
     if (!accountType) return false;
     const baseOk =
-      Object.keys(errors).length === 0 &&
       values.firstName &&
       values.lastName &&
       values.email &&
@@ -187,7 +184,19 @@ export default function RegisterScreen() {
       values.confirmPassword &&
       !isSubmitting;
     return !!baseOk;
-  }, [errors, values, isSubmitting, accountType]);
+  }, [values, isSubmitting, accountType]);
+
+  // Checagem explícita de senhas iguais — lê os valores atuais (o handler é
+  // recriado a cada render) e dá feedback garantido por modal.
+  const ensurePasswordsMatch = (): boolean => {
+    if (values.password !== values.confirmPassword) {
+      showError('As senhas não conferem. Verifique e tente de novo.', {
+        title: 'Senhas diferentes',
+      });
+      return false;
+    }
+    return true;
+  };
 
   const handlePhoneChange = (text: string) => {
     setDisplayPhone(formatUtils.phoneMask(text));
@@ -354,7 +363,9 @@ export default function RegisterScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!accountType || !validateForm()) return;
+    if (!accountType) return;
+    if (!ensurePasswordsMatch()) return;
+    if (!validateForm()) return;
 
     // Owner precisa de localização
     if (accountType === 'owner' && !shopLocation) {
@@ -765,11 +776,12 @@ export default function RegisterScreen() {
         {/* CTA */}
         <View style={styles.cta}>
           <TouchableOpacity
+            testID="register-submit"
             style={[styles.btn, (!canSubmit || isSubmitting) && styles.btnDisabled]}
             onPress={
               isOwner
                 ? () => {
-                    if (validateForm()) setLocationStep(true);
+                    if (ensurePasswordsMatch() && validateForm()) setLocationStep(true);
                   }
                 : handleSubmit
             }
