@@ -45,6 +45,8 @@ import { UI } from '@shared/constants/app.constants';
 import { dateUtils } from '@shared/utils/date.utils';
 import { formatUtils } from '@shared/utils/format.utils';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
+import { useNowTick } from '@shared/hooks/useNowTick';
+import { usePullRefresh } from '@shared/hooks/usePullRefresh';
 import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
 import PremiumStar from '@shared/components/PremiumStar';
 import ConfirmModal from '@shared/components/ConfirmModal';
@@ -121,6 +123,11 @@ export default function AdminDashboardScreen() {
   const isPremium = shop?.subscriptionStatus === 'active';
   const navigation = useNavigation<Nav>();
   const { unreadCount } = useShopNotifications(shopId);
+
+  // Relógio: recomputa o estado "vencido" com o tempo passando (sem precisar
+  // sair/voltar). O pull-to-refresh força o mesmo recálculo na hora.
+  const now = useNowTick();
+  const { refreshControl, tick } = usePullRefresh();
 
   // Registra o token de push do owner (pede permissão na primeira vez).
   useRegisterPushToken(user?.uid);
@@ -714,6 +721,8 @@ export default function AdminDashboardScreen() {
           data={agendaList}
           keyExtractor={item => item.id}
           renderItem={renderAppointment}
+          extraData={`${now}-${tick}`}
+          refreshControl={refreshControl}
           ItemSeparatorComponent={AppointmentSeparator}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

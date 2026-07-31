@@ -18,6 +18,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import type { RootStackParamList } from '@app/types';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useNowTick } from '@shared/hooks/useNowTick';
+import { usePullRefresh } from '@shared/hooks/usePullRefresh';
 import { FadeInUp } from '@shared/components/FadeInUp';
 import { HISTORY_APPOINTMENT_SET } from '../domain/appointment.constants';
 import { isExpiredScheduled } from '../domain/appointment.helpers';
@@ -129,10 +130,11 @@ export default function HistoryScreen() {
   const [filter, setFilter] = useState<FilterId>('all');
   const now = useNowTick();
 
-  const { loading, items } = useUserAppointments({
+  const { loading, items, mutate } = useUserAppointments({
     uid,
     limitN: 50,
   });
+  const { refreshControl, tick } = usePullRefresh(mutate);
 
   // Inclui no histórico os vencidos (scheduled que passaram do horário + tolerância):
   // pro cliente já são "Não realizado", mesmo antes do estabelecimento dar baixa.
@@ -243,6 +245,8 @@ export default function HistoryScreen() {
               keyExtractor={item => item.id}
               renderItem={renderHistoryItem}
               renderSectionHeader={renderSectionHeader}
+              extraData={`${now}-${tick}`}
+              refreshControl={refreshControl}
               stickySectionHeadersEnabled={false}
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator={false}

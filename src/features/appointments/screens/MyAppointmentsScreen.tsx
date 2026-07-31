@@ -18,6 +18,7 @@ import type { RootStackParamList } from '@app/types';
 import { useShop } from '@features/shops';
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useNowTick } from '@shared/hooks/useNowTick';
+import { usePullRefresh } from '@shared/hooks/usePullRefresh';
 import { FadeInUp } from '@shared/components/FadeInUp';
 import { useFeedback } from '@shared/components/FeedbackProvider';
 import { useUserAppointments } from '../hooks/useUserAppointments';
@@ -103,6 +104,7 @@ export default function MyAppointmentsScreen() {
   // Tick de relógio: recalcula "vencido" com o tempo passando, mesmo sem mudança
   // nos dados (senão o item ficaria preso na lista até remontar a tela).
   const now = useNowTick();
+  const { refreshControl, tick } = usePullRefresh(mutate);
 
   // Vencidos (passou do horário + tolerância) saem da lista de ativos — viram
   // "Não realizado" no Histórico. Aqui ficam só os realmente próximos/em andamento.
@@ -211,6 +213,8 @@ export default function MyAppointmentsScreen() {
                 data={activeItems}
                 keyExtractor={item => item.id}
                 renderItem={renderItem}
+                extraData={`${now}-${tick}`}
+                refreshControl={refreshControl}
                 ItemSeparatorComponent={AppointmentSeparator}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
