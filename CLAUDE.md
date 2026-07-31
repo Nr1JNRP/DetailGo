@@ -108,6 +108,21 @@ const { colors: D, isLight } = useAppTheme();
 - Usar sempre `D.primary`, `D.bg`, `D.text`, etc — nunca cores hardcoded
 - Estilos criados com `useMemo(() => createStyles(D), [D])` para reagir ao tema
 
+### Identidade visual (decisão fechada)
+
+A identidade é **"Garage Dark"**: escuro, neon amarelo-verde (`#D4FF3D`),
+acento laranja (`#FF5C39`), pegada industrial/automotiva. É proposital e
+coesa — **não migrar** para outro estilo (claymorphism, pastel, etc. destoam).
+
+- **Se for evoluir o visual, o caminho é neon glow COM PARCIMÔNIA** — brilho
+  sutil só nos elementos-chave (CTA primário, status "em andamento", chip de
+  filtro ativo), feito com `linear-gradient` + `box-shadow`/`Animated` (sem lib
+  nova). Glow em tudo cansa e vira cara de "AI-generated".
+- **Não adicionar** libs pesadas de efeito/animação (Reanimated, Moti, Skia) —
+  risco de compatibilidade com RN 0.81 / React 19. Blur (glassmorphism) só se
+  muito necessário, via `@react-native-community/blur`.
+- Refino visual é **polimento, não bloqueador** — priorizar testes/lançamento.
+
 ## Coleções Firestore
 
 ```
@@ -174,6 +189,11 @@ Customer        → Dashboard, Appointment, MyAppointments, History, Profile
 
 Stack: **Jest** + **@testing-library/react-native** (RNTL). Coverage via Istanbul.
 
+> **Definição de pronto:** toda feature ou alteração com lógica nova entrega
+> **teste unitário junto**, sempre que houver comportamento a proteger (regra de
+> negócio, validação, cálculo, fluxo). Não é etapa separada — faz parte da
+> entrega. Cosmético/ambiental não conta (ver a filosofia abaixo).
+
 - **Arquivo `.spec.tsx` colocado ao lado do componente** (ex.:
   `LoginScreen.spec.tsx` na mesma pasta da tela) — estilo `.spec.ts` do Angular.
 - **`jest.setup.js`** mocka os módulos nativos globais (AsyncStorage, safe-area,
@@ -181,7 +201,13 @@ Stack: **Jest** + **@testing-library/react-native** (RNTL). Coverage via Istanbu
   dele (services, `useNavigation`, hooks de feature).
 - **`testID`** em elementos sem texto estável (toggles, botões de ícone) — padrão
   de testabilidade, não afeta produção.
-- Rodar cobertura: `npm run test:cov` → relatório HTML em `coverage/index.html`.
+- **Comandos:** `npm test` (roda tudo), `test:watch` (modo watch), `test:cov`
+  (cobertura do **projeto inteiro** no terminal + HTML em `coverage/index.html`),
+  `test:ui` (cobertura + abre o HTML no navegador), `test:rules` (regras).
+- **Ratchet de cobertura:** o `jest.config.js` tem `coverageThreshold` global —
+  o CI roda o `test:cov` e **falha se a cobertura regredir** abaixo do piso. Só
+  sobe: ao adicionar testes, **suba os números** do threshold. É como garantimos
+  que o projeto nunca perde cobertura.
 
 ### Padrões e pegadinhas dos specs (aprendidos na prática)
 
