@@ -201,7 +201,9 @@ Stack: **Jest** + **@testing-library/react-native** (RNTL). Coverage via Istanbu
   dele (services, `useNavigation`, hooks de feature).
 - **`testID`** em elementos sem texto estável (toggles, botões de ícone) — padrão
   de testabilidade, não afeta produção.
-- Rodar cobertura: `npm run test:cov` → relatório HTML em `coverage/index.html`.
+- **Comandos:** `npm test` (roda tudo), `test:watch` (modo watch), `test:cov`
+  (cobertura do **projeto inteiro** no terminal + HTML em `coverage/index.html`),
+  `test:ui` (cobertura + abre o HTML no navegador), `test:rules` (regras).
 
 ### Padrões e pegadinhas dos specs (aprendidos na prática)
 
