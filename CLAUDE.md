@@ -204,6 +204,10 @@ Stack: **Jest** + **@testing-library/react-native** (RNTL). Coverage via Istanbu
 - **Comandos:** `npm test` (roda tudo), `test:watch` (modo watch), `test:cov`
   (cobertura do **projeto inteiro** no terminal + HTML em `coverage/index.html`),
   `test:ui` (cobertura + abre o HTML no navegador), `test:rules` (regras).
+- **Ratchet de cobertura:** o `jest.config.js` tem `coverageThreshold` global —
+  o CI roda o `test:cov` e **falha se a cobertura regredir** abaixo do piso. Só
+  sobe: ao adicionar testes, **suba os números** do threshold. É como garantimos
+  que o projeto nunca perde cobertura.
 
 ### Padrões e pegadinhas dos specs (aprendidos na prática)
 

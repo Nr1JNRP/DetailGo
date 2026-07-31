@@ -16,4 +16,14 @@ module.exports = {
     '!src/**/index.ts',
   ],
   coverageReporters: ['text', 'text-summary', 'html'],
+  // Ratchet: o CI falha se a cobertura regredir abaixo do piso atual. Só sobe —
+  // ao adicionar testes, suba os números. Garante que nunca perdemos cobertura.
+  coverageThreshold: {
+    global: {
+      statements: 13,
+      branches: 9,
+      functions: 12,
+      lines: 13,
+    },
+  },
 };

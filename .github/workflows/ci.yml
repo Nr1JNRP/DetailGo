@@ -103,8 +103,10 @@ jobs:
       - name: Instala dependencias
         run: npm ci
 
-      - name: Executa testes
-        run: npm test -- --runInBand --watchAll=false
+      # Roda com cobertura: mostra o número em toda PR e aplica o ratchet
+      # (coverageThreshold) — o job falha se a cobertura regredir.
+      - name: Executa testes com cobertura
+        run: npm run test:cov -- --runInBand --watchAll=false
 
   rules-tests:
     name: Testes das regras Firestore
