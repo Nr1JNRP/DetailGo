@@ -58,11 +58,14 @@ export class AvailabilityError extends Error {
   }
 }
 
-function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
+// As funções abaixo (overlaps/isWithinBusinessHours/generateSlots/
+// filterAvailableSlots) são a lógica pura de disponibilidade e capacidade;
+// exportadas para teste unitário direto (sem tocar no Firestore).
+export function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
   return aStart < bEnd && bStart < aEnd;
 }
 
-function isWithinBusinessHours(slot: Slot, settings: ShopSettings): boolean {
+export function isWithinBusinessHours(slot: Slot, settings: ShopSettings): boolean {
   const slotStartHour = new Date(slot.startAtMs).getHours();
   const slotEndHour = new Date(slot.endAtMs).getHours();
   const slotEndMinutes = new Date(slot.endAtMs).getMinutes();
@@ -181,7 +184,7 @@ async function getScheduledAppointmentsForDay(
   return snapRange.docs.map((d: QDoc) => d.data() as AppointmentDoc);
 }
 
-function generateSlots(day: Date, settings: ShopSettings, durationMin: number): Slot[] {
+export function generateSlots(day: Date, settings: ShopSettings, durationMin: number): Slot[] {
   const open = new Date(day);
   open.setHours(settings.openHour, 0, 0, 0);
 
@@ -204,7 +207,7 @@ function generateSlots(day: Date, settings: ShopSettings, durationMin: number): 
   return slots;
 }
 
-function filterAvailableSlots(
+export function filterAvailableSlots(
   slots: Slot[],
   appointments: AppointmentDoc[],
   capacity: number,
