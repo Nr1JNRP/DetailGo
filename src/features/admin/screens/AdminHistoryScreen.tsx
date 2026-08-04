@@ -29,6 +29,7 @@ import {
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useFeedback } from '@shared/components/FeedbackProvider';
 import { useCustomerName } from '@shared/hooks/useFirestoreCache';
+import { usePullRefresh } from '@shared/hooks/usePullRefresh';
 import { useShop } from '@features/shops';
 import { getAuth } from '@react-native-firebase/auth';
 
@@ -106,6 +107,7 @@ export default function AdminHistoryScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totals, setTotals] = useState({ done: 0, revenue: 0 });
   const { showError } = useFeedback();
+  const { refreshControl, tick } = usePullRefresh();
 
   const lastDocRef = useRef<QDoc | null>(null);
   const canLoadMoreRef = useRef(true);
@@ -303,6 +305,8 @@ export default function AdminHistoryScreen() {
           <SectionList
             sections={sections}
             keyExtractor={item => item.id}
+            extraData={tick}
+            refreshControl={refreshControl}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             onEndReached={loadMore}
