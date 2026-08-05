@@ -4,6 +4,10 @@ import * as admin from 'firebase-admin';
 
 import { notifyCustomer } from '../notifications/notifyCustomer';
 import { notifyOwner } from '../notifications/notifyOwner';
+import {
+  notifyCustomerWhatsApp,
+  whatsappSecrets,
+} from '../notifications/notifyCustomerWhatsApp';
 import { formatWhen } from '../notifications/format';
 
 /**
@@ -27,7 +31,10 @@ type AppointmentData = {
 };
 
 export const onAppointmentStatusChanged = onDocumentUpdated(
-  'shops/{shopId}/appointments/{appointmentId}',
+  {
+    document: 'shops/{shopId}/appointments/{appointmentId}',
+    secrets: whatsappSecrets,
+  },
   async event => {
     const before = event.data?.before.data() as AppointmentData | undefined;
     const after = event.data?.after.data() as AppointmentData | undefined;
@@ -79,6 +86,17 @@ export const onAppointmentStatusChanged = onDocumentUpdated(
         });
       } catch (err) {
         logger.error(`Falha ao notificar conclusao do agendamento ${appointmentId}`, err);
+      }
+
+      // WhatsApp automático (best-effort — não quebra o fluxo se falhar).
+      try {
+        const name = after.customerName?.split(' ')[0] || 'Olá';
+        await notifyCustomerWhatsApp(
+          customerUid,
+          `${name}, seu ${service} foi concluído! ✅ Obrigado pela preferência — DetailGo.`,
+        );
+      } catch (err) {
+        logger.error(`Falha ao enviar WhatsApp de conclusao ${appointmentId}`, err);
       }
     }
 

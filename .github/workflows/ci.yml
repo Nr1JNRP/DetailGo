@@ -108,6 +108,35 @@ jobs:
       - name: Executa testes com cobertura
         run: npm run test:cov -- --runInBand --watchAll=false
 
+  functions-tests:
+    name: Testes das Cloud Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Configura Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Instala dependencias
+        working-directory: functions
+        run: npm ci
+
+      - name: Compila (tsc) e roda os testes
+        working-directory: functions
+        run: |
+          npm run build
+          npm test
+
   rules-tests:
     name: Testes das regras Firestore
     runs-on: ubuntu-latest
