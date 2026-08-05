@@ -12,3 +12,40 @@ export function toWhatsAppNumber(rawPhone: string | undefined | null): string | 
   const withCountry = digits.length <= 11 ? `55${digits}` : digits;
   return `whatsapp:+${withCountry}`;
 }
+
+/**
+ * Monta o corpo da chamada `client.messages.create` do Twilio.
+ *
+ * O WhatsApp exige **template** (contentSid) para mensagens iniciadas pela
+ * empresa — texto livre só vale dentro da janela de 24h e nem sempre é aceito.
+ * Então: se houver `contentSid`, manda via template (com as variáveis); senão,
+ * cai no texto livre (`fallbackBody`).
+ */
+export type TwilioMessagePayload = {
+  from: string;
+  to: string;
+  body?: string;
+  contentSid?: string;
+  contentVariables?: string;
+};
+
+export function buildTwilioMessage(params: {
+  from: string;
+  to: string;
+  contentSid?: string | null;
+  contentVariables?: Record<string, string>;
+  fallbackBody: string;
+}): TwilioMessagePayload {
+  const { from, to, contentSid, contentVariables, fallbackBody } = params;
+
+  if (contentSid) {
+    return {
+      from,
+      to,
+      contentSid,
+      contentVariables: JSON.stringify(contentVariables ?? {}),
+    };
+  }
+
+  return { from, to, body: fallbackBody };
+}

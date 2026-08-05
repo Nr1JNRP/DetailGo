@@ -89,12 +89,13 @@ export const onAppointmentStatusChanged = onDocumentUpdated(
       }
 
       // WhatsApp automático (best-effort — não quebra o fluxo se falhar).
+      // Variáveis do template: {{1}} = nome, {{2}} = serviço.
       try {
-        const name = after.customerName?.split(' ')[0] || 'Olá';
-        await notifyCustomerWhatsApp(
-          customerUid,
-          `${name}, seu ${service} foi concluído! ✅ Obrigado pela preferência — DetailGo.`,
-        );
+        const name = after.customerName?.split(' ')[0] || 'Cliente';
+        await notifyCustomerWhatsApp(customerUid, {
+          contentVariables: { '1': name, '2': service },
+          fallbackBody: `${name}, seu ${service} foi concluído! ✅ Obrigado — DetailGo.`,
+        });
       } catch (err) {
         logger.error(`Falha ao enviar WhatsApp de conclusao ${appointmentId}`, err);
       }
