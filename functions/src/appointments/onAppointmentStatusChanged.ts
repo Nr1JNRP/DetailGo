@@ -5,6 +5,7 @@ import * as admin from 'firebase-admin';
 import { notifyCustomer } from '../notifications/notifyCustomer';
 import { notifyOwner } from '../notifications/notifyOwner';
 import { formatWhen } from '../notifications/format';
+import { buildServiceDoneBody } from '../notifications/notificationMessages';
 
 /**
  * Quando o status de um agendamento muda em shops/{shopId}/appointments/{id}
@@ -68,12 +69,21 @@ export const onAppointmentStatusChanged = onDocumentUpdated(
 
     // Servico concluido → notifica o cliente (push + sino).
     if (after.status === 'done') {
-      const service = after.serviceLabel || 'seu serviço';
+      // Nome da estetica (shops/{shopId}.name) para personalizar a mensagem.
+      // Best-effort: se falhar, cai no fallback sem o nome da estetica.
+      let shopName: string | null = null;
+      try {
+        const shopSnap = await db.collection('shops').doc(shopId).get();
+        shopName = (shopSnap.get('name') as string | undefined)?.trim() || null;
+      } catch (err) {
+        logger.error(`Falha ao buscar nome da estetica ${shopId}`, err);
+      }
+
       try {
         await notifyCustomer(customerUid, {
           type: 'appointment_done',
           title: 'Serviço concluído',
-          body: `Seu ${service} foi finalizado. Obrigado pela preferência!`,
+          body: buildServiceDoneBody({ serviceLabel: after.serviceLabel, shopName }),
           appointmentId,
           serviceLabel: after.serviceLabel ?? null,
         });
