@@ -55,12 +55,35 @@ service cloud.firestore {
             && request.time.toMillis() < resource.data.startAtMs;
         }
 
-        allow read: if isSignedIn();
+        // Leitura só do dono ou do próprio cliente (o nome do cliente fica aqui).
+        // A disponibilidade NÃO lê isto — usa os slots sem PII (abaixo).
+        allow read: if isShopOwner(shopId)
+          || (isSignedIn() && request.auth.uid == resource.data.customerUid);
         allow create: if isShopOwner(shopId)
           || (isSignedIn()
               && request.resource.data.customerUid == request.auth.uid
               && request.resource.data.status == 'scheduled');
         allow update: if isShopOwner(shopId) || isCustomerCancel();
+        allow delete: if isShopOwner(shopId);
+      }
+
+      // Slots ocupados: espelho SEM PII dos agendamentos 'scheduled' (só os
+      // horários). Leitura por qualquer logado — é o que o cálculo de
+      // disponibilidade usa, pra ninguém precisar ler os agendamentos (com nome)
+      // de outros clientes.
+      // - create: o próprio cliente, junto com o agendamento. O getAfter garante
+      //   que existe um appointment de MESMO id, DELE e no MESMO horário; o
+      //   hasOnly impede qualquer campo de PII.
+      // - update: ninguém pela regra (o Admin SDK da Cloud Function ignora regras
+      //   e mantém o slot em sincronia).
+      // - delete: o dono; a função apaga via Admin SDK quando sai de 'scheduled'.
+      match /slots/{slotId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+          && request.resource.data.keys().hasOnly(['startAtMs', 'endAtMs', 'dayKey', 'shopId'])
+          && getAfter(/databases/$(database)/documents/shops/$(shopId)/appointments/$(slotId)).data.customerUid == request.auth.uid
+          && request.resource.data.startAtMs == getAfter(/databases/$(database)/documents/shops/$(shopId)/appointments/$(slotId)).data.startAtMs;
+        allow update: if false;
         allow delete: if isShopOwner(shopId);
       }
 

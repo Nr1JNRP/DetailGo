@@ -25,6 +25,8 @@ type AppointmentData = {
   status?: string;
   serviceLabel?: string;
   startAtMs?: number;
+  endAtMs?: number;
+  dayKey?: string;
 };
 
 export const onAppointmentStatusChanged = onDocumentUpdated(
@@ -65,6 +67,28 @@ export const onAppointmentStatusChanged = onDocumentUpdated(
         .set(payload, { merge: true });
     } catch (err) {
       logger.error(`Falha ao sincronizar status do agendamento ${appointmentId}`, err);
+    }
+
+    // Mantem o slot publico (sem PII) em sincronia com o status:
+    //  - 'scheduled' (inclui reagendamento) -> garante o slot;
+    //  - qualquer outro (in_progress/done/no_show/cancelled) -> apaga o slot,
+    //    liberando o horario no calculo de disponibilidade.
+    // O slot inicial e criado pelo cliente na transacao de booking; aqui so
+    // reagimos a mudancas de status (Admin SDK ignora as regras).
+    const slotRef = db.collection('shops').doc(shopId).collection('slots').doc(appointmentId);
+    try {
+      if (after.status === 'scheduled' && after.startAtMs && after.endAtMs && after.dayKey) {
+        await slotRef.set({
+          startAtMs: after.startAtMs,
+          endAtMs: after.endAtMs,
+          dayKey: after.dayKey,
+          shopId,
+        });
+      } else {
+        await slotRef.delete();
+      }
+    } catch (err) {
+      logger.error(`Falha ao sincronizar slot do agendamento ${appointmentId}`, err);
     }
 
     // Servico concluido → notifica o cliente (push + sino).

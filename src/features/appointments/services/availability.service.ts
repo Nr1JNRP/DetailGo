@@ -153,35 +153,19 @@ async function assertCustomerCanBookShopOnDay(
   }
 }
 
-async function getScheduledAppointmentsForDay(
-  shopId: string,
-  dayKey: string,
-  dayStart: number,
-  dayEnd: number,
-): Promise<AppointmentDoc[]> {
+/**
+ * Slot ocupado (sem PII): espelho só com os horários de um agendamento
+ * 'scheduled', em shops/{shopId}/slots. É o que a disponibilidade lê — assim o
+ * cliente nunca precisa ler os agendamentos (com nome) de outros clientes.
+ */
+type SlotDoc = { startAtMs: number; endAtMs: number };
+
+async function getBusySlotsForDay(shopId: string, dayKey: string): Promise<SlotDoc[]> {
   const db = getFirestore();
-
-  const qByDayKey = query(
-    collection(db, 'shops', shopId, 'appointments'),
-    where('status', '==', 'scheduled'),
-    where('dayKey', '==', dayKey),
+  const snap = await getDocs(
+    query(collection(db, 'shops', shopId, 'slots'), where('dayKey', '==', dayKey)),
   );
-
-  const snapByDayKey = await getDocs(qByDayKey);
-
-  if (!snapByDayKey.empty) {
-    return snapByDayKey.docs.map((d: QDoc) => d.data() as AppointmentDoc);
-  }
-
-  const qRange = query(
-    collection(db, 'shops', shopId, 'appointments'),
-    where('status', '==', 'scheduled'),
-    where('startAtMs', '>=', dayStart),
-    where('startAtMs', '<=', dayEnd),
-  );
-
-  const snapRange = await getDocs(qRange);
-  return snapRange.docs.map((d: QDoc) => d.data() as AppointmentDoc);
+  return snap.docs.map((d: QDoc) => d.data() as SlotDoc);
 }
 
 export function generateSlots(day: Date, settings: ShopSettings, durationMin: number): Slot[] {
@@ -209,13 +193,13 @@ export function generateSlots(day: Date, settings: ShopSettings, durationMin: nu
 
 export function filterAvailableSlots(
   slots: Slot[],
-  appointments: AppointmentDoc[],
+  busy: readonly { startAtMs: number; endAtMs: number }[],
   capacity: number,
 ): Slot[] {
   return slots.filter(slot => {
     let concurrent = 0;
-    for (const appt of appointments) {
-      if (overlaps(appt.startAtMs, appt.endAtMs, slot.startAtMs, slot.endAtMs)) {
+    for (const b of busy) {
+      if (overlaps(b.startAtMs, b.endAtMs, slot.startAtMs, slot.endAtMs)) {
         concurrent += 1;
         if (concurrent >= capacity) return false;
       }
@@ -238,10 +222,7 @@ export async function getAvailableSlotsForDay(
   }
 
   const dayKey = dateUtils.toDayKey(day);
-  const dayStart = dateUtils.startOfDay(day);
-  const dayEnd = dateUtils.endOfDay(day);
-
-  const appointments = await getScheduledAppointmentsForDay(shopId, dayKey, dayStart, dayEnd);
+  const busy = await getBusySlotsForDay(shopId, dayKey);
 
   const allSlots = generateSlots(day, settings, durationMin);
 
@@ -252,7 +233,7 @@ export async function getAvailableSlotsForDay(
     return true;
   });
 
-  return filterAvailableSlots(validSlots, appointments, settings.parallelCapacity);
+  return filterAvailableSlots(validSlots, busy, settings.parallelCapacity);
 }
 
 async function getCustomerName(customerUid: string): Promise<string> {
@@ -296,18 +277,15 @@ export async function createAppointmentWithCapacityCheck(input: AppointmentCreat
   await assertCustomerCanBookShopOnDay(input.customerUid, shopId, dayKey, dayStart, dayEnd);
 
   return runTransaction(db, async tx => {
-    const qy = query(
-      collection(db, 'shops', shopId, 'appointments'),
-      where('status', '==', 'scheduled'),
-      where('dayKey', '==', dayKey),
-    );
+    // Conta a concorrência pelos slots (sem PII), não pelos agendamentos.
+    const qy = query(collection(db, 'shops', shopId, 'slots'), where('dayKey', '==', dayKey));
 
     const snap = await getDocs(qy);
 
     let concurrent = 0;
     snap.docs.forEach((d: QDoc) => {
-      const appt = d.data() as AppointmentDoc;
-      if (overlaps(appt.startAtMs, appt.endAtMs, input.startAtMs, input.endAtMs)) {
+      const s = d.data() as SlotDoc;
+      if (overlaps(s.startAtMs, s.endAtMs, input.startAtMs, input.endAtMs)) {
         concurrent += 1;
       }
     });
@@ -331,6 +309,16 @@ export async function createAppointmentWithCapacityCheck(input: AppointmentCreat
       endAtMs: input.endAtMs,
       status: 'scheduled',
       createdAt: serverTimestamp(),
+    });
+
+    // Slot público espelho (só horários, sem PII) — usado pela disponibilidade.
+    // Os campos batem EXATAMENTE com o hasOnly das firestore.rules.
+    const slotRef = doc(db, 'shops', shopId, 'slots', apptRef.id);
+    tx.set(slotRef, {
+      startAtMs: input.startAtMs,
+      endAtMs: input.endAtMs,
+      dayKey,
+      shopId,
     });
 
     const userRef = doc(db, 'users', input.customerUid, 'appointments', apptRef.id);
@@ -374,18 +362,14 @@ export async function checkSlotAvailability(
   }
 
   const db = getFirestore();
-  const qy = query(
-    collection(db, 'shops', shopId, 'appointments'),
-    where('status', '==', 'scheduled'),
-    where('dayKey', '==', dayKey),
-  );
+  const qy = query(collection(db, 'shops', shopId, 'slots'), where('dayKey', '==', dayKey));
 
   const snap = await getDocs(qy);
   let concurrent = 0;
 
   snap.docs.forEach((d: QDoc) => {
-    const appt = d.data() as AppointmentDoc;
-    if (overlaps(appt.startAtMs, appt.endAtMs, startAtMs, endAtMs)) {
+    const s = d.data() as SlotDoc;
+    if (overlaps(s.startAtMs, s.endAtMs, startAtMs, endAtMs)) {
       concurrent += 1;
     }
   });
