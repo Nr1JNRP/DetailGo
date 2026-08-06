@@ -65,6 +65,13 @@ beforeEach(async () => {
       startAtMs: PAST,
     });
     await setDoc(doc(db, 'shops', SHOP_A, 'notifications', 'n1'), { title: 'Novo agendamento' });
+    // Slot já existente (sem PII) para os testes de leitura.
+    await setDoc(doc(db, 'shops', SHOP_A, 'slots', 'slot_read'), {
+      startAtMs: FUTURE,
+      endAtMs: FUTURE + 30 * 60 * 1000,
+      dayKey: 'seed',
+      shopId: SHOP_A,
+    });
   });
 });
 
@@ -208,14 +215,75 @@ describe('agendamentos — cancelamento (corte no horário)', () => {
   });
 });
 
-describe('agendamentos — leitura', () => {
+describe('agendamentos — leitura (só dono e o próprio cliente)', () => {
   test('não logado não lê agendamentos', async () => {
     await assertFails(getDoc(doc(anon(), 'shops', SHOP_A, 'appointments', 'appt_future')));
   });
 
-  test('logado lê agendamentos do shop (necessário p/ disponibilidade)', async () => {
+  test('o próprio cliente lê o seu agendamento', async () => {
     await assertSucceeds(
+      getDoc(doc(authed(CUSTOMER_1), 'shops', SHOP_A, 'appointments', 'appt_future')),
+    );
+  });
+
+  test('o dono lê os agendamentos do seu shop', async () => {
+    await assertSucceeds(
+      getDoc(doc(authed(OWNER_A), 'shops', SHOP_A, 'appointments', 'appt_future')),
+    );
+  });
+
+  test('outro cliente NÃO lê o agendamento alheio (não vaza nome)', async () => {
+    await assertFails(
       getDoc(doc(authed(CUSTOMER_2), 'shops', SHOP_A, 'appointments', 'appt_future')),
+    );
+  });
+});
+
+describe('slots (espelho sem PII p/ disponibilidade)', () => {
+  const validSlot = extra => ({
+    startAtMs: FUTURE,
+    endAtMs: FUTURE + 30 * 60 * 1000,
+    dayKey: 'd1',
+    shopId: SHOP_A,
+    ...extra,
+  });
+
+  test('qualquer logado lê os slots (cálculo de disponibilidade)', async () => {
+    await assertSucceeds(getDoc(doc(authed(CUSTOMER_2), 'shops', SHOP_A, 'slots', 'slot_read')));
+  });
+
+  test('não logado não lê slots', async () => {
+    await assertFails(getDoc(doc(anon(), 'shops', SHOP_A, 'slots', 'slot_read')));
+  });
+
+  test('o cliente cria o slot do seu agendamento (getAfter casa dono+horário)', async () => {
+    // appt_future pertence a CUSTOMER_1 e ainda não tem slot.
+    await assertSucceeds(
+      setDoc(doc(authed(CUSTOMER_1), 'shops', SHOP_A, 'slots', 'appt_future'), validSlot()),
+    );
+  });
+
+  test('não cria slot para o agendamento de outro cliente', async () => {
+    await assertFails(
+      setDoc(doc(authed(CUSTOMER_2), 'shops', SHOP_A, 'slots', 'appt_future'), validSlot()),
+    );
+  });
+
+  test('não cria slot com campo de PII (hasOnly)', async () => {
+    await assertFails(
+      setDoc(
+        doc(authed(CUSTOMER_1), 'shops', SHOP_A, 'slots', 'appt_future'),
+        validSlot({ customerName: 'Fulano' }),
+      ),
+    );
+  });
+
+  test('não cria slot com horário diferente do agendamento', async () => {
+    await assertFails(
+      setDoc(
+        doc(authed(CUSTOMER_1), 'shops', SHOP_A, 'slots', 'appt_future'),
+        validSlot({ startAtMs: FUTURE + 999 }),
+      ),
     );
   });
 });
