@@ -52,6 +52,7 @@ import PremiumStar from '@shared/components/PremiumStar';
 import ConfirmModal from '@shared/components/ConfirmModal';
 import SuccessModal from '@shared/components/SuccessModal';
 import { useFeedback } from '@shared/components/FeedbackProvider';
+import { LiveDot } from '@shared/components/LiveDot';
 
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -430,7 +431,7 @@ export default function AdminDashboardScreen() {
     const statusLabel = isExpiredScheduled
       ? 'Aguardando baixa'
       : isInProgress
-      ? 'Em atendimento'
+      ? 'Em andamento'
       : 'Agendado';
     const actionLabel = isExpiredScheduled
       ? 'Não realizado'
@@ -471,11 +472,6 @@ export default function AdminDashboardScreen() {
 
     return (
       <View style={styles.agendaRow}>
-        <View style={styles.agendaTimeCol}>
-          <Text style={styles.agendaHour}>{dateUtils.formatHour(item.startAtMs)}</Text>
-          {durationMin !== null && <Text style={styles.agendaDuration}>{durationMin}m</Text>}
-        </View>
-
         <View
           style={[
             styles.agendaCard,
@@ -483,10 +479,7 @@ export default function AdminDashboardScreen() {
             isExpiredScheduled && styles.agendaCardExpired,
           ]}
         >
-          <View style={styles.agendaCardHeader}>
-            <Text style={styles.agendaService} numberOfLines={1}>
-              {item.serviceLabel ?? 'Serviço'}
-            </Text>
+          <View style={styles.agendaCardTop}>
             <View
               style={[
                 styles.agendaStatusPill,
@@ -494,13 +487,16 @@ export default function AdminDashboardScreen() {
                 isExpiredScheduled && styles.agendaStatusPillExpired,
               ]}
             >
-              <View
-                style={[
-                  styles.agendaStatusDot,
-                  isInProgress && styles.agendaStatusDotActive,
-                  isExpiredScheduled && styles.agendaStatusDotExpired,
-                ]}
-              />
+              {isInProgress ? (
+                <LiveDot size={7} />
+              ) : (
+                <View
+                  style={[
+                    styles.agendaStatusDot,
+                    isExpiredScheduled && styles.agendaStatusDotExpired,
+                  ]}
+                />
+              )}
               <Text
                 style={[
                   styles.agendaStatusText,
@@ -512,8 +508,16 @@ export default function AdminDashboardScreen() {
                 {statusLabel}
               </Text>
             </View>
+
+            <View style={styles.agendaTimeInline}>
+              <Text style={styles.agendaHour}>{dateUtils.formatHour(item.startAtMs)}</Text>
+              {durationMin !== null && <Text style={styles.agendaDuration}>{durationMin}m</Text>}
+            </View>
           </View>
 
+          <Text style={styles.agendaService} numberOfLines={1}>
+            {item.serviceLabel ?? 'Serviço'}
+          </Text>
           <Text style={styles.agendaClient} numberOfLines={1}>
             {item.customerName} · {vehicle}
           </Text>
@@ -972,10 +976,14 @@ function createStyles(D: AppColors) {
       paddingHorizontal: spacing.lg,
       gap: spacing.sm,
     },
-    agendaTimeCol: {
-      width: 48,
-      alignItems: 'flex-start',
-      paddingTop: spacing.md,
+    agendaCardTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+    },
+    agendaTimeInline: {
+      alignItems: 'flex-end',
     },
     agendaHour: {
       fontSize: 15,

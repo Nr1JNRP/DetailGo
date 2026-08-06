@@ -58,6 +58,7 @@ import { formatUtils } from '@shared/utils/format.utils';
 import { useNowTick } from '@shared/hooks/useNowTick';
 import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
 import { FadeInUp } from '@shared/components/FadeInUp';
+import { LiveDot } from '@shared/components/LiveDot';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -78,7 +79,7 @@ function getGreeting() {
 export default function DashboardScreen() {
   const navigation = useNavigation<NavProp>();
   const { colors: D, isLight } = useAppTheme();
-  const { showError, showSuccess } = useFeedback();
+  const { showError, showSuccess, showConfirm } = useFeedback();
   const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 42 : 16);
@@ -266,9 +267,15 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     toggleMenu();
-    await signOut();
+    showConfirm({
+      title: 'Sair da conta',
+      message: 'Deseja encerrar sua sessão?',
+      confirmLabel: 'Sair',
+      destructive: true,
+      onConfirm: () => signOut(),
+    });
   };
 
   const goToAppointment = () => {
@@ -615,7 +622,8 @@ const AppointmentCard = memo(function AppointmentCard({
 }) {
   const { colors: D } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
-  const statusConfig = getAppointmentStatusConfig(appt.status);
+  const isInProgress = appt.status === 'in_progress';
+  const statusConfig = getAppointmentStatusConfig(appt.status, D);
 
   return (
     <TouchableOpacity
@@ -647,9 +655,13 @@ const AppointmentCard = memo(function AppointmentCard({
                 { backgroundColor: statusConfig.color + '20', borderColor: statusConfig.color },
               ]}
             >
-              <View
-                style={[styles.appointmentStatusDot, { backgroundColor: statusConfig.color }]}
-              />
+              {isInProgress ? (
+                <LiveDot color={statusConfig.color} size={7} />
+              ) : (
+                <View
+                  style={[styles.appointmentStatusDot, { backgroundColor: statusConfig.color }]}
+                />
+              )}
               <Text style={[styles.appointmentStatusText, { color: statusConfig.color }]}>
                 {statusConfig.label}
               </Text>
