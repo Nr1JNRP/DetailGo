@@ -1,4 +1,4 @@
-import { colors } from '@shared/theme';
+import { colors, type AppColors } from '@shared/theme';
 
 import type { AppointmentStatus } from './appointment.types';
 import { NO_SHOW_GRACE_MS } from './appointment.constants';
@@ -23,20 +23,27 @@ export function isExpiredScheduled(
   return status === 'scheduled' && now > startAtMs + NO_SHOW_GRACE_MS;
 }
 
+/**
+ * Config de exibição do status (label + cor). Se receber a paleta do tema (`D`),
+ * devolve cores theme-aware — em especial `in_progress` usa o neon `D.primary`,
+ * padronizado com os cards. Sem a paleta, cai nas cores estáticas (fallback
+ * usado em testes e contextos sem tema).
+ */
 export const getAppointmentStatusConfig = (
   status: 'scheduled' | 'in_progress' | 'done' | 'no_show' | 'cancelled',
+  D?: AppColors,
 ): StatusConfig => {
   switch (status) {
     case 'done':
-      return { label: 'Concluído', color: colors.status.success };
+      return { label: 'Concluído', color: D ? D.status.success : colors.status.success };
     case 'in_progress':
-      return { label: 'Em andamento', color: colors.status.warning };
+      return { label: 'Em andamento', color: D ? D.primary : colors.primary.main };
     case 'no_show':
-      return { label: 'Não realizado', color: colors.status.error };
+      return { label: 'Não realizado', color: D ? D.status.error : colors.status.error };
     case 'cancelled':
-      return { label: 'Cancelado', color: colors.status.disabled };
+      return { label: 'Cancelado', color: D ? D.ink3 : colors.status.disabled };
     default: // scheduled
-      return { label: 'Agendado', color: colors.text.disabled };
+      return { label: 'Agendado', color: D ? D.ink3 : colors.text.disabled };
   }
 };
 
