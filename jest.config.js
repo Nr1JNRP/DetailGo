@@ -20,10 +20,10 @@ module.exports = {
   // ao adicionar testes, suba os números. Garante que nunca perdemos cobertura.
   coverageThreshold: {
     global: {
-      statements: 13,
-      branches: 9,
-      functions: 12,
-      lines: 13,
+      statements: 14,
+      branches: 10,
+      functions: 14,
+      lines: 15,
     },
   },
 };

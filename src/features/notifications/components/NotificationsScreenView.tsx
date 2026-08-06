@@ -17,6 +17,7 @@ import {
   CalendarX2,
   CheckCircle2,
   Clock,
+  Trash2,
   XCircle,
 } from 'lucide-react-native';
 
@@ -31,6 +32,8 @@ type Props = {
   subtitle: string;
   /** Chamado ao abrir a tela (ex.: marcar todas como lidas). */
   onOpened?: () => void;
+  /** Se fornecido e houver itens, mostra o botão de limpar todas. */
+  onClearAll?: () => void;
 };
 
 function relativeTime(ms: number): string {
@@ -50,7 +53,13 @@ function relativeTime(ms: number): string {
   )}`;
 }
 
-export default function NotificationsScreenView({ items, loading, subtitle, onOpened }: Props) {
+export default function NotificationsScreenView({
+  items,
+  loading,
+  subtitle,
+  onOpened,
+  onClearAll,
+}: Props) {
   const { colors: D, isLight } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
   const navigation = useNavigation();
@@ -77,6 +86,17 @@ export default function NotificationsScreenView({ items, loading, subtitle, onOp
             <Text style={styles.headerTitle}>Notificações</Text>
             <Text style={styles.headerSub}>{subtitle}</Text>
           </View>
+          {onClearAll && items.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearBtn}
+              onPress={onClearAll}
+              activeOpacity={0.7}
+              testID="clear-all-notifications"
+              accessibilityLabel="Limpar todas as notificações"
+            >
+              <Trash2 size={18} color={D.ink2} strokeWidth={2} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {loading && items.length === 0 ? (
@@ -152,6 +172,16 @@ function createStyles(D: AppColors) {
       gap: 14,
     },
     backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: D.card,
+      borderWidth: 1,
+      borderColor: D.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    clearBtn: {
       width: 40,
       height: 40,
       borderRadius: 12,

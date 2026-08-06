@@ -81,6 +81,29 @@ async function markAllRead(scope: Scope): Promise<void> {
   await batch.commit();
 }
 
+/**
+ * Apaga TODAS as notificações de um escopo (esvazia o sino). O Firestore não
+ * deleta uma coleção inteira de uma vez: busca em lotes e deleta em batch
+ * (limite de 500 por batch) até não sobrar nada.
+ */
+async function clearAll(scope: Scope): Promise<void> {
+  const db = getFirestore();
+  const [c, id, sub] = notificationsPath(scope);
+  const PAGE = 400;
+
+  let done = false;
+  while (!done) {
+    const snap = await getDocs(query(collection(db, c, id, sub), limit(PAGE)));
+    if (snap.empty) return;
+
+    const batch = writeBatch(db);
+    snap.docs.forEach((d: QDoc) => batch.delete(d.ref));
+    await batch.commit();
+
+    done = snap.size < PAGE;
+  }
+}
+
 // ── Owner (shop) ──
 export function watchShopNotifications(
   shopId: string,
@@ -94,6 +117,10 @@ export function markAllNotificationsRead(shopId: string): Promise<void> {
   return markAllRead({ kind: 'shop', shopId });
 }
 
+export function clearShopNotifications(shopId: string): Promise<void> {
+  return clearAll({ kind: 'shop', shopId });
+}
+
 // ── Cliente (user) ──
 export function watchUserNotifications(
   uid: string,
@@ -105,4 +132,8 @@ export function watchUserNotifications(
 
 export function markAllUserNotificationsRead(uid: string): Promise<void> {
   return markAllRead({ kind: 'user', uid });
+}
+
+export function clearUserNotifications(uid: string): Promise<void> {
+  return clearAll({ kind: 'user', uid });
 }
