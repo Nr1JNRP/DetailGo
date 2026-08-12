@@ -108,11 +108,29 @@ apos o horario de inicio')`, não `it('funciona')`.
 
 ---
 
-## Ordem sugerida no início
+## Como agendar
 
-Comece pela **auditoria (2)**, que não altera código e mostra a qualidade do
-agente sem risco. Depois **testes (1)**. Deixe **dependências (3)** por último,
-por ser a de maior chance de quebrar o build.
+As rotinas rodam automaticamente pela aba **Scheduled** do Jules. O texto da
+tarefa agendada pode ser uma linha só, apontando para este arquivo:
 
-Só ligue execução automática recorrente depois de alguns PRs revisados na mão,
-quando você já confiar no padrão das entregas.
+```
+Siga o AGENTS.md. Execute a rotina descrita na seção 1 de docs/jules-tasks.md.
+```
+
+Assim as instruções ficam versionadas no repositório: para mudar um critério,
+edite este arquivo via PR — sem precisar reconfigurar nada no Jules.
+
+Cadência sugerida:
+
+| Rotina          | Frequência | Produz              |
+| --------------- | ---------- | ------------------- |
+| 1. Testes       | diária     | PR com testes novos |
+| 2. Auditoria    | semanal    | relatório, sem PR   |
+| 3. Dependências | semanal    | PR de correções     |
+
+Testes diariamente funciona porque a instrução limita o escopo a uma área por
+execução — cada PR chega revisável. Segurança e dependências mudam devagar;
+diariamente só repetiria o mesmo relatório.
+
+O controle é o **code review**: a `main` é protegida, então nada entra sem
+aprovação humana, por mais autônomo que o agente seja.

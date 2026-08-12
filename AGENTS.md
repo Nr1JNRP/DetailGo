@@ -57,6 +57,13 @@ telefone, e-mail ou payload de pagamento.
 webhook do MercadoPago via Cloud Function. O app nunca escreve estado de
 pagamento por conta própria.
 
+**7. Não mexer no núcleo de dependências.** Nunca rode `npm audit fix --force`.
+Nunca atualize React, React Native ou o toolchain `@react-native/*` — o
+`renovate.json` os trava de propósito, por compatibilidade entre RN 0.81 e
+React 19. Upgrade desses é manual e planejado. Corrigir vulnerabilidade é
+bem-vindo, mas só com mudança verificável e sem breaking change; o resto vira
+recomendação para decisão humana.
+
 ## Comandos
 
 ```bash
