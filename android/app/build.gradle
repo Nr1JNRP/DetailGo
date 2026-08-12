@@ -18,6 +18,15 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
+    // CMake 3.31.6 traz ninja 1.12, que não tem o limite fixo de 260 caracteres
+    // do ninja 1.10 (padrão do RN). Sem isso o build nativo falha em caminhos
+    // longos com "Filename longer than 260 characters".
+    externalNativeBuild {
+        cmake {
+            version "3.31.6"
+        }
+    }
+
     namespace "com.testapp"
     defaultConfig {
         // applicationId = identidade do app na Play Store / Firebase (imutável
