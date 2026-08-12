@@ -2,6 +2,10 @@
 
 Aplicativo mobile de agendamentos para estéticas/barbearias. Plataforma SaaS multi-tenant onde cada estabelecimento é um `shop` independente.
 
+> **Veja também [AGENTS.md](AGENTS.md)** — regras canônicas do repositório, lidas
+> por qualquer agente de código (Jules, Codex, Claude). Em caso de divergência
+> entre os dois arquivos, o `AGENTS.md` prevalece; ajuste-o lá.
+
 ## Stack
 
 - **React Native** + Expo (mobile)
