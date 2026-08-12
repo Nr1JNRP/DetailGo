@@ -47,6 +47,8 @@ import {
   type ShopSettings,
   ALL_WEEK_DAYS,
   WEEK_DAY_LABELS,
+  SLOT_STEP_OPTIONS,
+  MAX_MIN_NOTICE_MIN,
 } from '@features/settings';
 import SelectModal from '@shared/components/SelectModal';
 import ConfirmModal from '@shared/components/ConfirmModal';
@@ -498,6 +500,74 @@ export default function AdminManageScreen() {
     setSettings(prev => (prev ? { ...prev, parallelCapacity: val } : prev));
   };
 
+  // O intervalo anda pela lista de opções (15/30/60), não de 1 em 1.
+  const stepSlotStep = (dir: 1 | -1) => {
+    if (!settings) return;
+    const i = SLOT_STEP_OPTIONS.indexOf(settings.slotStepMin as (typeof SLOT_STEP_OPTIONS)[number]);
+    const next = SLOT_STEP_OPTIONS[(i < 0 ? 1 : i) + dir];
+    if (next == null) return;
+    setSettings(prev => (prev ? { ...prev, slotStepMin: next } : prev));
+  };
+
+  const renderSlotStepStepper = () => (
+    <View style={styles.stepperRow}>
+      <Text style={styles.stepperLabel}>Intervalo entre horários</Text>
+      <View style={styles.stepper}>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={() => stepSlotStep(-1)}
+          activeOpacity={0.7}
+          testID="slot-step-minus"
+        >
+          <ChevronDown size={18} color={D.primary} />
+        </TouchableOpacity>
+        <Text style={styles.stepperValue}>{settings?.slotStepMin ?? 30} min</Text>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={() => stepSlotStep(1)}
+          activeOpacity={0.7}
+          testID="slot-step-plus"
+        >
+          <ChevronUp size={18} color={D.primary} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const stepMinNotice = (dir: 1 | -1) => {
+    if (!settings) return;
+    const val = settings.minNoticeMin + dir * 15;
+    if (val < 0 || val > MAX_MIN_NOTICE_MIN) return;
+    setSettings(prev => (prev ? { ...prev, minNoticeMin: val } : prev));
+  };
+
+  const renderMinNoticeStepper = () => (
+    <View style={styles.stepperRow}>
+      <Text style={styles.stepperLabel}>Antecedência mínima</Text>
+      <View style={styles.stepper}>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={() => stepMinNotice(-1)}
+          activeOpacity={0.7}
+          testID="min-notice-minus"
+        >
+          <ChevronDown size={18} color={D.primary} />
+        </TouchableOpacity>
+        <Text style={styles.stepperValue}>
+          {settings?.minNoticeMin === 0 ? 'Sem' : `${settings?.minNoticeMin ?? 15} min`}
+        </Text>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={() => stepMinNotice(1)}
+          activeOpacity={0.7}
+          testID="min-notice-plus"
+        >
+          <ChevronUp size={18} color={D.primary} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderCapacityStepper = () => (
     <View style={styles.stepperRow}>
       <Text style={styles.stepperLabel}>Atendimentos simultâneos</Text>
@@ -776,6 +846,14 @@ export default function AdminManageScreen() {
                 <View style={styles.divider} />
 
                 {renderCapacityStepper()}
+
+                <View style={styles.divider} />
+
+                {renderSlotStepStepper()}
+
+                <View style={styles.divider} />
+
+                {renderMinNoticeStepper()}
 
                 <View style={styles.divider} />
 

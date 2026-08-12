@@ -20,6 +20,12 @@ export const WEEK_DAY_LABELS: Record<WeekDay, string> = {
   dom: 'Dom',
 };
 
+/** Intervalos aceitos entre um horário e o seguinte, em minutos */
+export const SLOT_STEP_OPTIONS = [15, 30, 60] as const;
+
+/** Antecedência mínima máxima aceita (4h) — acima disso o dia perde utilidade */
+export const MAX_MIN_NOTICE_MIN = 240;
+
 export type ShopSettings = {
   openHour: number;
   closeHour: number;
@@ -27,6 +33,16 @@ export type ShopSettings = {
   parallelCapacity: number;
   /** Dias da semana em que a estética atende */
   workingDays: WeekDay[];
+  /**
+   * Intervalo entre os horários oferecidos ao cliente. Independe da duração do
+   * serviço: com 30, um serviço de 90min pode começar às 8:00, 8:30, 9:00…
+   */
+  slotStepMin: number;
+  /**
+   * Antecedência mínima para agendar. Evita que o cliente marque um horário que
+   * começa "agora", dando tempo de chegar até a estética e de preparar o box.
+   */
+  minNoticeMin: number;
 };
 
 const DEFAULT_SETTINGS: ShopSettings = {
@@ -34,6 +50,8 @@ const DEFAULT_SETTINGS: ShopSettings = {
   closeHour: 18,
   parallelCapacity: 2,
   workingDays: ['seg', 'ter', 'qua', 'qui', 'sex'],
+  slotStepMin: 30,
+  minNoticeMin: 15,
 };
 
 export class ShopSettingsError extends Error {
@@ -56,12 +74,22 @@ function validateWorkingDays(days?: unknown): WeekDay[] {
   return days.filter((d): d is WeekDay => ALL_WEEK_DAYS.includes(d as WeekDay));
 }
 
+function validateSlotStep(step?: number): number | null {
+  return step != null && (SLOT_STEP_OPTIONS as readonly number[]).includes(step) ? step : null;
+}
+
+function validateMinNotice(minutes?: number): number | null {
+  return minutes != null && minutes >= 0 && minutes <= MAX_MIN_NOTICE_MIN ? minutes : null;
+}
+
 function validateAndMergeSettings(data: Partial<ShopSettings>): ShopSettings {
   return {
     openHour: validateHour(data?.openHour) ?? DEFAULT_SETTINGS.openHour,
     closeHour: validateHour(data?.closeHour) ?? DEFAULT_SETTINGS.closeHour,
     parallelCapacity: validateCapacity(data?.parallelCapacity) ?? DEFAULT_SETTINGS.parallelCapacity,
     workingDays: validateWorkingDays(data?.workingDays),
+    slotStepMin: validateSlotStep(data?.slotStepMin) ?? DEFAULT_SETTINGS.slotStepMin,
+    minNoticeMin: validateMinNotice(data?.minNoticeMin) ?? DEFAULT_SETTINGS.minNoticeMin,
   };
 }
 
@@ -102,7 +130,16 @@ export async function ensureShopSettings(shopId: string): Promise<{
     const merged = validateAndMergeSettings(data);
 
     if (hasSettingsChanged(data, merged)) {
-      await setDoc(ref, { ...merged, updatedAt: serverTimestamp() }, { merge: true });
+      // Persistir os padrões é conveniência, não requisito: o cliente passa por
+      // aqui ao montar os horários e NÃO tem permissão de escrita nas settings
+      // (ver firestore.rules). Falhar a gravação não pode quebrar a leitura —
+      // os valores mesclados em memória já bastam. O dono regrava no próximo
+      // acesso à tela de gestão.
+      try {
+        await setDoc(ref, { ...merged, updatedAt: serverTimestamp() }, { merge: true });
+      } catch {
+        // sem permissão (cliente) ou rede: segue com os valores em memória
+      }
     }
 
     return { created: false, settings: merged };

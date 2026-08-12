@@ -175,12 +175,16 @@ export function generateSlots(day: Date, settings: ShopSettings, durationMin: nu
   const close = new Date(day);
   close.setHours(settings.closeHour, 0, 0, 0);
 
-  // Cada serviço usa a própria duração como intervalo entre os horários:
-  // lavagem (30min) → 8:00, 8:30, 9:00…; polimento (90min) → 8:00, 9:30, 11:00…
+  // O intervalo entre horários é fixo (slotStepMin) e independe da duração do
+  // serviço: com passo de 30min, um serviço de 90min pode começar às 8:00,
+  // 8:30, 9:00… Alinhar a grade à duração deixaria a estética sem poder
+  // receber o cliente em janelas ociosas (ex.: às 15:37, com a loja vazia, o
+  // próximo horário de um serviço de 90min só apareceria às 17:00).
   const durationMs = durationMin * 60 * 1000;
+  const stepMs = settings.slotStepMin * 60 * 1000;
 
   const slots: Slot[] = [];
-  for (let t = open.getTime(); t + durationMs <= close.getTime(); t += durationMs) {
+  for (let t = open.getTime(); t + durationMs <= close.getTime(); t += stepMs) {
     slots.push({
       startAtMs: t,
       endAtMs: t + durationMs,
@@ -189,6 +193,14 @@ export function generateSlots(day: Date, settings: ShopSettings, durationMin: nu
   }
 
   return slots;
+}
+
+/**
+ * O horário só é oferecido se começar daqui a pelo menos `minNoticeMin`.
+ * Com 0 equivale a "qualquer horário futuro".
+ */
+export function respectsMinNotice(slot: Slot, minNoticeMin: number, now = Date.now()): boolean {
+  return slot.startAtMs >= now + minNoticeMin * 60 * 1000;
 }
 
 export function filterAvailableSlots(
@@ -228,6 +240,7 @@ export async function getAvailableSlotsForDay(
 
   const validSlots = allSlots.filter(slot => {
     if (!isNotInPast(slot)) return false;
+    if (!respectsMinNotice(slot, settings.minNoticeMin)) return false;
     if (!isWithinBusinessHours(slot, settings)) return false;
     if (!hasValidDuration(slot, durationMin)) return false;
     return true;
@@ -268,6 +281,13 @@ export async function createAppointmentWithCapacityCheck(input: AppointmentCreat
 
   if (!isNotInPast(slot)) {
     throw new AvailabilityError('Não é possível agendar para horários passados', 'PAST_DATE');
+  }
+
+  if (!respectsMinNotice(slot, settings.minNoticeMin)) {
+    throw new AvailabilityError(
+      `Agende com pelo menos ${settings.minNoticeMin} minutos de antecedência`,
+      'MIN_NOTICE',
+    );
   }
 
   if (!isWithinBusinessHours(slot, settings)) {
@@ -355,6 +375,13 @@ export async function checkSlotAvailability(
 
   if (!isNotInPast(slot)) {
     return { available: false, reason: 'Horário no passado' };
+  }
+
+  if (!respectsMinNotice(slot, settings.minNoticeMin)) {
+    return {
+      available: false,
+      reason: `Agende com pelo menos ${settings.minNoticeMin} minutos de antecedência`,
+    };
   }
 
   if (!isWithinBusinessHours(slot, settings)) {
