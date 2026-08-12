@@ -8,10 +8,17 @@ import {
   isWithinBusinessHours,
   generateSlots,
   filterAvailableSlots,
+  respectsMinNotice,
   type Slot,
 } from './availability.service';
 
-const settings = { openHour: 8, closeHour: 18, slotStepMin: 30, parallelCapacity: 2 } as any;
+const settings = {
+  openHour: 8,
+  closeHour: 18,
+  slotStepMin: 30,
+  parallelCapacity: 2,
+  minNoticeMin: 15,
+} as any;
 
 function slotAt(hour: number, minute: number, durationMin: number): Slot {
   const d = new Date(2026, 6, 15);
@@ -51,18 +58,62 @@ describe('isWithinBusinessHours', () => {
 });
 
 describe('generateSlots', () => {
-  it('gera slots do openHour ao closeHour no passo da duração', () => {
-    const day = new Date(2026, 6, 15);
+  const day = new Date(2026, 6, 15);
+
+  it('gera slots do openHour ao closeHour no passo configurado', () => {
     const slots = generateSlots(day, settings, 30);
-    // 8h→18h = 10h = 600min / 30 = 20 slots
+    // 8h→18h = 600min; passo 30 e duração 30 → último começa 17:30 → 20 slots
     expect(slots).toHaveLength(20);
     expect(new Date(slots[0].startAtMs).getHours()).toBe(8);
     expect(new Date(slots[slots.length - 1].endAtMs).getHours()).toBe(18);
   });
 
-  it('serviço mais longo gera menos slots', () => {
-    const day = new Date(2026, 6, 15);
-    expect(generateSlots(day, settings, 90)).toHaveLength(6); // 600/90 = 6 (arredonda p/ baixo)
+  it('serviço longo continua no passo do slot, não no da duração', () => {
+    // 90min com passo de 30: 8:00, 8:30, 9:00… último que cabe começa 16:30.
+    const slots = generateSlots(day, settings, 90);
+    expect(slots).toHaveLength(18);
+
+    const starts = slots.map(s => new Date(s.startAtMs));
+    expect(starts[1].getHours()).toBe(8);
+    expect(starts[1].getMinutes()).toBe(30);
+    expect(starts[starts.length - 1].getHours()).toBe(16);
+    expect(starts[starts.length - 1].getMinutes()).toBe(30);
+  });
+
+  it('respeita o passo de 15 e de 60 minutos', () => {
+    // passo 15: 8:00 → 17:30 (último que cabe) = 39 slots
+    expect(generateSlots(day, { ...settings, slotStepMin: 15 }, 30)).toHaveLength(39);
+    // passo 60: 8:00 → 17:00 = 10 slots
+    expect(generateSlots(day, { ...settings, slotStepMin: 60 }, 30)).toHaveLength(10);
+  });
+
+  it('nenhum slot ultrapassa o fechamento', () => {
+    const slots = generateSlots(day, settings, 90);
+    const close = new Date(day);
+    close.setHours(18, 0, 0, 0);
+    expect(slots.every(s => s.endAtMs <= close.getTime())).toBe(true);
+  });
+});
+
+describe('respectsMinNotice', () => {
+  const now = new Date(2026, 6, 15, 15, 37).getTime();
+
+  it('rejeita horário que começa antes da antecedência mínima', () => {
+    // 15:37 + 15min de antecedência → 15:45 ainda não vale
+    expect(respectsMinNotice(slotAt(15, 45, 90), 15, now)).toBe(false);
+  });
+
+  it('aceita horário com folga suficiente', () => {
+    // era o caso real: loja vazia às 15:37 e o cliente quer as 16:00
+    expect(respectsMinNotice(slotAt(16, 0, 90), 15, now)).toBe(true);
+  });
+
+  it('aceita exatamente no limite da antecedência', () => {
+    expect(respectsMinNotice(slotAt(15, 52, 90), 15, now)).toBe(true);
+  });
+
+  it('antecedência zero aceita qualquer horário futuro', () => {
+    expect(respectsMinNotice(slotAt(15, 38, 90), 0, now)).toBe(true);
   });
 });
 
