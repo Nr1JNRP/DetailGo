@@ -10,6 +10,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Marca o início para conseguir provar, no fim, que o APK é desta execução.
+$startedAt = Get-Date
+
 $RootDir = Resolve-Path (Join-Path $PSScriptRoot "..")
 $AndroidDir = Join-Path $RootDir "android"
 $AppGradle = Join-Path $AndroidDir "app\build.gradle"
@@ -60,15 +63,28 @@ Write-Host "Build: $BuildType"
 Write-Host "Version: $versionName ($versionCode)"
 Write-Host ""
 
+# $ErrorActionPreference não cobre código de saída de programa externo: se o
+# Gradle falhar e ninguém checar $LASTEXITCODE, o script segue, encontra o APK
+# da build anterior e o copia como se fosse novo — inclusive para a Área de
+# Trabalho. Já aconteceu: um APK antigo foi distribuído achando que era o atual.
+function Invoke-Gradle {
+  param([string[]]$GradleArgs)
+
+  & .\gradlew.bat @GradleArgs
+  if ($LASTEXITCODE -ne 0) {
+    throw "Gradle falhou (exit $LASTEXITCODE) em: gradlew $($GradleArgs -join ' ')"
+  }
+}
+
 Push-Location $AndroidDir
 try {
   if ($Clean) {
     Write-Host "Cleaning previous Android build..."
-    & .\gradlew.bat clean
+    Invoke-Gradle @("clean")
   }
 
   Write-Host "Generating APK with Gradle task: $gradleTask"
-  & .\gradlew.bat $gradleTask
+  Invoke-Gradle @($gradleTask)
 }
 finally {
   Pop-Location
@@ -76,6 +92,13 @@ finally {
 
 if (!(Test-Path -LiteralPath $sourceApk)) {
   throw "APK not found at: $sourceApk"
+}
+
+# Segunda rede de proteção: se o APK for anterior ao início desta execução, ele
+# é de uma build passada e não deve ser publicado como novo.
+$apkWrittenAt = (Get-Item -LiteralPath $sourceApk).LastWriteTime
+if ($apkWrittenAt -lt $startedAt) {
+  throw "APK em $sourceApk e de $apkWrittenAt, anterior ao inicio desta build ($startedAt). Build nao gerou APK novo."
 }
 
 New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
