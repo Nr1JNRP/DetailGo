@@ -94,5 +94,11 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "overrides": {
+    "fast-xml-parser": "^5.7.0",
+    "sharp": "^0.35.3",
+    "uuid": "^11.1.1",
+    "image-size": "^2.0.2"
   }
 }
