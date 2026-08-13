@@ -85,6 +85,10 @@ npm run test:rules     # regras do Firestore (sobe emulador; exige Java 21+)
 npx commitlint --from=main --to=HEAD   # valida as mensagens de commit
 ```
 
+As Cloud Functions têm dependências próprias em `functions/package.json` — o
+`npm install` da raiz não as instala. Ao mexer em `functions/`, rode antes
+`cd functions && npm install`, senão o TypeScript não resolve `firebase-admin`.
+
 Não afirme que um comando passou sem tê-lo executado. Se não conseguiu rodar,
 diga qual e por quê.
 

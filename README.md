@@ -28,6 +28,7 @@ Com ele, estéticas automotivas ganham uma central única para cadastrar seus se
 O aplicativo trabalha com dois perfis de uso:
 
 ### Empresas (estéticas automotivas)
+
 - Cadastro da estética
 - Gestão dos serviços oferecidos
 - Controle de agenda e atendimentos
@@ -35,6 +36,7 @@ O aplicativo trabalha com dois perfis de uso:
 - Acompanhamento operacional do negócio
 
 ### Clientes
+
 - Cadastro e login
 - Agendamento de serviços
 - Consulta de horários disponíveis
@@ -49,7 +51,6 @@ Este projeto foi construído com:
 - [TypeScript](https://www.typescriptlang.org/)
 - [React Navigation](https://reactnavigation.org/)
 - [Firebase](https://firebase.google.com/) (Authentication, Firestore e Storage)
-
 
 ## Como executar
 
@@ -69,6 +70,17 @@ Clone o repositório e instale as dependências:
 git clone https://github.com/Nr1JNRP/DetailGo.git
 cd DetailGo
 npm install
+```
+
+> ⚠️ As Cloud Functions têm dependências próprias, em `functions/package.json`.
+> O `npm install` da raiz **não** as instala. Sem esse passo, o editor acusa
+> `Cannot find module 'firebase-admin'` nos arquivos de `functions/` — o app
+> compila normalmente, mas a análise de tipos dessa pasta quebra.
+
+```bash
+cd functions
+npm install
+cd ..
 ```
 
 Para o ambiente iOS, instale também os pods:
