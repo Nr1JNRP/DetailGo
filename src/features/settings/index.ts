@@ -9,4 +9,5 @@ export {
   WEEK_DAY_LABELS,
   SLOT_STEP_OPTIONS,
   MAX_MIN_NOTICE_MIN,
+  SHOP_SETTINGS_DEFAULTS,
 } from './services/shopSettings.service';

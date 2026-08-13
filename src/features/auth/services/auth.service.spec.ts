@@ -203,11 +203,15 @@ describe('AuthService', () => {
       );
 
       // 2. Configurações padrão do Shop (settings/config)
+      // Espelha SHOP_SETTINGS_DEFAULTS: se um campo novo entrar lá e não chegar
+      // aqui, este teste quebra — que é exatamente o que queremos.
       expect(mockSetDoc).toHaveBeenCalledWith(expect.objectContaining({ id: 'config' }), {
         openHour: 8,
         closeHour: 18,
         parallelCapacity: 2,
         workingDays: ['seg', 'ter', 'qua', 'qui', 'sex'],
+        slotStepMin: 30,
+        minNoticeMin: 15,
         createdAt: 'mock-server-timestamp',
         updatedAt: 'mock-server-timestamp',
       });

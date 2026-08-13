@@ -45,7 +45,8 @@ export type ShopSettings = {
   minNoticeMin: number;
 };
 
-const DEFAULT_SETTINGS: ShopSettings = {
+/** Padrões de um shop novo. Fonte única — não duplicar estes valores. */
+export const SHOP_SETTINGS_DEFAULTS: ShopSettings = {
   openHour: 8,
   closeHour: 18,
   parallelCapacity: 2,
@@ -70,7 +71,7 @@ function validateCapacity(capacity?: number): number | null {
 }
 
 function validateWorkingDays(days?: unknown): WeekDay[] {
-  if (!Array.isArray(days) || days.length === 0) return DEFAULT_SETTINGS.workingDays;
+  if (!Array.isArray(days) || days.length === 0) return SHOP_SETTINGS_DEFAULTS.workingDays;
   return days.filter((d): d is WeekDay => ALL_WEEK_DAYS.includes(d as WeekDay));
 }
 
@@ -84,12 +85,13 @@ function validateMinNotice(minutes?: number): number | null {
 
 function validateAndMergeSettings(data: Partial<ShopSettings>): ShopSettings {
   return {
-    openHour: validateHour(data?.openHour) ?? DEFAULT_SETTINGS.openHour,
-    closeHour: validateHour(data?.closeHour) ?? DEFAULT_SETTINGS.closeHour,
-    parallelCapacity: validateCapacity(data?.parallelCapacity) ?? DEFAULT_SETTINGS.parallelCapacity,
+    openHour: validateHour(data?.openHour) ?? SHOP_SETTINGS_DEFAULTS.openHour,
+    closeHour: validateHour(data?.closeHour) ?? SHOP_SETTINGS_DEFAULTS.closeHour,
+    parallelCapacity:
+      validateCapacity(data?.parallelCapacity) ?? SHOP_SETTINGS_DEFAULTS.parallelCapacity,
     workingDays: validateWorkingDays(data?.workingDays),
-    slotStepMin: validateSlotStep(data?.slotStepMin) ?? DEFAULT_SETTINGS.slotStepMin,
-    minNoticeMin: validateMinNotice(data?.minNoticeMin) ?? DEFAULT_SETTINGS.minNoticeMin,
+    slotStepMin: validateSlotStep(data?.slotStepMin) ?? SHOP_SETTINGS_DEFAULTS.slotStepMin,
+    minNoticeMin: validateMinNotice(data?.minNoticeMin) ?? SHOP_SETTINGS_DEFAULTS.minNoticeMin,
   };
 }
 
@@ -119,11 +121,11 @@ export async function ensureShopSettings(shopId: string): Promise<{
 
     if (!snap.exists) {
       await setDoc(ref, {
-        ...DEFAULT_SETTINGS,
+        ...SHOP_SETTINGS_DEFAULTS,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      return { created: true, settings: DEFAULT_SETTINGS };
+      return { created: true, settings: SHOP_SETTINGS_DEFAULTS };
     }
 
     const data = snap.data() as Partial<ShopSettings>;
