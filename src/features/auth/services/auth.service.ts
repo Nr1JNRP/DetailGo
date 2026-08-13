@@ -15,6 +15,7 @@ import {
   collection,
   Timestamp,
 } from '@react-native-firebase/firestore';
+import { SHOP_SETTINGS_DEFAULTS } from '@features/settings';
 import { mapFirebaseAuthError } from '@shared/utils/firebase.utils';
 import { generateGeohash } from '@shared/utils/geo.utils';
 import type { ShopLocation } from '@features/shops/domain/shopLocation.types';
@@ -74,12 +75,12 @@ async function registerAsOwner(uid: string, data: RegisterInput): Promise<void> 
     isVisibleOnMap: true, // controle de visibilidade independente da assinatura
   });
 
-  // Configurações padrão do shop
+  // Configurações padrão do shop — vêm de SHOP_SETTINGS_DEFAULTS, não daqui.
+  // Duplicar os valores já causou divergência: ao ganhar slotStepMin e
+  // minNoticeMin, este caminho ficou para trás e toda estética nova nascia sem
+  // os dois campos.
   await setDoc(doc(db, 'shops', shopId, 'settings', 'config'), {
-    openHour: 8,
-    closeHour: 18,
-    parallelCapacity: 2,
-    workingDays: ['seg', 'ter', 'qua', 'qui', 'sex'],
+    ...SHOP_SETTINGS_DEFAULTS,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
