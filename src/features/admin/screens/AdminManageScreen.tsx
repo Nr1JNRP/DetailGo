@@ -478,6 +478,7 @@ export default function AdminManageScreen() {
           style={styles.stepperBtn}
           onPress={() => stepHour(field, -1)}
           activeOpacity={0.7}
+          testID={`${field}-minus`}
         >
           <ChevronDown size={18} color={D.primary} />
         </TouchableOpacity>
@@ -486,6 +487,7 @@ export default function AdminManageScreen() {
           style={styles.stepperBtn}
           onPress={() => stepHour(field, 1)}
           activeOpacity={0.7}
+          testID={`${field}-plus`}
         >
           <ChevronUp size={18} color={D.primary} />
         </TouchableOpacity>
@@ -576,6 +578,7 @@ export default function AdminManageScreen() {
           style={styles.stepperBtn}
           onPress={() => stepCapacity(-1)}
           activeOpacity={0.7}
+          testID="capacity-minus"
         >
           <ChevronDown size={18} color={D.primary} />
         </TouchableOpacity>
@@ -584,6 +587,7 @@ export default function AdminManageScreen() {
           style={styles.stepperBtn}
           onPress={() => stepCapacity(1)}
           activeOpacity={0.7}
+          testID="capacity-plus"
         >
           <ChevronUp size={18} color={D.primary} />
         </TouchableOpacity>

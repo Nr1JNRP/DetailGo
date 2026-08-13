@@ -706,6 +706,7 @@ export default function AppointmentScreen() {
 
             {selectedService ? (
               <TouchableOpacity
+                testID="service-selector"
                 style={styles.serviceCard}
                 onPress={() => setServiceModalOpen(true)}
               >
@@ -739,6 +740,7 @@ export default function AppointmentScreen() {
               </View>
             ) : (
               <TouchableOpacity
+                testID="service-selector"
                 style={[
                   styles.selector,
                   compatibleServices.length === 0 && styles.selectorDisabled,
@@ -766,6 +768,7 @@ export default function AppointmentScreen() {
               <Text style={styles.sectionLabel}>CATEGORIA</Text>
               {/* sub-seção condicional — depende do veículo selecionado */}
               <TouchableOpacity
+                testID="category-selector"
                 style={[
                   styles.selector,
                   availableCarCategories.length === 0 && styles.selectorDisabled,

@@ -129,4 +129,32 @@ describe('LoginScreen', () => {
     fireEvent(senha, 'blur');
     expect(field).toHaveStyle(errorStyle);
   });
+
+  it('destaca o e-mail em erro só depois do blur', () => {
+    render(<LoginScreen />);
+    const email = screen.getByPlaceholderText('seu@email.com');
+
+    fireEvent.changeText(email, 'nao-e-email');
+    fireEvent(email, 'blur');
+
+    // Com o e-mail inválido marcado, o botão não deve disparar o login.
+    fireEvent.press(screen.getByText('Entrar'));
+
+    expect(mockSignIn).not.toHaveBeenCalled();
+  });
+
+  it('erro sem mensagem cai no texto padrão', async () => {
+    mockSignIn.mockResolvedValueOnce({ ok: false });
+    render(<LoginScreen />);
+
+    fillValidForm();
+    fireEvent.press(screen.getByText('Entrar'));
+
+    await waitFor(() => {
+      expect(mockShowError).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ title: 'Erro ao acessar' }),
+      );
+    });
+  });
 });

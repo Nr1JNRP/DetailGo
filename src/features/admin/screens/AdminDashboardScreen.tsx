@@ -568,7 +568,12 @@ export default function AdminDashboardScreen() {
     <>
       {/* ── Topbar ─────────────────────────────── */}
       <View style={styles.topbar}>
-        <TouchableOpacity style={styles.headerBtn} onPress={toggleDrawer} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={toggleDrawer}
+          activeOpacity={0.7}
+          testID="admin-menu"
+        >
           <Menu size={20} color={D.ink2} />
         </TouchableOpacity>
         <Text style={styles.topbarBrand}>DETAILGO</Text>
@@ -576,6 +581,7 @@ export default function AdminDashboardScreen() {
           style={styles.headerBtn}
           onPress={() => navigation.navigate('AdminNotifications')}
           activeOpacity={0.7}
+          testID="admin-notifications"
         >
           <Bell size={20} color={D.ink2} />
           {unreadCount > 0 && (
@@ -591,6 +597,7 @@ export default function AdminDashboardScreen() {
         <TouchableOpacity
           style={styles.avatarWrap}
           onPress={saveAvatar}
+          testID="admin-avatar"
           activeOpacity={0.85}
           disabled={savingOwnerPhoto}
         >
@@ -667,6 +674,7 @@ export default function AdminDashboardScreen() {
               style={styles.weekNavBtn}
               onPress={() => setWeekAnchor(prev => dateUtils.addDays(prev, -7))}
               activeOpacity={0.7}
+              testID="week-prev"
             >
               <ChevronLeft size={16} color={D.ink2} />
             </TouchableOpacity>
@@ -674,6 +682,7 @@ export default function AdminDashboardScreen() {
               style={styles.weekNavBtn}
               onPress={() => setWeekAnchor(prev => dateUtils.addDays(prev, 7))}
               activeOpacity={0.7}
+              testID="week-next"
             >
               <ChevronRight size={16} color={D.ink2} />
             </TouchableOpacity>
