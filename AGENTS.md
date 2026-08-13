@@ -64,6 +64,14 @@ React 19. Upgrade desses é manual e planejado. Corrigir vulnerabilidade é
 bem-vindo, mas só com mudança verificável e sem breaking change; o resto vira
 recomendação para decisão humana.
 
+**8. Módulo nativo não sobe sem teste em aparelho.** `react-native-maps`,
+`@notifee/*`, `@react-native-firebase/*`, `react-native-screens`,
+`react-native-svg` e afins carregam código nativo: **nenhum teste do Jest cobre
+a mudança**, porque são mockados. Se uma atualização (mesmo dentro da faixa do
+`package.json`, mesmo vinda do `npm audit fix`) mexer num deles, **declare isso
+em destaque no PR** — o merge depende de build e verificação manual no
+dispositivo. Não afirme que a mudança é segura só porque a suíte passou.
+
 ## Comandos
 
 ```bash
@@ -73,6 +81,8 @@ npm run format:check   # prettier
 npm test               # suíte completa
 npm run test:cov       # cobertura (respeita o piso)
 npm run test:rules     # regras do Firestore (sobe emulador; exige Java 21+)
+
+npx commitlint --from=main --to=HEAD   # valida as mensagens de commit
 ```
 
 Não afirme que um comando passou sem tê-lo executado. Se não conseguiu rodar,
@@ -154,11 +164,32 @@ atualizada, nomeada `jnrp/<descritivo>`.
 Commitlint (hook `commit-msg`) exige:
 
 - formato `type(scope): subject` — **escopo obrigatório**
-- subject em **minúsculo** (sem PascalCase/camelCase)
+- subject em **minúsculo** (sem PascalCase/camelCase) e ≤ 100 caracteres
 - corpo com linhas ≤ 72 caracteres
 - type ∈ `build, docs, feat, fix, perf, refactor, test`
 
-Um commit por entrega — se surgirem vários, faça squash antes do push final.
+O erro mais comum é citar nome de função no subject, que traz camelCase junto:
+
+```
+✅ test(appointments): cobre cancelamento e limpeza de favorito
+❌ test(appointments): add tests for cancelAppointment
+❌ corpo com uma linha única de 200 caracteres
+```
+
+**Valide antes de enviar** — não confie na leitura:
+
+```bash
+npx commitlint --from=main --to=HEAD
+```
+
+**Nunca use `--no-verify`** nem desative os hooks do husky. Eles existem para
+pegar exatamente esse tipo de erro antes do CI.
+
+Um commit por entrega. Se a mensagem sair errada, **refaça o commit**
+(`git commit --amend`, ou `git reset --soft main` e commite de novo) — não
+empilhe um commit novo por cima tentando corrigir. O commitlint valida todos os
+commits do PR, então o commit ruim continua reprovando mesmo depois do
+"conserto".
 
 Descrição do PR deve responder: o que mudou, por quê, como foi testado,
 implicações de segurança e limitações conhecidas.
