@@ -487,21 +487,21 @@ export default function AppointmentScreen() {
     await refreshSlots(day, svc);
   };
 
+  // O que ainda falta escolher — null quando dá para confirmar. Fonte única:
+  // é o que desabilita o botão e o que explica o motivo se o toque escapar.
+  const pendingSelection = useMemo(() => {
+    if (!selectedService) return 'Selecione um serviço.';
+    if (vehicleType === 'Carro' && !carCategory) return 'Selecione a categoria do veículo.';
+    if (!selectedSlot) return 'Selecione um horário.';
+    return null;
+  }, [carCategory, selectedService, selectedSlot, vehicleType]);
+
   const handleSave = async () => {
-    if (!selectedService) {
-      showError('Selecione um serviço.', { title: 'Atenção' });
+    if (pendingSelection) {
+      showError(pendingSelection, { title: 'Atenção' });
       return;
     }
-
-    if (vehicleType === 'Carro' && !carCategory) {
-      showError('Selecione a categoria do veículo.', { title: 'Atenção' });
-      return;
-    }
-
-    if (!selectedSlot) {
-      showError('Selecione um horário.', { title: 'Atenção' });
-      return;
-    }
+    if (!selectedService || !selectedSlot) return;
 
     try {
       setSubmitting(true);
@@ -546,7 +546,7 @@ export default function AppointmentScreen() {
     return null;
   }
 
-  const canConfirm = !!selectedService && !!selectedSlot && !submitting;
+  const canConfirm = !pendingSelection && !submitting;
   const SelectedServiceIcon = selectedService ? getShopServiceIcon(selectedService) : Calendar;
 
   return (
@@ -749,7 +749,9 @@ export default function AppointmentScreen() {
                 <View style={styles.selectorContent}>
                   <Clock size={16} color={D.ink2} />
                   <Text style={styles.selectorPlaceholder}>
-                    {services.length > 0
+                    {compatibleServices.length > 0
+                      ? 'Selecione um serviço'
+                      : services.length > 0
                       ? 'Nenhum serviço para este veículo'
                       : 'Nenhum serviço disponível'}
                   </Text>
