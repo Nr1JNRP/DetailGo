@@ -623,14 +623,13 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.locationCta}>
+            {/* Mesmo padrão do passo anterior: o botão não trava por falta de
+                localização — quem explica o que falta é o handleSubmit. Travado,
+                o dono só via um botão cinza sem saber o motivo. */}
             <TouchableOpacity
-              style={[
-                styles.btn,
-                { justifyContent: 'center' },
-                (!shopLocation || isSubmitting) && styles.btnDisabled,
-              ]}
+              style={[styles.btn, { justifyContent: 'center' }, isSubmitting && styles.btnDisabled]}
               onPress={handleSubmit}
-              disabled={!shopLocation || isSubmitting}
+              disabled={isSubmitting}
               activeOpacity={0.85}
             >
               {isSubmitting ? (
