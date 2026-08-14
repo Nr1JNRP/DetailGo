@@ -278,6 +278,9 @@ export default function DashboardScreen() {
     });
   };
 
+  // Único caminho para "quero um serviço": sem estética vinculada não há o que
+  // agendar, então cai no mapa. Deixar essa decisão em dois lugares faz um
+  // deles envelhecer sem ninguém notar.
   const goToAppointment = () => {
     if (!shopId) {
       navigation.navigate('Map');
@@ -390,7 +393,7 @@ export default function DashboardScreen() {
               <Text style={styles.emptyText}>e agende seu primeiro serviço.</Text>
               <TouchableOpacity
                 style={styles.emptyButton}
-                onPress={() => navigation.navigate('Map')}
+                onPress={goToAppointment}
                 activeOpacity={0.82}
               >
                 <Text style={styles.emptyButtonText}>Explorar mapa</Text>
