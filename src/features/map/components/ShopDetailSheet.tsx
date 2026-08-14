@@ -32,7 +32,7 @@ export default function ShopDetailSheet({ shop, onClose }: Props) {
   return (
     <View style={styles.sheet}>
       {/* Fechar */}
-      <Pressable style={styles.closeBtn} onPress={onClose}>
+      <Pressable testID="shop-sheet-close" style={styles.closeBtn} onPress={onClose}>
         <X size={16} color={D.ink2} />
       </Pressable>
 

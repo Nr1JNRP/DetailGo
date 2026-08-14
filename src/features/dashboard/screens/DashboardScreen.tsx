@@ -553,7 +553,7 @@ export default function DashboardScreen() {
 
         {menuVisible && (
           <>
-            <Pressable style={styles.overlay} onPress={toggleMenu} />
+            <Pressable testID="drawer-overlay" style={styles.overlay} onPress={toggleMenu} />
             <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
               <View style={styles.drawerHeader}>
                 <View style={styles.drawerAvatar}>

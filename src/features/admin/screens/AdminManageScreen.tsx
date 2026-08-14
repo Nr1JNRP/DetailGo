@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -182,6 +182,22 @@ export default function AdminManageScreen() {
 
   const [shopName, setShopName] = useState('');
   const [savingName, setSavingName] = useState(false);
+  // As marcas de "salvo" somem sozinhas depois de 2s. Sem cancelar no unmount,
+  // o timer sobrevive a tela e dispara setState em componente desmontado.
+  const savedTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(
+    () => () => {
+      savedTimers.current.forEach(clearTimeout);
+      savedTimers.current = [];
+    },
+    [],
+  );
+
+  const hideAfterDelay = useCallback((hide: () => void) => {
+    savedTimers.current.push(setTimeout(hide, 2000));
+  }, []);
+
   const [savedName, setSavedName] = useState(false);
 
   const { loading: loadingServices, items: services } = useShopServices({
@@ -228,7 +244,7 @@ export default function AdminManageScreen() {
     try {
       await updateShopName(shopId, shopName);
       setSavedName(true);
-      setTimeout(() => setSavedName(false), 2000);
+      hideAfterDelay(() => setSavedName(false));
     } catch (e: any) {
       showError(e?.message ?? 'Falha ao salvar nome.');
     } finally {
@@ -247,7 +263,7 @@ export default function AdminManageScreen() {
       const updated = await updateShopSettings(shopId, settings);
       setSettings(updated);
       setSavedSettings(true);
-      setTimeout(() => setSavedSettings(false), 2000);
+      hideAfterDelay(() => setSavedSettings(false));
     } catch {
       showError('Falha ao salvar configurações.');
     } finally {
@@ -406,7 +422,7 @@ export default function AdminManageScreen() {
       setNewServiceDraft(createEmptyServiceDraft());
       setAddingService(false);
       setSavedServiceId(serviceId);
-      setTimeout(() => setSavedServiceId(null), 2000);
+      hideAfterDelay(() => setSavedServiceId(null));
     } catch {
       showError('Falha ao criar serviço.');
     } finally {
@@ -436,7 +452,7 @@ export default function AdminManageScreen() {
       });
       setEditingServiceId(null);
       setSavedServiceId(service.id);
-      setTimeout(() => setSavedServiceId(null), 2000);
+      hideAfterDelay(() => setSavedServiceId(null));
     } catch {
       showError('Falha ao salvar serviço.');
     } finally {
@@ -478,6 +494,7 @@ export default function AdminManageScreen() {
           style={styles.stepperBtn}
           onPress={() => stepHour(field, -1)}
           activeOpacity={0.7}
+          testID={`${field}-minus`}
         >
           <ChevronDown size={18} color={D.primary} />
         </TouchableOpacity>
@@ -486,6 +503,7 @@ export default function AdminManageScreen() {
           style={styles.stepperBtn}
           onPress={() => stepHour(field, 1)}
           activeOpacity={0.7}
+          testID={`${field}-plus`}
         >
           <ChevronUp size={18} color={D.primary} />
         </TouchableOpacity>
@@ -576,6 +594,7 @@ export default function AdminManageScreen() {
           style={styles.stepperBtn}
           onPress={() => stepCapacity(-1)}
           activeOpacity={0.7}
+          testID="capacity-minus"
         >
           <ChevronDown size={18} color={D.primary} />
         </TouchableOpacity>
@@ -584,6 +603,7 @@ export default function AdminManageScreen() {
           style={styles.stepperBtn}
           onPress={() => stepCapacity(1)}
           activeOpacity={0.7}
+          testID="capacity-plus"
         >
           <ChevronUp size={18} color={D.primary} />
         </TouchableOpacity>

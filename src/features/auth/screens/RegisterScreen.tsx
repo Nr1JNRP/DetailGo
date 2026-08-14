@@ -741,7 +741,7 @@ export default function RegisterScreen() {
             secureTextEntry={!showPassword}
             error={touched.password ? errors.password : undefined}
             trailing={
-              <TouchableOpacity onPress={() => setShowPassword(v => !v)}>
+              <TouchableOpacity testID="password-toggle" onPress={() => setShowPassword(v => !v)}>
                 {showPassword ? (
                   <EyeOff size={18} color={D.ink3} />
                 ) : (
@@ -761,7 +761,7 @@ export default function RegisterScreen() {
             secureTextEntry={!showConfirm}
             error={touched.confirmPassword ? errors.confirmPassword : undefined}
             trailing={
-              <TouchableOpacity onPress={() => setShowConfirm(v => !v)}>
+              <TouchableOpacity testID="confirm-toggle" onPress={() => setShowConfirm(v => !v)}>
                 {showConfirm ? (
                   <EyeOff size={18} color={D.ink3} />
                 ) : (

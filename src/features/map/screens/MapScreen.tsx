@@ -160,7 +160,7 @@ export default function MapScreen() {
       <View style={styles.header}>
         <View style={styles.headerCard}>
           {canGoBack && (
-            <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Pressable testID="map-back" style={styles.backBtn} onPress={() => navigation.goBack()}>
               <ArrowLeft size={18} color={D.ink} />
             </Pressable>
           )}
@@ -179,10 +179,10 @@ export default function MapScreen() {
 
       {/* Botões flutuantes */}
       <View style={styles.fab}>
-        <Pressable style={styles.fabBtn} onPress={fetchLocation}>
+        <Pressable testID="map-refresh" style={styles.fabBtn} onPress={fetchLocation}>
           <RefreshCw size={18} color={D.ink} />
         </Pressable>
-        <Pressable style={styles.fabBtn} onPress={handleCenterUser}>
+        <Pressable testID="map-center" style={styles.fabBtn} onPress={handleCenterUser}>
           <Navigation size={18} color={D.primary} />
         </Pressable>
       </View>
