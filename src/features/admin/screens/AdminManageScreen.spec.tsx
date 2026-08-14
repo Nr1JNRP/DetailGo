@@ -802,7 +802,12 @@ describe('AdminManageScreen', () => {
     // O "salvo" some sozinho depois de 2s — sem os timers falsos o teste
     // ficaria dependente de espera real.
     it('a marca de nome salvo desaparece após 2 segundos', async () => {
-      jest.useFakeTimers();
+      // Falsificar SÓ os timers. Os modernos também congelam nextTick,
+      // queueMicrotask e setImmediate — e o `await act(...)` depende dessa
+      // fila para resolver, então o teste travava sem nunca terminar.
+      jest.useFakeTimers({
+        doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask', 'performance'],
+      });
       try {
         render(<AdminManageScreen />);
         await act(async () => {
