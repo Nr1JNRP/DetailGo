@@ -12,6 +12,20 @@ uma lista fixa que envelhece. Todos assumem que o `AGENTS.md` da raiz é lido.
 >
 > Sua tarefa é aumentar a proteção real do projeto com testes unitários.
 >
+> **Antes de qualquer coisa, veja o que já está em andamento.** Rode
+> `gh pr list --state open` e leia os títulos e arquivos dos PRs abertos. Um PR
+> aberto ainda não mergeado significa que aquele trabalho **já foi feito** — a
+> cobertura na `main` continua baixa porque ele está esperando revisão, não
+> porque falta fazer. Então:
+>
+> - Se já existe PR aberto para o alvo que você escolheria, **não abra outro**.
+>   Ou melhore aquele PR, ou escolha o próximo alvo da lista.
+> - Nunca crie um arquivo `.spec` que já exista em algum PR aberto: os dois
+>   entram em conflito e só um pode ser mergeado.
+>
+> Entre 15 e 24/08/2026 esta rotina abriu oito PRs criando os mesmos três
+> arquivos de teste, um por dia, exatamente por não fazer essa checagem.
+>
 > **Escolha você os alvos.** Rode `npm run test:cov`, leia o relatório e
 > identifique a lógica de maior risco que hoje está sem proteção. Priorize
 > nesta ordem:
@@ -30,6 +44,25 @@ uma lista fixa que envelhece. Todos assumem que o `AGENTS.md` da raiz é lido.
 > - Teste o que quebraria em produção: caminho feliz, falha, e casos-limite.
 > - Asserte resultado e efeito (o service certo foi chamado com os argumentos
 >   certos), não a existência do mock.
+> - **Asserte o caminho do documento.** Ao testar algo que fala com o Firestore,
+>   verifique que a operação foi para `shops/{shopId}`, e não só que o conteúdo
+>   gravado está certo:
+>
+>   ```js
+>   // não basta — aceita a referência como undefined
+>   expect(mockUpdateDoc).toHaveBeenCalledWith(undefined, { name: 'Nova' });
+>
+>   // faça também
+>   expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'shops', 'shop-123');
+>   ```
+>
+>   Sem isso, um bug que grave na estética de outro dono passa em todos os
+>   testes, mesmo com 100% de cobertura. Já aconteceu.
+>
+> - **Prove que o teste pega o bug.** Antes de finalizar, quebre de propósito o
+>   código que você testou (troque o `shopId`, inverta uma condição, remova um
+>   `trim()`) e confirme que algum teste falha. Se nada falhar, o teste não
+>   protege nada — refaça. Desfaça a quebra antes de abrir o PR.
 > - Nome do teste descreve o comportamento. `it('impede cancelar agendamento
 apos o horario de inicio')`, não `it('funciona')`.
 > - Proibido: teste trivial só para subir percentual, snapshot sem asserção,
@@ -55,7 +88,8 @@ apos o horario de inicio')`, não `it('funciona')`.
 
 > Siga o AGENTS.md. Faça uma auditoria de segurança do DetailGo.
 >
-> **NÃO altere código nesta tarefa.**
+> **NÃO altere código de produção nesta tarefa.** A única escrita permitida é o
+> arquivo do relatório, descrito abaixo.
 >
 > Investigue pelo menos:
 >
@@ -70,12 +104,22 @@ apos o horario de inicio')`, não `it('funciona')`.
 > - validação de entrada
 > - armazenamento local inseguro
 >
-> Entregue relatório com os achados classificados em CRÍTICO, ALTO, MÉDIO e
-> BAIXO. Para cada um: arquivo afetado, comportamento vulnerável, impacto
-> possível, correção recomendada e se cabe teste de regressão.
+> **Grave o relatório em `docs/auditorias/AAAA-MM-DD.md`**, com a data da
+> execução no nome. Esse arquivo é o conteúdo do PR — sem ele o PR nasce vazio e
+> o trabalho se perde quando o link da tarefa expira. Já aconteceu cinco vezes.
+>
+> O relatório traz os achados classificados em CRÍTICO, ALTO, MÉDIO e BAIXO.
+> Para cada um: arquivo afetado, comportamento vulnerável, impacto possível,
+> correção recomendada e se cabe teste de regressão.
 >
 > Se não encontrar nada em alguma categoria, diga explicitamente — não invente
 > achado para preencher o relatório.
+>
+> **Compare com a auditoria anterior.** Leia o relatório mais recente que já
+> existir em `docs/auditorias/` e abra o novo com uma seção "O que mudou desde a
+> última auditoria": o que foi corrigido, o que continua aberto e o que é
+> achado novo. Um achado que reaparece semana após semana sem correção merece
+> destaque — é dívida, não novidade.
 
 ---
 
@@ -120,17 +164,38 @@ Siga o AGENTS.md. Execute a rotina descrita na seção 1 de docs/jules-tasks.md.
 Assim as instruções ficam versionadas no repositório: para mudar um critério,
 edite este arquivo via PR — sem precisar reconfigurar nada no Jules.
 
-Cadência sugerida:
+Cadência:
 
-| Rotina          | Frequência | Produz              |
-| --------------- | ---------- | ------------------- |
-| 1. Testes       | diária     | PR com testes novos |
-| 2. Auditoria    | semanal    | relatório, sem PR   |
-| 3. Dependências | semanal    | PR de correções     |
+| Rotina          | Quando         | Produz              |
+| --------------- | -------------- | ------------------- |
+| 1. Testes       | segunda, 12:00 | PR com testes novos |
+| 2. Auditoria    | quarta, 12:00  | PR com o relatório  |
+| 3. Dependências | sexta, 12:00   | PR de correções     |
 
-Testes diariamente funciona porque a instrução limita o escopo a uma área por
-execução — cada PR chega revisável. Segurança e dependências mudam devagar;
-diariamente só repetiria o mesmo relatório.
+Configurado assim na aba _Scheduled_ do Jules em 25/08/2026 (GMT-3).
+
+**A frequência real só muda no Jules** — editar este arquivo não altera nada.
+Até 25/08 as três rotinas rodavam `Daily at 12:00`, embora este documento já
+dissesse "semanal" para duas delas. Ao mudar a cadência lá, atualize esta tabela
+junto; se divergirem de novo, o Jules é a fonte de verdade.
+
+Os dias são separados de propósito: três PRs no mesmo dia empilham a revisão. A
+de testes cai na segunda para dar a semana inteira de folga até a próxima
+rodada — era exatamente essa folga que faltava.
+
+Testes já foi diária e não funcionou: entre 15 e 24/08/2026 a rotina abriu oito
+PRs criando os mesmos três arquivos de teste. O ritmo do agente precisa
+acompanhar o ritmo da revisão humana — enquanto o PR anterior não é mergeado, a
+cobertura na `main` continua baixa e a execução seguinte escolhe o mesmo alvo.
+Semanal dá tempo de revisar antes da próxima rodada.
+
+A auditoria diária produziu cinco PRs sem um arquivo sequer (#104, #106, #107,
+#110, #115): o prompt manda não alterar código, então o relatório fica só na
+interface do Jules e o PR nasce vazio. Dois deles chegaram a ser mergeados
+assim.
+
+Segurança e dependências mudam devagar; mais que semanal só repetiria o mesmo
+relatório.
 
 O controle é o **code review**: a `main` é protegida, então nada entra sem
 aprovação humana, por mais autônomo que o agente seja.
