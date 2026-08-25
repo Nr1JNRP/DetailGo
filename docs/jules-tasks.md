@@ -153,7 +153,7 @@ Siga o AGENTS.md. Execute a rotina descrita na seção 1 de docs/jules-tasks.md.
 Assim as instruções ficam versionadas no repositório: para mudar um critério,
 edite este arquivo via PR — sem precisar reconfigurar nada no Jules.
 
-Cadência sugerida:
+Cadência:
 
 | Rotina          | Frequência | Produz              |
 | --------------- | ---------- | ------------------- |
@@ -161,11 +161,23 @@ Cadência sugerida:
 | 2. Auditoria    | semanal    | relatório, sem PR   |
 | 3. Dependências | semanal    | PR de correções     |
 
+**Esta tabela é a intenção, não o que está configurado.** A frequência real vive
+na aba _Scheduled_ do Jules e só muda por lá — editar este arquivo não altera
+nada. Em 25/08/2026 as três rotinas estavam em `Daily at 12:00 PM GMT-3`,
+embora o documento já dissesse "semanal" para duas delas. Ao mudar a cadência
+no Jules, atualize esta tabela junto; se elas divergirem de novo, confie no
+Jules e corrija aqui.
+
 Testes já foi diária e não funcionou: entre 15 e 24/08/2026 a rotina abriu oito
 PRs criando os mesmos três arquivos de teste. O ritmo do agente precisa
 acompanhar o ritmo da revisão humana — enquanto o PR anterior não é mergeado, a
 cobertura na `main` continua baixa e a execução seguinte escolhe o mesmo alvo.
 Semanal dá tempo de revisar antes da próxima rodada.
+
+A auditoria diária produziu cinco PRs sem um arquivo sequer (#104, #106, #107,
+#110, #115): o prompt manda não alterar código, então o relatório fica só na
+interface do Jules e o PR nasce vazio. Dois deles chegaram a ser mergeados
+assim.
 
 Segurança e dependências mudam devagar; mais que semanal só repetiria o mesmo
 relatório.
