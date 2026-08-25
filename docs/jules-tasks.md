@@ -88,7 +88,8 @@ apos o horario de inicio')`, não `it('funciona')`.
 
 > Siga o AGENTS.md. Faça uma auditoria de segurança do DetailGo.
 >
-> **NÃO altere código nesta tarefa.**
+> **NÃO altere código de produção nesta tarefa.** A única escrita permitida é o
+> arquivo do relatório, descrito abaixo.
 >
 > Investigue pelo menos:
 >
@@ -103,12 +104,22 @@ apos o horario de inicio')`, não `it('funciona')`.
 > - validação de entrada
 > - armazenamento local inseguro
 >
-> Entregue relatório com os achados classificados em CRÍTICO, ALTO, MÉDIO e
-> BAIXO. Para cada um: arquivo afetado, comportamento vulnerável, impacto
-> possível, correção recomendada e se cabe teste de regressão.
+> **Grave o relatório em `docs/auditorias/AAAA-MM-DD.md`**, com a data da
+> execução no nome. Esse arquivo é o conteúdo do PR — sem ele o PR nasce vazio e
+> o trabalho se perde quando o link da tarefa expira. Já aconteceu cinco vezes.
+>
+> O relatório traz os achados classificados em CRÍTICO, ALTO, MÉDIO e BAIXO.
+> Para cada um: arquivo afetado, comportamento vulnerável, impacto possível,
+> correção recomendada e se cabe teste de regressão.
 >
 > Se não encontrar nada em alguma categoria, diga explicitamente — não invente
 > achado para preencher o relatório.
+>
+> **Compare com a auditoria anterior.** Leia o relatório mais recente que já
+> existir em `docs/auditorias/` e abra o novo com uma seção "O que mudou desde a
+> última auditoria": o que foi corrigido, o que continua aberto e o que é
+> achado novo. Um achado que reaparece semana após semana sem correção merece
+> destaque — é dívida, não novidade.
 
 ---
 
@@ -158,7 +169,7 @@ Cadência:
 | Rotina          | Quando         | Produz              |
 | --------------- | -------------- | ------------------- |
 | 1. Testes       | segunda, 12:00 | PR com testes novos |
-| 2. Auditoria    | quarta, 12:00  | relatório, sem PR   |
+| 2. Auditoria    | quarta, 12:00  | PR com o relatório  |
 | 3. Dependências | sexta, 12:00   | PR de correções     |
 
 Configurado assim na aba _Scheduled_ do Jules em 25/08/2026 (GMT-3).
