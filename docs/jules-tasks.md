@@ -155,18 +155,22 @@ edite este arquivo via PR — sem precisar reconfigurar nada no Jules.
 
 Cadência:
 
-| Rotina          | Frequência | Produz              |
-| --------------- | ---------- | ------------------- |
-| 1. Testes       | semanal    | PR com testes novos |
-| 2. Auditoria    | semanal    | relatório, sem PR   |
-| 3. Dependências | semanal    | PR de correções     |
+| Rotina          | Quando         | Produz              |
+| --------------- | -------------- | ------------------- |
+| 1. Testes       | segunda, 12:00 | PR com testes novos |
+| 2. Auditoria    | quarta, 12:00  | relatório, sem PR   |
+| 3. Dependências | sexta, 12:00   | PR de correções     |
 
-**Esta tabela é a intenção, não o que está configurado.** A frequência real vive
-na aba _Scheduled_ do Jules e só muda por lá — editar este arquivo não altera
-nada. Em 25/08/2026 as três rotinas estavam em `Daily at 12:00 PM GMT-3`,
-embora o documento já dissesse "semanal" para duas delas. Ao mudar a cadência
-no Jules, atualize esta tabela junto; se elas divergirem de novo, confie no
-Jules e corrija aqui.
+Configurado assim na aba _Scheduled_ do Jules em 25/08/2026 (GMT-3).
+
+**A frequência real só muda no Jules** — editar este arquivo não altera nada.
+Até 25/08 as três rotinas rodavam `Daily at 12:00`, embora este documento já
+dissesse "semanal" para duas delas. Ao mudar a cadência lá, atualize esta tabela
+junto; se divergirem de novo, o Jules é a fonte de verdade.
+
+Os dias são separados de propósito: três PRs no mesmo dia empilham a revisão. A
+de testes cai na segunda para dar a semana inteira de folga até a próxima
+rodada — era exatamente essa folga que faltava.
 
 Testes já foi diária e não funcionou: entre 15 e 24/08/2026 a rotina abriu oito
 PRs criando os mesmos três arquivos de teste. O ritmo do agente precisa
