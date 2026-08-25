@@ -58,7 +58,7 @@ import { formatUtils } from '@shared/utils/format.utils';
 import { useNowTick } from '@shared/hooks/useNowTick';
 import { uploadProfilePhoto } from '@shared/services/userPhoto.service';
 import { FadeInUp } from '@shared/components/FadeInUp';
-import { LiveDot } from '@shared/components/LiveDot';
+import { DotStream } from '@shared/components/DotStream';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -659,7 +659,7 @@ const AppointmentCard = memo(function AppointmentCard({
               ]}
             >
               {isInProgress ? (
-                <LiveDot color={statusConfig.color} size={7} />
+                <DotStream color={statusConfig.color} size={3} />
               ) : (
                 <View
                   style={[styles.appointmentStatusDot, { backgroundColor: statusConfig.color }]}

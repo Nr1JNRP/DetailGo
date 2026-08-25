@@ -52,7 +52,7 @@ import PremiumStar from '@shared/components/PremiumStar';
 import ConfirmModal from '@shared/components/ConfirmModal';
 import SuccessModal from '@shared/components/SuccessModal';
 import { useFeedback } from '@shared/components/FeedbackProvider';
-import { LiveDot } from '@shared/components/LiveDot';
+import { DotStream } from '@shared/components/DotStream';
 
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -488,7 +488,7 @@ export default function AdminDashboardScreen() {
               ]}
             >
               {isInProgress ? (
-                <LiveDot size={7} />
+                <DotStream size={3} />
               ) : (
                 <View
                   style={[
