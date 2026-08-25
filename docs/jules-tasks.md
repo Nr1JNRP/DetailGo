@@ -12,6 +12,20 @@ uma lista fixa que envelhece. Todos assumem que o `AGENTS.md` da raiz é lido.
 >
 > Sua tarefa é aumentar a proteção real do projeto com testes unitários.
 >
+> **Antes de qualquer coisa, veja o que já está em andamento.** Rode
+> `gh pr list --state open` e leia os títulos e arquivos dos PRs abertos. Um PR
+> aberto ainda não mergeado significa que aquele trabalho **já foi feito** — a
+> cobertura na `main` continua baixa porque ele está esperando revisão, não
+> porque falta fazer. Então:
+>
+> - Se já existe PR aberto para o alvo que você escolheria, **não abra outro**.
+>   Ou melhore aquele PR, ou escolha o próximo alvo da lista.
+> - Nunca crie um arquivo `.spec` que já exista em algum PR aberto: os dois
+>   entram em conflito e só um pode ser mergeado.
+>
+> Entre 15 e 24/08/2026 esta rotina abriu oito PRs criando os mesmos três
+> arquivos de teste, um por dia, exatamente por não fazer essa checagem.
+>
 > **Escolha você os alvos.** Rode `npm run test:cov`, leia o relatório e
 > identifique a lógica de maior risco que hoje está sem proteção. Priorize
 > nesta ordem:
@@ -30,6 +44,25 @@ uma lista fixa que envelhece. Todos assumem que o `AGENTS.md` da raiz é lido.
 > - Teste o que quebraria em produção: caminho feliz, falha, e casos-limite.
 > - Asserte resultado e efeito (o service certo foi chamado com os argumentos
 >   certos), não a existência do mock.
+> - **Asserte o caminho do documento.** Ao testar algo que fala com o Firestore,
+>   verifique que a operação foi para `shops/{shopId}`, e não só que o conteúdo
+>   gravado está certo:
+>
+>   ```js
+>   // não basta — aceita a referência como undefined
+>   expect(mockUpdateDoc).toHaveBeenCalledWith(undefined, { name: 'Nova' });
+>
+>   // faça também
+>   expect(mockDoc).toHaveBeenCalledWith(expect.anything(), 'shops', 'shop-123');
+>   ```
+>
+>   Sem isso, um bug que grave na estética de outro dono passa em todos os
+>   testes, mesmo com 100% de cobertura. Já aconteceu.
+>
+> - **Prove que o teste pega o bug.** Antes de finalizar, quebre de propósito o
+>   código que você testou (troque o `shopId`, inverta uma condição, remova um
+>   `trim()`) e confirme que algum teste falha. Se nada falhar, o teste não
+>   protege nada — refaça. Desfaça a quebra antes de abrir o PR.
 > - Nome do teste descreve o comportamento. `it('impede cancelar agendamento
 apos o horario de inicio')`, não `it('funciona')`.
 > - Proibido: teste trivial só para subir percentual, snapshot sem asserção,
@@ -124,13 +157,18 @@ Cadência sugerida:
 
 | Rotina          | Frequência | Produz              |
 | --------------- | ---------- | ------------------- |
-| 1. Testes       | diária     | PR com testes novos |
+| 1. Testes       | semanal    | PR com testes novos |
 | 2. Auditoria    | semanal    | relatório, sem PR   |
 | 3. Dependências | semanal    | PR de correções     |
 
-Testes diariamente funciona porque a instrução limita o escopo a uma área por
-execução — cada PR chega revisável. Segurança e dependências mudam devagar;
-diariamente só repetiria o mesmo relatório.
+Testes já foi diária e não funcionou: entre 15 e 24/08/2026 a rotina abriu oito
+PRs criando os mesmos três arquivos de teste. O ritmo do agente precisa
+acompanhar o ritmo da revisão humana — enquanto o PR anterior não é mergeado, a
+cobertura na `main` continua baixa e a execução seguinte escolhe o mesmo alvo.
+Semanal dá tempo de revisar antes da próxima rodada.
+
+Segurança e dependências mudam devagar; mais que semanal só repetiria o mesmo
+relatório.
 
 O controle é o **code review**: a `main` é protegida, então nada entra sem
 aprovação humana, por mais autônomo que o agente seja.
