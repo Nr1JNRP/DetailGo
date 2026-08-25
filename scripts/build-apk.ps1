@@ -81,6 +81,14 @@ try {
   if ($Clean) {
     Write-Host "Cleaning previous Android build..."
     Invoke-Gradle @("clean")
+
+    # O clean apaga o build/ de TODOS os modulos, inclusive das libs React
+    # Native dentro de node_modules. O configureCMake do app inclui as pastas
+    # de codegen dessas libs (Android-autolinking.cmake) e falha com CXX1429 se
+    # elas ainda nao existirem. O Gradle nao declara essa dependencia, entao
+    # regeramos o codegen antes de montar o APK.
+    Write-Host "Regenerating codegen artifacts (required after clean)..."
+    Invoke-Gradle @("generateCodegenArtifactsFromSchema")
   }
 
   Write-Host "Generating APK with Gradle task: $gradleTask"
