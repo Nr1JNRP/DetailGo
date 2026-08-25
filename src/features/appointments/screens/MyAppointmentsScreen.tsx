@@ -20,7 +20,7 @@ import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useNowTick } from '@shared/hooks/useNowTick';
 import { usePullRefresh } from '@shared/hooks/usePullRefresh';
 import { FadeInUp } from '@shared/components/FadeInUp';
-import { LiveDot } from '@shared/components/LiveDot';
+import { DotStream } from '@shared/components/DotStream';
 import { useFeedback } from '@shared/components/FeedbackProvider';
 import { useUserAppointments } from '../hooks/useUserAppointments';
 import type { UserAppointment } from '../domain/appointment.types';
@@ -261,7 +261,7 @@ const AppointmentCard = memo(function AppointmentCard({
     <View style={[styles.card, isInProgress && styles.cardInProgress]}>
       <View style={styles.cardTop}>
         <View style={[styles.statusPill, isInProgress && styles.statusPillActive]}>
-          {isInProgress && <LiveDot size={9} />}
+          {isInProgress && <DotStream size={4} />}
           <Text style={[styles.statusText, isInProgress && styles.statusTextActive]}>
             {isInProgress ? 'Em andamento' : 'Agendado'}
           </Text>
