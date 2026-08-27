@@ -26,7 +26,8 @@ automaticamente**.
 | Onde o checkout abre        | Navegador do sistema, via `Linking` | WebView exigiria `react-native-webview`, uma dependência nativa permanente, para o dono não sair do app por 40 segundos. Não compensa |
 | Convivência com MercadoPago | Nenhuma — remoção completa          | Ninguém paga pelo MercadoPago hoje. Código de convivência seria complexidade sem beneficiário                                         |
 | Inadimplência               | Carência de 5 dias                  | Cartão vencido é problema banal; derrubar a agenda no meio do expediente perde cliente por nada. O Asaas retenta nesse intervalo      |
-| Cancelamento pelo app       | Fora de escopo                      | O dono cancela pelo próprio Asaas. Ninguém pediu                                                                                      |
+| Cancelamento pelo app       | Adiado, não descartado              | O dono cancela pelo painel do Asaas por enquanto. Entra numa entrega própria depois que a cobrança estiver rodando                    |
+| Valor cobrado               | Derivado do ambiente                | Sandbox cobra R$ 0,01 para teste; produção cobra R$ 89,00. Amarrar ao ambiente impede cobrar um centavo de todo mundo por descuido    |
 
 ---
 
@@ -137,6 +138,25 @@ firebase functions:secrets:set ASAAS_WEBHOOK_TOKEN
 
 A URL base da API fica configurável, porque muda entre sandbox e produção.
 
+### O valor sai do ambiente, não de uma constante solta
+
+O ambiente é a única chave, e o valor vem dele:
+
+```ts
+const ASAAS = {
+  sandbox: { baseUrl: 'https://api-sandbox.asaas.com/v3', valor: 0.01 },
+  producao: { baseUrl: 'https://api.asaas.com/v3', valor: 89.0 },
+};
+```
+
+Assim não existe o estado inválido de "produção cobrando um centavo": para
+errar o valor seria preciso errar a URL da API junto, e aí nada funciona — o
+erro aparece na hora, em vez de silenciosamente no fim do mês.
+
+A etiqueta na tela continua **R$ 89/mês** nos dois ambientes. Em sandbox o dono
+de teste vê R$ 89 e paga R$ 0,01; como ninguém além de você usa o sandbox, isso
+não confunde ninguém.
+
 No painel do Asaas: criar o webhook apontando para a function, guardar o
 `authToken` gerado, e assinar os eventos `PAYMENT_CONFIRMED`,
 `PAYMENT_RECEIVED` e `PAYMENT_OVERDUE`.
@@ -159,4 +179,13 @@ estiver marcado como confirmado, o mesmo padrão que o webhook atual já usa com
 
 **Sandbox e produção trocados.** Chave de sandbox em produção não cobra
 ninguém, e ninguém percebe até o fim do mês. Mitigação: a URL base vem de
-configuração explícita, não de padrão implícito.
+configuração explícita, não de padrão implícito, e o valor vem junto dela.
+
+---
+
+## Fica para depois
+
+**Cancelar a assinatura pelo app.** Hoje o dono cancela pelo painel do Asaas.
+Entra numa entrega própria depois que a cobrança estiver rodando — envolve
+`DELETE /v3/subscriptions/{id}`, decidir se o acesso cai na hora ou no fim do
+período já pago, e o que fazer com a agenda que continua marcada.
