@@ -1,33 +1,36 @@
 import { resolveAsaasConfig } from './asaasConfig';
 import { buildCheckoutRequest, toAsaasDate } from './asaasCheckoutRequest';
 
+const CHAVE_PRODUCAO = '$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2';
+const CHAVE_SANDBOX = '$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2';
+
 describe('resolveAsaasConfig', () => {
-  it('producao cobra o valor cheio e aponta para a API real', () => {
-    const config = resolveAsaasConfig('production');
+  it('chave de producao cobra o valor cheio e aponta para a API real', () => {
+    const config = resolveAsaasConfig(CHAVE_PRODUCAO);
 
     expect(config.planValue).toBe(89.0);
     expect(config.baseUrl).toBe('https://api.asaas.com/v3');
   });
 
-  it('sandbox cobra um centavo e aponta para a API de teste', () => {
-    const config = resolveAsaasConfig('sandbox');
+  it('chave de sandbox cobra um centavo e aponta para a API de teste', () => {
+    const config = resolveAsaasConfig(CHAVE_SANDBOX);
 
     expect(config.planValue).toBe(0.01);
     expect(config.baseUrl).toContain('sandbox');
   });
 
-  // O estado perigoso e produção cobrando um centavo. Erro de digitação, valor
-  // ausente ou lixo tem que cair em sandbox — nunca cobrar de verdade por engano.
-  it.each([undefined, '', 'producao', 'PRODUCTION', 'prod', 'qualquer coisa'])(
+  // O estado perigoso e producao cobrando um centavo. Chave ausente, vazia ou
+  // irreconhecivel cai em sandbox — nunca cobrar de verdade por engano.
+  it.each([undefined, '', 'chave-invalida', 'aact_prod_sem_cifrao', '$aact_'])(
     'trata %s como sandbox',
-    valor => {
-      expect(resolveAsaasConfig(valor).planValue).toBe(0.01);
+    chave => {
+      expect(resolveAsaasConfig(chave).planValue).toBe(0.01);
     },
   );
 
   it('a URL e o valor andam sempre juntos', () => {
-    for (const env of ['production', 'sandbox', 'lixo']) {
-      const { baseUrl, planValue } = resolveAsaasConfig(env);
+    for (const chave of [CHAVE_PRODUCAO, CHAVE_SANDBOX, 'lixo', undefined]) {
+      const { baseUrl, planValue } = resolveAsaasConfig(chave);
       const ehProducao = !baseUrl.includes('sandbox');
 
       expect(planValue).toBe(ehProducao ? 89.0 : 0.01);
@@ -39,7 +42,7 @@ describe('buildCheckoutRequest', () => {
   const base = {
     shopId: 'shop_1',
     shopName: 'Estetica A',
-    config: resolveAsaasConfig('production'),
+    config: resolveAsaasConfig(CHAVE_PRODUCAO),
     returnUrl: 'https://detailgo.app/assinatura',
     now: new Date('2026-08-27T12:00:00Z'),
   };
@@ -58,7 +61,10 @@ describe('buildCheckoutRequest', () => {
   });
 
   it('usa o valor do ambiente, nao um numero fixo', () => {
-    const sandbox = buildCheckoutRequest({ ...base, config: resolveAsaasConfig('sandbox') });
+    const sandbox = buildCheckoutRequest({
+      ...base,
+      config: resolveAsaasConfig(CHAVE_SANDBOX),
+    });
 
     expect(buildCheckoutRequest(base).items[0].value).toBe(89.0);
     expect(sandbox.items[0].value).toBe(0.01);

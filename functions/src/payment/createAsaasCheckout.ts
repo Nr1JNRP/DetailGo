@@ -1,5 +1,5 @@
 import { onRequest } from 'firebase-functions/v2/https';
-import { defineSecret, defineString } from 'firebase-functions/params';
+import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 
@@ -7,7 +7,6 @@ import { resolveAsaasConfig } from './asaasConfig';
 import { buildCheckoutRequest } from './asaasCheckoutRequest';
 
 const asaasApiKey = defineSecret('ASAAS_API_KEY');
-const asaasEnv = defineString('ASAAS_ENV', { default: 'sandbox' });
 
 /** Para onde o navegador volta depois do checkout. Não é prova de pagamento. */
 const RETURN_URL = 'https://detailgo.app/assinatura';
@@ -51,7 +50,7 @@ export const createAsaasCheckout = onRequest(
         return;
       }
 
-      const config = resolveAsaasConfig(asaasEnv.value());
+      const config = resolveAsaasConfig(asaasApiKey.value());
       const body = buildCheckoutRequest({
         shopId,
         shopName: shop.name,
