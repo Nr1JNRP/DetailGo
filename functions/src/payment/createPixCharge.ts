@@ -20,9 +20,7 @@ export const createPixCharge = onRequest(
     try {
       // Verifica autenticação via Bearer token
       const authHeader = req.headers.authorization ?? '';
-      const idToken = authHeader.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : null;
+      const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
       if (!idToken) {
         res.status(401).json({ error: 'Token não fornecido.' });
@@ -75,9 +73,7 @@ export const createPixCharge = onRequest(
             first_name: user.firstName ?? 'Proprietario',
             last_name: user.lastName ?? 'DetailGo',
           },
-          date_of_expiration: new Date(
-            Date.now() + 24 * 60 * 60 * 1000,
-          ).toISOString(),
+          date_of_expiration: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           metadata: {
             shop_id: shopId,
             shop_name: shop.name,
@@ -86,10 +82,8 @@ export const createPixCharge = onRequest(
       });
 
       const paymentId = paymentData.id!.toString();
-      const qrCode =
-        paymentData.point_of_interaction?.transaction_data?.qr_code ?? '';
-      const qrCodeBase64 =
-        paymentData.point_of_interaction?.transaction_data?.qr_code_base64 ?? '';
+      const qrCode = paymentData.point_of_interaction?.transaction_data?.qr_code ?? '';
+      const qrCodeBase64 = paymentData.point_of_interaction?.transaction_data?.qr_code_base64 ?? '';
 
       await db.doc(`payments/${paymentId}`).set({
         paymentId,
