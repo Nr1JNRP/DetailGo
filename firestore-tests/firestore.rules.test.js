@@ -72,6 +72,14 @@ beforeEach(async () => {
       dayKey: 'seed',
       shopId: SHOP_A,
     });
+    // Cobrança da estética A, escrita pelas Cloud Functions (Admin SDK).
+    await setDoc(doc(db, 'payments', 'pay_a'), {
+      paymentId: 'pay_a',
+      shopId: SHOP_A,
+      shopName: 'Estetica A',
+      amount: 8900,
+      status: 'pending',
+    });
   });
 });
 
@@ -305,5 +313,63 @@ describe('documento do usuário', () => {
 
   test('usuário não escreve o doc de outro', async () => {
     await assertFails(setDoc(doc(authed(CUSTOMER_2), 'users', CUSTOMER_1), { name: 'hack' }));
+  });
+
+  // O cadastro cria o doc com o papel — é assim que o app registra a conta.
+  const cadastrar = () =>
+    setDoc(doc(authed(CUSTOMER_1), 'users', CUSTOMER_1), {
+      uid: CUSTOMER_1,
+      role: 'customer',
+      shopId: null,
+    });
+
+  test('o cadastro grava o papel', async () => {
+    await assertSucceeds(cadastrar());
+  });
+
+  // Auditoria de 26/08/2026: sem esta trava o cliente virava dono sozinho e
+  // caía na interface do painel do estabelecimento.
+  test('cliente não se promove a dono depois do cadastro', async () => {
+    await cadastrar();
+
+    await assertFails(updateDoc(doc(authed(CUSTOMER_1), 'users', CUSTOMER_1), { role: 'owner' }));
+  });
+
+  test('mas atualiza os próprios dados normalmente', async () => {
+    await cadastrar();
+
+    await assertSucceeds(
+      updateDoc(doc(authed(CUSTOMER_1), 'users', CUSTOMER_1), { firstName: 'Ana' }),
+    );
+  });
+
+  // O app grava a "última estética usada" a cada agendamento — travar o shopId
+  // junto com o role quebraria esse fluxo.
+  test('a última estética usada continua gravável', async () => {
+    await cadastrar();
+
+    await assertSucceeds(
+      updateDoc(doc(authed(CUSTOMER_1), 'users', CUSTOMER_1), { shopId: SHOP_A }),
+    );
+  });
+});
+
+describe('pagamentos', () => {
+  // Auditoria de 26/08/2026: a regra antiga era `allow read: if isSignedIn()`,
+  // então qualquer cliente logado lia o valor e o status de todas as cobranças.
+  test('cliente não lê cobrança de estética alguma', async () => {
+    await assertFails(getDoc(doc(authed(CUSTOMER_1), 'payments', 'pay_a')));
+  });
+
+  test('dono de outra estética também não lê', async () => {
+    await assertFails(getDoc(doc(authed(OWNER_B), 'payments', 'pay_a')));
+  });
+
+  test('o dono cobrado lê a própria cobrança', async () => {
+    await assertSucceeds(getDoc(doc(authed(OWNER_A), 'payments', 'pay_a')));
+  });
+
+  test('ninguém escreve pagamento pelo cliente', async () => {
+    await assertFails(setDoc(doc(authed(OWNER_A), 'payments', 'pay_novo'), { amount: 1 }));
   });
 });
