@@ -97,7 +97,17 @@ service cloud.firestore {
     // ── Usuários ───────────────────────────────────────────────────────────
     // Só o próprio usuário acessa o seu documento e subcoleções.
     match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && request.auth.uid == userId;
+
+      // O papel é definido no cadastro e não muda mais pelo cliente. Sem isto,
+      // um customer virava owner sozinho gravando role: 'owner' no próprio doc
+      // e caía na interface do painel do dono. O shopId continua livre: o app
+      // grava nele a "última estética usada" a cada agendamento.
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn()
+        && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+      allow delete: if isSignedIn() && request.auth.uid == userId;
 
       match /appointments/{appointmentId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -110,9 +120,11 @@ service cloud.firestore {
     }
 
     // ── Pagamentos ─────────────────────────────────────────────────────────
-    // Só o backend (Cloud Functions) escreve. Leitura autenticada.
+    // Só o backend (Cloud Functions) escreve. Leitura restrita ao dono do shop
+    // cobrado: `isSignedIn()` sozinho deixava qualquer cliente logado ler o
+    // valor, o status e a estética de TODAS as cobranças da plataforma.
     match /payments/{paymentId} {
-      allow read: if isSignedIn();
+      allow read: if isShopOwner(resource.data.shopId);
       allow write: if false;
     }
   }
