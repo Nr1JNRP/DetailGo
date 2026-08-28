@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Linking,
-  Share,
   StatusBar,
   StyleSheet,
   Text,
@@ -11,88 +9,48 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Check,
-  CheckCircle2,
-  Copy,
-  LogOut,
-  MessageCircle,
-  QrCode,
-  RefreshCw,
-  ShieldCheck,
-} from 'lucide-react-native';
-import { getAuth } from '@react-native-firebase/auth';
+import { Check, CreditCard, LogOut, MessageCircle, ShieldCheck } from 'lucide-react-native';
 
 import { radii, spacing, typography as T, useAppTheme, type AppColors } from '@shared/theme';
 import { useFeedback } from '@shared/components/FeedbackProvider';
-import { useShop } from '@features/shops';
+import { useShop, GRACE_DAYS } from '@features/shops';
 import { useAuth } from '@features/auth';
+import { createCheckoutLink } from '../services/checkout.service';
 
 const PLAN_PRICE = 'R$ 89,00/m\u00eas';
 const WHATSAPP_NUMBER = '5511996784399';
-const CREATE_PIX_URL = 'https://us-central1-magic-auto.cloudfunctions.net/createPixCharge';
 
 const BENEFITS = ['Agenda liberada', 'Loja vis\u00edvel no mapa', 'Hist\u00f3rico e dashboard'];
-
-type PixData = {
-  payment_id: string;
-  qr_code: string;
-  qr_code_base64: string;
-  expires_at: string;
-};
 
 export default function SubscriptionScreen() {
   const { colors: D, isLight } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
 
-  const { shop, trialDaysLeft } = useShop();
+  const { shop, trialDaysLeft, isInGrace } = useShop();
   const { signOut } = useAuth();
   const { showError } = useFeedback();
 
-  const [pixData, setPixData] = useState<PixData | null>(null);
-  const [loadingPix, setLoadingPix] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   const isTrialActive = trialDaysLeft > 0;
   const priceValue = PLAN_PRICE.replace('/m\u00eas', '');
 
-  const handleGeneratePix = async () => {
+  /**
+   * Abre o checkout do Asaas no navegador do sistema. \u00c9 l\u00e1 que o dono escolhe
+   * Pix ou cart\u00e3o e digita os dados \u2014 nada disso passa pelo app.
+   */
+  const handleSubscribe = async () => {
     if (!shop?.id) return;
-    setLoadingPix(true);
-    setPixData(null);
+    setLoadingCheckout(true);
 
     try {
-      const auth = getAuth();
-      const idToken = await auth.currentUser?.getIdToken();
-
-      const response = await fetch(CREATE_PIX_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ shopId: shop.id }),
-      });
-
-      const result = (await response.json()) as Record<string, any>;
-
-      if (!response.ok) {
-        throw new Error(result?.error ?? 'Erro ao gerar PIX.');
-      }
-
-      setPixData(result as PixData);
+      const link = await createCheckoutLink(shop.id);
+      await Linking.openURL(link);
     } catch (e: any) {
-      showError(e?.message ?? 'N\u00e3o foi poss\u00edvel gerar o PIX. Tente novamente.');
+      showError(e?.message ?? 'N\u00e3o foi poss\u00edvel iniciar o pagamento. Tente novamente.');
     } finally {
-      setLoadingPix(false);
+      setLoadingCheckout(false);
     }
-  };
-
-  const handleCopyPix = async () => {
-    if (!pixData?.qr_code) return;
-    await Share.share({ message: pixData.qr_code });
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
   };
 
   const handleWhatsApp = async () => {
@@ -145,80 +103,60 @@ export default function SubscriptionScreen() {
       </View>
 
       <View style={styles.content}>
-        {!pixData && (
-          <View style={styles.benefitCard}>
-            <Text style={styles.sectionTitle}>{'Inclu\u00eddo no plano'}</Text>
-            <View style={styles.benefitGrid}>
-              {BENEFITS.map(item => (
-                <View key={item} style={styles.benefitItem}>
-                  <View style={styles.benefitIcon}>
-                    <Check size={13} color={D.primary} strokeWidth={3} />
-                  </View>
-                  <Text style={styles.benefitText}>{item}</Text>
-                </View>
-              ))}
-            </View>
+        {isInGrace && (
+          <View style={styles.graceCard}>
+            <Text style={styles.graceTitle}>{'Pagamento pendente'}</Text>
+            <Text style={styles.graceText}>
+              {`Seu acesso continua liberado por ${GRACE_DAYS} dias enquanto tentamos a cobran\u00e7a. Regularize para n\u00e3o perder a agenda.`}
+            </Text>
           </View>
         )}
+
+        <View style={styles.benefitCard}>
+          <Text style={styles.sectionTitle}>{'Inclu\u00eddo no plano'}</Text>
+          <View style={styles.benefitGrid}>
+            {BENEFITS.map(item => (
+              <View key={item} style={styles.benefitItem}>
+                <View style={styles.benefitIcon}>
+                  <Check size={13} color={D.primary} strokeWidth={3} />
+                </View>
+                <Text style={styles.benefitText}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
 
         <View style={styles.pixCard}>
           <View style={styles.pixHeader}>
             <View style={styles.pixIcon}>
-              <QrCode size={22} color={D.primary} strokeWidth={2.5} />
+              <CreditCard size={22} color={D.primary} strokeWidth={2.5} />
             </View>
             <View style={styles.pixTitleWrap}>
-              <Text style={styles.pixTitle}>Pagamento PIX</Text>
+              <Text style={styles.pixTitle}>{'Pix ou cart\u00e3o'}</Text>
               <Text style={styles.pixSubtitle}>
-                {'Libera\u00e7\u00e3o autom\u00e1tica ap\u00f3s confirma\u00e7\u00e3o.'}
+                {
+                  'No cart\u00e3o a renova\u00e7\u00e3o \u00e9 autom\u00e1tica. Libera\u00e7\u00e3o ap\u00f3s a confirma\u00e7\u00e3o.'
+                }
               </Text>
             </View>
           </View>
 
-          {pixData ? (
-            <View style={styles.qrArea}>
-              {pixData.qr_code_base64 ? (
-                <Image
-                  source={{ uri: `data:image/png;base64,${pixData.qr_code_base64}` }}
-                  style={styles.qrImage}
-                  resizeMode="contain"
-                />
-              ) : null}
-              <TouchableOpacity style={styles.copyBtn} onPress={handleCopyPix} activeOpacity={0.82}>
-                {copied ? (
-                  <CheckCircle2 size={18} color={D.status.success} />
-                ) : (
-                  <Copy size={18} color={D.primary} />
-                )}
-                <Text style={[styles.copyText, copied && styles.copyTextDone]}>
-                  {copied ? 'C\u00f3digo compartilhado' : 'Copiar c\u00f3digo PIX'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.refreshBtn}
-                onPress={handleGeneratePix}
-                activeOpacity={0.75}
-              >
-                <RefreshCw size={14} color={D.ink3} />
-                <Text style={styles.refreshText}>Gerar novo</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={[styles.primaryBtn, loadingPix && styles.primaryBtnDisabled]}
-              onPress={handleGeneratePix}
-              disabled={loadingPix}
-              activeOpacity={0.86}
-            >
-              {loadingPix ? (
-                <ActivityIndicator color={D.onPrimary} />
-              ) : (
-                <>
-                  <Text style={styles.primaryBtnText}>Gerar PIX</Text>
-                  <Text style={styles.primaryBtnPrice}>{priceValue}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            testID="assinar"
+            style={[styles.primaryBtn, loadingCheckout && styles.primaryBtnDisabled]}
+            onPress={handleSubscribe}
+            disabled={loadingCheckout}
+            activeOpacity={0.86}
+          >
+            {loadingCheckout ? (
+              <ActivityIndicator color={D.onPrimary} />
+            ) : (
+              <>
+                <Text style={styles.primaryBtnText}>Assinar</Text>
+                <Text style={styles.primaryBtnPrice}>{priceValue}</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.supportBtn} onPress={handleWhatsApp} activeOpacity={0.82}>
           <MessageCircle size={18} color={D.ink} />
@@ -348,6 +286,27 @@ function createStyles(D: AppColors) {
       backgroundColor: D.surface,
       borderWidth: 1,
       borderColor: D.border,
+    },
+    graceCard: {
+      borderRadius: radii.sm,
+      padding: spacing.sm,
+      backgroundColor: D.surface,
+      borderWidth: 1,
+      borderColor: D.status.warning,
+      marginBottom: spacing.sm,
+    },
+    graceTitle: {
+      color: D.status.warning,
+      fontFamily: T.family.extraBold,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+      marginBottom: 4,
+    },
+    graceText: {
+      color: D.ink2,
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
     },
     sectionTitle: {
       color: D.ink,
