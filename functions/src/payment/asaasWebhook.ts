@@ -31,13 +31,23 @@ export const asaasWebhook = onRequest({ secrets: [asaasWebhookToken] }, async (r
     }
 
     const db = admin.firestore();
+
+    // A cobrança chega sem o externalReference do checkout; o vínculo vem pelo
+    // checkoutSession, resolvido contra o que gravamos ao criar o checkout.
+    const shopId = decisao.ref.shopId ?? (await resolveShopId(db, decisao.ref.checkoutSession));
+    if (!shopId) {
+      logger.warn(`Pagamento sem estetica identificada: payment=${decisao.paymentId}`);
+      res.status(200).send('ok');
+      return;
+    }
+
     const pagamentoRef = db.doc(`payments/${decisao.paymentId}`);
 
     if (decisao.kind === 'overdue') {
       await pagamentoRef.set(
         {
           paymentId: decisao.paymentId,
-          shopId: decisao.shopId,
+          shopId,
           status: 'overdue',
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
@@ -45,12 +55,12 @@ export const asaasWebhook = onRequest({ secrets: [asaasWebhookToken] }, async (r
       );
       // O acesso não cai aqui: o app dá 5 dias de carência a partir do
       // activeUntil, tempo em que o Asaas ainda retenta o cartão.
-      logger.info(`Pagamento vencido: shop=${decisao.shopId} payment=${decisao.paymentId}`);
+      logger.info(`Pagamento vencido: shop=${shopId} payment=${decisao.paymentId}`);
       res.status(200).send('ok');
       return;
     }
 
-    const shopRef = db.doc(`shops/${decisao.shopId}`);
+    const shopRef = db.doc(`shops/${shopId}`);
 
     // O Asaas reenvia o evento quando não recebe 200, então o mesmo pagamento
     // pode chegar duas vezes. Somar 30 dias de novo daria mês grátis.
@@ -60,7 +70,7 @@ export const asaasWebhook = onRequest({ secrets: [asaasWebhookToken] }, async (r
 
       const shop = await tx.get(shopRef);
       if (!shop.exists) {
-        logger.error(`Pagamento de shop inexistente: ${decisao.shopId}`);
+        logger.error(`Pagamento de shop inexistente: ${shopId}`);
         return true;
       }
 
@@ -71,7 +81,7 @@ export const asaasWebhook = onRequest({ secrets: [asaasWebhookToken] }, async (r
         pagamentoRef,
         {
           paymentId: decisao.paymentId,
-          shopId: decisao.shopId,
+          shopId: shopId,
           value: decisao.value ?? null,
           status: 'confirmed',
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -93,7 +103,7 @@ export const asaasWebhook = onRequest({ secrets: [asaasWebhookToken] }, async (r
     if (jaConfirmado) {
       logger.info(`Evento repetido ignorado: payment=${decisao.paymentId}`);
     } else {
-      logger.info(`Assinatura ativada: shop=${decisao.shopId} payment=${decisao.paymentId}`);
+      logger.info(`Assinatura ativada: shop=${shopId} payment=${decisao.paymentId}`);
     }
 
     res.status(200).send('ok');
@@ -104,3 +114,20 @@ export const asaasWebhook = onRequest({ secrets: [asaasWebhookToken] }, async (r
     res.status(500).send('error');
   }
 });
+
+/**
+ * Traduz o id do checkout na estética que o originou.
+ *
+ * A associação é gravada quando o checkout é criado — ver createAsaasCheckout.
+ * Sem ela não há como saber de quem é a cobrança, porque o Asaas devolve o
+ * externalReference nulo no evento de pagamento.
+ */
+async function resolveShopId(
+  db: admin.firestore.Firestore,
+  checkoutSession: string | undefined,
+): Promise<string | undefined> {
+  if (!checkoutSession) return undefined;
+
+  const snap = await db.doc(`asaasCheckouts/${checkoutSession}`).get();
+  return snap.exists ? (snap.data()?.shopId as string | undefined) : undefined;
+}

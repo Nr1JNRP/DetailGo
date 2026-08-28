@@ -2,7 +2,10 @@ import { decideFromEvent, nextActiveUntil, DIAS_POR_CICLO } from './asaasEvents'
 
 const pagamento = (over: Record<string, unknown> = {}) => ({
   id: 'pay_1',
-  externalReference: 'shop_1',
+  // O Asaas manda nulo aqui mesmo quando o checkout foi criado com um valor:
+  // o externalReference do checkout nao chega na cobranca.
+  externalReference: null,
+  checkoutSession: 'chk_1',
   subscription: 'sub_1',
   value: 89,
   status: 'CONFIRMED',
@@ -13,7 +16,7 @@ describe('decideFromEvent', () => {
   it.each(['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'])('%s libera o acesso', evento => {
     expect(decideFromEvent({ event: evento, payment: pagamento() })).toEqual({
       kind: 'confirm',
-      shopId: 'shop_1',
+      ref: { shopId: undefined, checkoutSession: 'chk_1' },
       paymentId: 'pay_1',
       subscriptionId: 'sub_1',
       value: 89,
@@ -21,19 +24,28 @@ describe('decideFromEvent', () => {
   });
 
   it('PAYMENT_OVERDUE marca a falha sem liberar', () => {
-    expect(decideFromEvent({ event: 'PAYMENT_OVERDUE', payment: pagamento() })).toEqual({
-      kind: 'overdue',
-      shopId: 'shop_1',
-      paymentId: 'pay_1',
-    });
+    const fora = decideFromEvent({ event: 'PAYMENT_OVERDUE', payment: pagamento() });
+
+    expect(fora).toMatchObject({ kind: 'overdue', paymentId: 'pay_1' });
   });
 
-  // Sem o externalReference não dá para saber de quem é o pagamento. Adivinhar
-  // liberaria o shop errado.
-  it('ignora pagamento sem externalReference', () => {
+  // Se um dia o Asaas passar a repassar o externalReference, ele vale mais que
+  // a consulta: e direto, sem ida ao banco.
+  it('prefere o externalReference quando ele vem', () => {
     const fora = decideFromEvent({
       event: 'PAYMENT_CONFIRMED',
-      payment: pagamento({ externalReference: undefined }),
+      payment: pagamento({ externalReference: 'shop_1' }),
+    });
+
+    expect(fora).toMatchObject({ ref: { shopId: 'shop_1' } });
+  });
+
+  // Sem nenhuma das duas pistas nao da para saber de quem e o pagamento.
+  // Adivinhar liberaria a estetica errada.
+  it('ignora pagamento sem vinculo nenhum', () => {
+    const fora = decideFromEvent({
+      event: 'PAYMENT_CONFIRMED',
+      payment: pagamento({ externalReference: null, checkoutSession: undefined }),
     });
 
     expect(fora.kind).toBe('ignore');
@@ -48,8 +60,8 @@ describe('decideFromEvent', () => {
     expect(decideFromEvent(evento).kind).toBe('ignore');
   });
 
-  // O Asaas manda dezenas de eventos; tratar o que não se entende como
-  // confirmação liberaria acesso por engano.
+  // O Asaas manda dezenas de eventos; tratar o que nao se entende como
+  // confirmacao liberaria acesso por engano.
   it.each(['PAYMENT_CREATED', 'PAYMENT_DELETED', 'PAYMENT_REFUNDED', 'SUBSCRIPTION_CREATED'])(
     'ignora %s',
     evento => {
@@ -62,9 +74,9 @@ describe('nextActiveUntil', () => {
   const agora = new Date('2026-08-27T12:00:00Z');
 
   it('sem acesso anterior conta a partir de agora', () => {
-    const ate = nextActiveUntil(undefined, agora);
-
-    expect(ate.getTime()).toBe(new Date('2026-09-26T12:00:00Z').getTime());
+    expect(nextActiveUntil(undefined, agora).getTime()).toBe(
+      new Date('2026-09-26T12:00:00Z').getTime(),
+    );
   });
 
   it('acesso ja vencido tambem conta a partir de agora', () => {
@@ -85,8 +97,9 @@ describe('nextActiveUntil', () => {
   });
 
   it('adiciona exatamente um ciclo', () => {
-    const ate = nextActiveUntil(undefined, agora);
-    const dias = Math.round((ate.getTime() - agora.getTime()) / 86_400_000);
+    const dias = Math.round(
+      (nextActiveUntil(undefined, agora).getTime() - agora.getTime()) / 86_400_000,
+    );
 
     expect(dias).toBe(DIAS_POR_CICLO);
   });

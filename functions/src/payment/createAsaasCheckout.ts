@@ -88,6 +88,17 @@ export const createAsaasCheckout = onRequest(
         return;
       }
 
+      // O Asaas não repassa o externalReference do checkout para a cobrança —
+      // ela chega com externalReference nulo e o checkoutSession preenchido.
+      // Esta associação é o que permite ao webhook saber de quem é o pagamento.
+      if (checkout.id) {
+        await db.doc(`asaasCheckouts/${checkout.id}`).set({
+          shopId,
+          metodo: metodoEscolhido,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
       logger.info(`Checkout criado: shop=${shopId} checkout=${checkout.id}`);
       res.status(200).json({ checkout_id: checkout.id, link: checkout.link });
     } catch (error) {
