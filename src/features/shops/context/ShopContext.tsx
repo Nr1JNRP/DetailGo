@@ -96,7 +96,7 @@ export function useShop() {
   const loadingShop = useShopStore(state => state.loadingShop);
 
   const loading = loadingUser || loadingShop;
-  const { isSubscriptionActive, trialDaysLeft } = computeSubscription(shop);
+  const { isSubscriptionActive, trialDaysLeft, isInGrace } = computeSubscription(shop);
 
-  return { shopId, shop, userRole, loading, isSubscriptionActive, trialDaysLeft };
+  return { shopId, shop, userRole, loading, isSubscriptionActive, trialDaysLeft, isInGrace };
 }

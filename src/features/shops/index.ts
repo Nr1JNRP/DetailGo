@@ -1,5 +1,7 @@
 export { ShopProvider, useShop } from './context/ShopContext';
 export type { ShopDoc, UserRole, SubscriptionStatus } from './context/ShopContext';
+export { computeSubscription, GRACE_DAYS } from './state/shop.store';
+export type { SubscriptionState } from './state/shop.store';
 export { useShopServices } from './hooks/useShopServices';
 export { updateShopName } from './services/shop.service';
 export { discoverNearbyShops } from './services/discoverShops.service';

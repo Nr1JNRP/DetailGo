@@ -54,26 +54,49 @@ export const useShopStore = create<ShopState>(set => ({
     set({ shopId: null, shop: null, userRole: null, loadingUser: false, loadingShop: false }),
 }));
 
-/** Calcula se a assinatura está ativa e quantos dias de trial restam. */
-export function computeSubscription(shop: ShopDoc | null): {
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Dias que o dono continua entrando depois do vencimento.
+ *
+ * Cartão vencido é problema banal, e o Asaas retenta a cobrança nesse
+ * intervalo. Derrubar a agenda no meio do expediente, com clientes marcados,
+ * perde o assinante por um contratempo de banco.
+ */
+export const GRACE_DAYS = 5;
+
+export type SubscriptionState = {
   isSubscriptionActive: boolean;
   trialDaysLeft: number;
-} {
-  if (!shop) return { isSubscriptionActive: false, trialDaysLeft: 0 };
+  /** Vencida, mas ainda dentro da carência: entra com aviso de pendência. */
+  isInGrace: boolean;
+};
 
-  const now = Date.now();
+/** Calcula se a assinatura está ativa e quantos dias de trial restam. */
+export function computeSubscription(shop: ShopDoc | null, now = Date.now()): SubscriptionState {
+  const bloqueado = { isSubscriptionActive: false, trialDaysLeft: 0, isInGrace: false };
+
+  if (!shop) return bloqueado;
 
   if (shop.subscriptionStatus === 'trial') {
     const endsAt = shop.trialEndsAt?.toMillis?.() ?? 0;
-    const msLeft = endsAt - now;
-    const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
-    return { isSubscriptionActive: daysLeft > 0, trialDaysLeft: daysLeft };
+    const daysLeft = Math.max(0, Math.ceil((endsAt - now) / DIA_MS));
+    return { isSubscriptionActive: daysLeft > 0, trialDaysLeft: daysLeft, isInGrace: false };
   }
 
   if (shop.subscriptionStatus === 'active') {
     const until = shop.activeUntil?.toMillis?.() ?? 0;
-    return { isSubscriptionActive: until > now, trialDaysLeft: 0 };
+    if (until > now) {
+      return { isSubscriptionActive: true, trialDaysLeft: 0, isInGrace: false };
+    }
+
+    const dentroDaCarencia = now <= until + GRACE_DAYS * DIA_MS;
+    return {
+      isSubscriptionActive: dentroDaCarencia,
+      trialDaysLeft: 0,
+      isInGrace: dentroDaCarencia,
+    };
   }
 
-  return { isSubscriptionActive: false, trialDaysLeft: 0 };
+  return bloqueado;
 }
