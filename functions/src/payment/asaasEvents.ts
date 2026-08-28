@@ -2,24 +2,36 @@ export type AsaasEvent = {
   event?: string;
   payment?: {
     id?: string;
-    externalReference?: string;
-    subscription?: string;
+    /** Chega `null` em cobrança nascida de checkout — não é opcional, é nulo. */
+    externalReference?: string | null;
+    /** Id do checkout que originou a cobrança. */
+    checkoutSession?: string | null;
+    subscription?: string | null;
     value?: number;
     status?: string;
   };
 };
+
+/**
+ * Como descobrir de quem é o pagamento.
+ *
+ * O `externalReference` gravado no checkout **não** é repassado para a
+ * cobrança — chega sempre nulo. O que vem é o `checkoutSession`, o id do
+ * checkout, que resolvemos contra a associação gravada na criação.
+ */
+export type ShopRef = { shopId?: string; checkoutSession?: string };
 
 /** O que o webhook deve fazer com um evento. */
 export type EventOutcome =
   | { kind: 'ignore'; reason: string }
   | {
       kind: 'confirm';
-      shopId: string;
+      ref: ShopRef;
       paymentId: string;
       subscriptionId?: string;
       value?: number;
     }
-  | { kind: 'overdue'; shopId: string; paymentId: string };
+  | { kind: 'overdue'; ref: ShopRef; paymentId: string };
 
 const CONFIRMADOS = ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'];
 const VENCIDOS = ['PAYMENT_OVERDUE'];
@@ -38,25 +50,28 @@ export function decideFromEvent(evento: AsaasEvent): EventOutcome {
     return { kind: 'ignore', reason: 'evento sem nome ou sem pagamento' };
   }
 
-  // O externalReference é o shopId, gravado na criação do checkout. Sem ele não
-  // dá para saber quem pagou — e adivinhar seria liberar o shop errado.
-  const shopId = pagamento.externalReference;
-  if (!shopId) {
-    return { kind: 'ignore', reason: 'pagamento sem externalReference' };
+  // Sem nenhuma das duas pistas não dá para saber quem pagou — e adivinhar
+  // seria liberar a estética errada.
+  const ref: ShopRef = {
+    shopId: pagamento.externalReference ?? undefined,
+    checkoutSession: pagamento.checkoutSession ?? undefined,
+  };
+  if (!ref.shopId && !ref.checkoutSession) {
+    return { kind: 'ignore', reason: 'pagamento sem vinculo com estetica' };
   }
 
   if (CONFIRMADOS.includes(nome)) {
     return {
       kind: 'confirm',
-      shopId,
+      ref,
       paymentId: pagamento.id,
-      subscriptionId: pagamento.subscription,
+      subscriptionId: pagamento.subscription ?? undefined,
       value: pagamento.value,
     };
   }
 
   if (VENCIDOS.includes(nome)) {
-    return { kind: 'overdue', shopId, paymentId: pagamento.id };
+    return { kind: 'overdue', ref, paymentId: pagamento.id };
   }
 
   return { kind: 'ignore', reason: `evento nao tratado: ${nome}` };

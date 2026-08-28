@@ -5,7 +5,9 @@ export type AsaasConfig = {
 };
 
 const PRODUCAO: AsaasConfig = { baseUrl: 'https://api.asaas.com/v3', planValue: 89.0 };
-const SANDBOX: AsaasConfig = { baseUrl: 'https://api-sandbox.asaas.com/v3', planValue: 0.01 };
+// R$ 5,00 é o mínimo que o Asaas aceita numa cobrança: valor abaixo disso é
+// recusado com 400. Por isso o teste não pode custar um centavo.
+const SANDBOX: AsaasConfig = { baseUrl: 'https://api-sandbox.asaas.com/v3', planValue: 5.0 };
 
 /** Prefixo das chaves de produção do Asaas. As de sandbox usam `$aact_hmlg_`. */
 const PREFIXO_PRODUCAO = '$aact_prod_';
