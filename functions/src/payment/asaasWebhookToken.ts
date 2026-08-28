@@ -8,10 +8,14 @@ import { timingSafeEqual } from 'crypto';
  * que descubra a URL da function consegue forjar confirmação de pagamento.
  */
 export function isValidAsaasToken(recebido: string | undefined, esperado: string): boolean {
-  if (!recebido || !esperado) return false;
+  // Espaço em branco nas pontas não faz parte do token, e entra fácil sem
+  // ninguém ver: gravar o segredo por pipe no PowerShell acrescenta uma quebra
+  // de linha, e o valor passa a diferir por um caractere invisível. Já custou
+  // uma depuração longa aqui.
+  const a = Buffer.from((recebido ?? '').trim(), 'utf8');
+  const b = Buffer.from((esperado ?? '').trim(), 'utf8');
 
-  const a = Buffer.from(recebido, 'utf8');
-  const b = Buffer.from(esperado, 'utf8');
+  if (a.length === 0 || b.length === 0) return false;
 
   // Comparar com === vaza o tamanho do prefixo correto pelo tempo de resposta,
   // o que permite descobrir o token caractere a caractere.
