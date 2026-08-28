@@ -4,7 +4,7 @@ import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 
 import { resolveAsaasConfig } from './asaasConfig';
-import { buildCheckoutRequest } from './asaasCheckoutRequest';
+import { buildCheckoutRequest, type MetodoPagamento } from './asaasCheckoutRequest';
 
 const asaasApiKey = defineSecret('ASAAS_API_KEY');
 
@@ -29,11 +29,16 @@ export const createAsaasCheckout = onRequest(
 
       const { uid } = await admin.auth().verifyIdToken(idToken);
 
-      const { shopId } = req.body as { shopId?: string };
+      const { shopId, metodo } = req.body as { shopId?: string; metodo?: string };
       if (!shopId) {
         res.status(400).json({ error: 'shopId é obrigatório.' });
         return;
       }
+
+      // Só 'card' renova sozinho; qualquer outra coisa cai em Pix avulso, que é
+      // o caminho mais conservador — ninguém fica com cobrança recorrente por
+      // engano.
+      const metodoEscolhido: MetodoPagamento = metodo === 'card' ? 'card' : 'pix';
 
       const db = admin.firestore();
       const shopSnap = await db.doc(`shops/${shopId}`).get();
@@ -54,6 +59,7 @@ export const createAsaasCheckout = onRequest(
       const body = buildCheckoutRequest({
         shopId,
         shopName: shop.name,
+        metodo: metodoEscolhido,
         config,
         returnUrl: RETURN_URL,
       });

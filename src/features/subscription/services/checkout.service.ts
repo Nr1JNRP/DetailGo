@@ -9,7 +9,9 @@ const CREATE_CHECKOUT_URL = 'https://us-central1-magic-auto.cloudfunctions.net/c
  * e informa os dados. Nenhum dado de pagamento passa por aqui — é o que mantém
  * o app fora do escopo de PCI.
  */
-export async function createCheckoutLink(shopId: string): Promise<string> {
+export type MetodoPagamento = 'card' | 'pix';
+
+export async function createCheckoutLink(shopId: string, metodo: MetodoPagamento): Promise<string> {
   const user = getAuth().currentUser;
   if (!user) throw new Error('Sessão expirada. Entre novamente.');
 
@@ -21,7 +23,7 @@ export async function createCheckoutLink(shopId: string): Promise<string> {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${idToken}`,
     },
-    body: JSON.stringify({ shopId }),
+    body: JSON.stringify({ shopId, metodo }),
   });
 
   if (!resposta.ok) {

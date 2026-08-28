@@ -15,7 +15,7 @@ import { radii, spacing, typography as T, useAppTheme, type AppColors } from '@s
 import { useFeedback } from '@shared/components/FeedbackProvider';
 import { useShop, GRACE_DAYS } from '@features/shops';
 import { useAuth } from '@features/auth';
-import { createCheckoutLink } from '../services/checkout.service';
+import { createCheckoutLink, type MetodoPagamento } from '../services/checkout.service';
 
 const PLAN_PRICE = 'R$ 89,00/m\u00eas';
 const WHATSAPP_NUMBER = '5511996784399';
@@ -30,26 +30,29 @@ export default function SubscriptionScreen() {
   const { signOut } = useAuth();
   const { showError } = useFeedback();
 
-  const [loadingCheckout, setLoadingCheckout] = useState(false);
+  const [carregando, setCarregando] = useState<MetodoPagamento | null>(null);
 
   const isTrialActive = trialDaysLeft > 0;
   const priceValue = PLAN_PRICE.replace('/m\u00eas', '');
 
   /**
-   * Abre o checkout do Asaas no navegador do sistema. \u00c9 l\u00e1 que o dono escolhe
-   * Pix ou cart\u00e3o e digita os dados \u2014 nada disso passa pelo app.
+   * Abre o checkout do Asaas no navegador do sistema. \u00c9 l\u00e1 que o dono digita os
+   * dados de pagamento \u2014 nada disso passa pelo app.
+   *
+   * O m\u00e9todo vai daqui porque o Asaas n\u00e3o aceita os dois no mesmo checkout:
+   * recorrente s\u00f3 existe no cart\u00e3o, e Pix tem que ser avulso.
    */
-  const handleSubscribe = async () => {
+  const abrirCheckout = async (metodo: MetodoPagamento) => {
     if (!shop?.id) return;
-    setLoadingCheckout(true);
+    setCarregando(metodo);
 
     try {
-      const link = await createCheckoutLink(shop.id);
+      const link = await createCheckoutLink(shop.id, metodo);
       await Linking.openURL(link);
     } catch (e: any) {
       showError(e?.message ?? 'N\u00e3o foi poss\u00edvel iniciar o pagamento. Tente novamente.');
     } finally {
-      setLoadingCheckout(false);
+      setCarregando(null);
     }
   };
 
@@ -132,29 +135,43 @@ export default function SubscriptionScreen() {
               <CreditCard size={22} color={D.primary} strokeWidth={2.5} />
             </View>
             <View style={styles.pixTitleWrap}>
-              <Text style={styles.pixTitle}>{'Pix ou cart\u00e3o'}</Text>
+              <Text style={styles.pixTitle}>{'Como quer pagar'}</Text>
               <Text style={styles.pixSubtitle}>
-                {
-                  'No cart\u00e3o a renova\u00e7\u00e3o \u00e9 autom\u00e1tica. Libera\u00e7\u00e3o ap\u00f3s a confirma\u00e7\u00e3o.'
-                }
+                {'Libera\u00e7\u00e3o autom\u00e1tica ap\u00f3s a confirma\u00e7\u00e3o.'}
               </Text>
             </View>
           </View>
 
           <TouchableOpacity
-            testID="assinar"
-            style={[styles.primaryBtn, loadingCheckout && styles.primaryBtnDisabled]}
-            onPress={handleSubscribe}
-            disabled={loadingCheckout}
+            testID="assinar-cartao"
+            style={[styles.primaryBtn, carregando !== null && styles.primaryBtnDisabled]}
+            onPress={() => abrirCheckout('card')}
+            disabled={carregando !== null}
             activeOpacity={0.86}
           >
-            {loadingCheckout ? (
+            {carregando === 'card' ? (
               <ActivityIndicator color={D.onPrimary} />
             ) : (
               <>
-                <Text style={styles.primaryBtnText}>Assinar</Text>
+                <Text style={styles.primaryBtnText}>{'Cartão · renova sozinho'}</Text>
                 <Text style={styles.primaryBtnPrice}>{priceValue}</Text>
               </>
+            )}
+          </TouchableOpacity>
+
+          {/* Pix nao renova sozinho: o Asaas so aceita recorrencia no cartao.
+              Dizer isso no botao evita o dono achar que ficou automatico. */}
+          <TouchableOpacity
+            testID="assinar-pix"
+            style={[styles.secondaryBtn, carregando !== null && styles.primaryBtnDisabled]}
+            onPress={() => abrirCheckout('pix')}
+            disabled={carregando !== null}
+            activeOpacity={0.86}
+          >
+            {carregando === 'pix' ? (
+              <ActivityIndicator color={D.primary} />
+            ) : (
+              <Text style={styles.secondaryBtnText}>{'Pix · pagar mês a mês'}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -386,6 +403,22 @@ function createStyles(D: AppColors) {
     },
     primaryBtnDisabled: {
       opacity: 0.55,
+    },
+    secondaryBtn: {
+      height: 52,
+      borderRadius: radii.sm,
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: D.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.xs,
+    },
+    secondaryBtnText: {
+      color: D.primary,
+      fontFamily: T.family.extraBold,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
     },
     primaryBtnText: {
       color: D.onPrimary,
