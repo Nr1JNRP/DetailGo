@@ -44,6 +44,9 @@ export default function RootNavigator() {
               <Stack.Screen name="AdminHistory" component={AdminHistoryScreen} />
               <Stack.Screen name="AdminProfile" component={ProfileScreen} />
               <Stack.Screen name="AdminNotifications" component={NotificationsScreen} />
+              {/* Alcançável durante a carência: sem isto o aviso de cobrança
+                  falhada no painel não teria para onde levar. */}
+              <Stack.Screen name="Subscription" component={SubscriptionScreen} />
             </Stack.Group>
           ) : (
             // Owner sem assinatura → tela de pagamento
