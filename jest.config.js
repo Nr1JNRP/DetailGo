@@ -24,10 +24,10 @@ module.exports = {
   // Cobertura em 27/08/2026: 74.54 stmts · 66.92 branch · 75.78 func · 75.56 lines
   coverageThreshold: {
     global: {
-      statements: 74,
-      branches: 66,
-      functions: 75,
-      lines: 75,
+      statements: 75,
+      branches: 67,
+      functions: 76,
+      lines: 76,
     },
   },
 };

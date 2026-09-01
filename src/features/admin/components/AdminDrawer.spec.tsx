@@ -112,6 +112,7 @@ describe('AdminDrawer', () => {
     ['Histórico', 'AdminHistory'],
     ['Gerenciar loja', 'AdminManage'],
     ['Perfil', 'AdminProfile'],
+    ['Assinatura', 'SubscriptionDetail'],
   ] as const)('item %s navega para %s e fecha o drawer', (rotulo, rota) => {
     const { onClose } = renderDrawer();
 
@@ -119,6 +120,25 @@ describe('AdminDrawer', () => {
 
     expect(onClose).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith(rota);
+  });
+
+  // A ordem é pedida: Assinatura entra logo depois de Perfil, e Sair continua
+  // por último, separado pelo divisor.
+  it('lista os itens na ordem combinada', () => {
+    renderDrawer();
+
+    const rotulos = screen
+      .getAllByText(/^(Agendamentos|Histórico|Gerenciar loja|Perfil|Assinatura|Sair)$/)
+      .map(no => no.props.children);
+
+    expect(rotulos).toEqual([
+      'Agendamentos',
+      'Histórico',
+      'Gerenciar loja',
+      'Perfil',
+      'Assinatura',
+      'Sair',
+    ]);
   });
 
   describe('sair da conta', () => {

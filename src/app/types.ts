@@ -5,6 +5,7 @@ export type RootStackParamList = {
 
   // SUBSCRIPTION
   Subscription: undefined;
+  SubscriptionDetail: undefined;
 
   // USER
   Map: undefined;
