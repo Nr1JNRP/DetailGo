@@ -640,7 +640,7 @@ export default function AdminDashboardScreen() {
         <TouchableOpacity
           testID="aviso-carencia"
           style={styles.graceBanner}
-          onPress={() => navigation.navigate('Subscription')}
+          onPress={() => navigation.navigate('SubscriptionRenew')}
           activeOpacity={0.85}
         >
           <AlertTriangle size={18} color={D.status.warning} strokeWidth={2.5} />

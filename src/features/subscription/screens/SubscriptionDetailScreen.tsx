@@ -172,7 +172,7 @@ export default function SubscriptionDetailScreen() {
             <TouchableOpacity
               testID="mudar-para-cartao"
               style={styles.btnPrimario}
-              onPress={() => navigation.navigate('Subscription')}
+              onPress={() => navigation.navigate('SubscriptionRenew')}
               activeOpacity={0.85}
             >
               <Text style={styles.btnPrimarioTexto}>{'Mudar para cartão e renovar sozinho'}</Text>

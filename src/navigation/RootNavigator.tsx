@@ -44,9 +44,11 @@ export default function RootNavigator() {
               <Stack.Screen name="AdminHistory" component={AdminHistoryScreen} />
               <Stack.Screen name="AdminProfile" component={ProfileScreen} />
               <Stack.Screen name="AdminNotifications" component={NotificationsScreen} />
-              {/* Alcançável durante a carência: sem isto o aviso de cobrança
-                  falhada no painel não teria para onde levar. */}
-              <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+              {/* Mesma tela do grupo bloqueado, com OUTRO nome de rota de
+                  propósito. Repetir o nome faz o React Navigation preservar a
+                  rota ao trocar de grupo, e o dono que acabou de pagar fica
+                  preso na tela de pagamento em vez de cair no painel. */}
+              <Stack.Screen name="SubscriptionRenew" component={SubscriptionScreen} />
               <Stack.Screen name="SubscriptionDetail" component={SubscriptionDetailScreen} />
             </Stack.Group>
           ) : (

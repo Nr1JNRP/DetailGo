@@ -637,7 +637,7 @@ describe('AdminDashboardScreen', () => {
 
       fireEvent.press(screen.getByTestId('aviso-carencia'));
 
-      expect(mockNavigate).toHaveBeenCalledWith('Subscription');
+      expect(mockNavigate).toHaveBeenCalledWith('SubscriptionRenew');
     });
   });
 });
