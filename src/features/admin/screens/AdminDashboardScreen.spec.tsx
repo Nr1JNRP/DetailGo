@@ -55,10 +55,15 @@ const mockFeedbackApi = {
 };
 jest.mock('@shared/components/FeedbackProvider', () => ({ useFeedback: () => mockFeedbackApi }));
 
-const mockShopApi = { shop: { name: 'Tirac Auto Detail' }, shopId: 'shop-1' as string | null };
+const mockShopApi = {
+  shop: { name: 'Tirac Auto Detail' },
+  shopId: 'shop-1' as string | null,
+  isInGrace: false,
+};
 jest.mock('@features/shops', () => ({
   useShop: () => mockShopApi,
   useShopServices: () => ({ items: [{ id: 'svc-1' }], loading: false }),
+  GRACE_DAYS: 5,
 }));
 
 jest.mock('@features/auth', () => ({
@@ -138,6 +143,7 @@ async function emitir(docs: ReturnType<typeof doc>[]) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockShopApi.shopId = 'shop-1';
+  mockShopApi.isInGrace = false;
   mockOnSnapshot.mockReturnValue(jest.fn());
   mockGetDocs.mockResolvedValue({ docs: [] });
   mockUpdateAppointmentStatus.mockResolvedValue(undefined);
@@ -599,5 +605,39 @@ describe('AdminDashboardScreen', () => {
     render(<AdminDashboardScreen />);
 
     expect(mockOnSnapshot).not.toHaveBeenCalled();
+  });
+
+  // Durante a carência o dono entra direto no painel e nunca passa pela tela de
+  // assinatura. Sem este aviso aqui, ele perderia o acesso no sexto dia sem
+  // nenhuma pista de que a cobrança falhou. Já aconteceu em teste manual.
+  describe('cobrança pendente', () => {
+    it('não aparece quando está tudo em dia', async () => {
+      render(<AdminDashboardScreen />);
+      await emitir([]);
+
+      expect(screen.queryByTestId('aviso-carencia')).toBeNull();
+    });
+
+    it('avisa no painel quando o pagamento falhou', async () => {
+      mockShopApi.isInGrace = true;
+
+      render(<AdminDashboardScreen />);
+      await emitir([]);
+
+      expect(screen.getByTestId('aviso-carencia')).toBeTruthy();
+      expect(screen.getByText('Pagamento pendente')).toBeTruthy();
+    });
+
+    // Aviso sem saída é só ansiedade: tem que levar para onde se resolve.
+    it('leva para a tela de assinatura ao tocar', async () => {
+      mockShopApi.isInGrace = true;
+
+      render(<AdminDashboardScreen />);
+      await emitir([]);
+
+      fireEvent.press(screen.getByTestId('aviso-carencia'));
+
+      expect(mockNavigate).toHaveBeenCalledWith('Subscription');
+    });
   });
 });

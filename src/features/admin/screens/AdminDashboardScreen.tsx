@@ -59,7 +59,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { updateAppointmentStatus } from '@features/admin';
 import { useMeStore } from '@features/auth';
-import { useShop } from '@features/shops';
+import { useShop, GRACE_DAYS } from '@features/shops';
 import { useShopNotifications, useRegisterPushToken } from '@features/notifications';
 import { NO_SHOW_GRACE_MS } from '@features/appointments';
 import type { AppointmentStatus } from '@features/appointments';
@@ -120,7 +120,7 @@ export default function AdminDashboardScreen() {
   const auth = getAuth();
   const user = auth.currentUser;
   const db = getFirestore();
-  const { shopId, shop } = useShop();
+  const { shopId, shop, isInGrace } = useShop();
   const isPremium = shop?.subscriptionStatus === 'active';
   const navigation = useNavigation<Nav>();
   const { unreadCount } = useShopNotifications(shopId);
@@ -633,6 +633,27 @@ export default function AdminDashboardScreen() {
         )}
       </View>
 
+      {/* Aviso de cobrança falhada. Fica aqui, e não na tela de assinatura,
+          porque durante a carência o dono entra direto no painel e nunca
+          passaria por lá — perderia o acesso no sexto dia sem aviso nenhum. */}
+      {isInGrace && (
+        <TouchableOpacity
+          testID="aviso-carencia"
+          style={styles.graceBanner}
+          onPress={() => navigation.navigate('Subscription')}
+          activeOpacity={0.85}
+        >
+          <AlertTriangle size={18} color={D.status.warning} strokeWidth={2.5} />
+          <View style={styles.graceBannerText}>
+            <Text style={styles.graceBannerTitle}>Pagamento pendente</Text>
+            <Text style={styles.graceBannerSub}>
+              {`Seu acesso cai em até ${GRACE_DAYS} dias. Toque para regularizar.`}
+            </Text>
+          </View>
+          <ChevronRight size={18} color={D.status.warning} />
+        </TouchableOpacity>
+      )}
+
       {/* ── KPI Cards ──────────────────────────── */}
       <View style={styles.kpiRow}>
         <View style={[styles.kpiCard, { flex: 1.1 }]}>
@@ -832,6 +853,33 @@ function createStyles(D: AppColors) {
     },
 
     // ── KPI Cards ────────────────────────────────────
+    graceBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.lg,
+      padding: spacing.sm,
+      borderRadius: radii.sm,
+      backgroundColor: D.card,
+      borderWidth: 1,
+      borderColor: D.status.warning,
+    },
+    graceBannerText: {
+      flex: 1,
+    },
+    graceBannerTitle: {
+      color: D.status.warning,
+      fontFamily: T.family.extraBold,
+      fontSize: T.size.body,
+      lineHeight: T.lineHeight.body,
+    },
+    graceBannerSub: {
+      color: D.ink2,
+      fontFamily: T.family.regular,
+      fontSize: T.size.secondary,
+      lineHeight: T.lineHeight.secondary,
+    },
     kpiRow: {
       flexDirection: 'row',
       gap: spacing.sm,
