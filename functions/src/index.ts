@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 admin.initializeApp();
 
 export { createAsaasCheckout } from './payment/createAsaasCheckout';
+export { getAsaasSubscription, cancelAsaasSubscription } from './payment/asaasSubscription';
 export { asaasWebhook } from './payment/asaasWebhook';
 export { checkTrialExpiry } from './scheduled/checkTrialExpiry';
 export { checkSubscriptionExpiry } from './scheduled/checkSubscriptionExpiry';

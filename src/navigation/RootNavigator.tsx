@@ -5,7 +5,7 @@ import { View, ActivityIndicator } from 'react-native';
 import type { RootStackParamList } from '@app/types';
 
 import { useAuth, LoginScreen, RegisterScreen } from '@features/auth';
-import { SubscriptionScreen } from '@features/subscription';
+import { SubscriptionScreen, SubscriptionDetailScreen } from '@features/subscription';
 import { MapScreen } from '@features/map';
 import { DashboardScreen } from '@features/dashboard';
 import { AppointmentScreen, MyAppointmentsScreen, HistoryScreen } from '@features/appointments';
@@ -47,6 +47,7 @@ export default function RootNavigator() {
               {/* Alcançável durante a carência: sem isto o aviso de cobrança
                   falhada no painel não teria para onde levar. */}
               <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+              <Stack.Screen name="SubscriptionDetail" component={SubscriptionDetailScreen} />
             </Stack.Group>
           ) : (
             // Owner sem assinatura → tela de pagamento
