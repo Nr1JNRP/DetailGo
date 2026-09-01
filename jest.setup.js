@@ -16,10 +16,15 @@ jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
   const inset = { top: 0, right: 0, bottom: 0, left: 0 };
   const frame = { x: 0, y: 0, width: 390, height: 844 };
+  // Os contexts também: o React Navigation lê direto deles em vez dos hooks,
+  // e sem isto qualquer teste que monte um navegador quebra no useContext.
   return {
     __esModule: true,
     SafeAreaProvider: ({ children }) => React.createElement(View, null, children),
     SafeAreaView: ({ children, ...props }) => React.createElement(View, props, children),
+    SafeAreaInsetsContext: React.createContext(inset),
+    SafeAreaFrameContext: React.createContext(frame),
+    initialWindowMetrics: { insets: inset, frame },
     useSafeAreaInsets: () => inset,
     useSafeAreaFrame: () => frame,
   };

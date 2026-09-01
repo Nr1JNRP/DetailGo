@@ -5,6 +5,7 @@ export type RootStackParamList = {
 
   // SUBSCRIPTION
   Subscription: undefined;
+  SubscriptionRenew: undefined;
   SubscriptionDetail: undefined;
 
   // USER

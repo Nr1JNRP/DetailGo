@@ -92,7 +92,11 @@ export const asaasWebhook = onRequest({ secrets: [asaasWebhookToken] }, async (r
       tx.update(shopRef, {
         subscriptionStatus: 'active',
         activeUntil: admin.firestore.Timestamp.fromDate(nextActiveUntil(atual, now)),
-        asaasSubscriptionId: decisao.subscriptionId ?? null,
+        // Só grava quando o evento traz assinatura. Pagamento por Pix é avulso
+        // e não tem subscriptionId: escrever null aqui apagaria a recorrência
+        // no cartão de quem só quis adiantar um mês, e a tela de assinatura
+        // perderia o botão de cancelar.
+        ...(decisao.subscriptionId ? { asaasSubscriptionId: decisao.subscriptionId } : {}),
         lastPaymentId: decisao.paymentId,
         lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
       });

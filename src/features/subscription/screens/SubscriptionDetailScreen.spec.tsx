@@ -148,7 +148,7 @@ describe('SubscriptionDetailScreen', () => {
 
     fireEvent.press(await screen.findByTestId('mudar-para-cartao'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('Subscription');
+    expect(mockNavigate).toHaveBeenCalledWith('SubscriptionRenew');
   });
 
   it('volta ao tocar na seta', async () => {
