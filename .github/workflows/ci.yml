@@ -167,10 +167,53 @@ jobs:
       - name: Executa testes das regras
         run: npm run test:rules
 
+  # O build Android sozinho leva mais que toda a esteira somada. Ele so precisa
+  # rodar quando alguma entrada dele muda.
+  native-changes:
+    name: Detecta mudancas nativas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      android: ${{ steps.filtro.outputs.android }}
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+
+      - name: Verifica se algo nativo mudou
+        id: filtro
+        shell: bash
+        run: |
+          # Fora de PR (push na main) compila sempre: e a execucao que popula
+          # o cache do Gradle que as PRs leem.
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "android=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          alterados="$(git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}")"
+
+          if echo "$alterados" | grep -qE '^(android/|package\.json$|package-lock\.json$|\.github/workflows/ci\.yml$)'; then
+            echo "android=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "android=false" >> "$GITHUB_OUTPUT"
+          fi
+
   android-debug:
     name: Android debug build
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    needs: native-changes
+    # O assembleDebug nao empacota o JS — nenhuma tarefa de bundle roda nele.
+    # Mudanca em src/ nao tem como quebrar este build; o que quebra e o
+    # conteudo de android/, o conjunto de dependencias ou este workflow.
+    if: needs.native-changes.outputs.android == 'true'
 
     steps:
       - name: Checkout do codigo
@@ -190,7 +233,16 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
+
+      # Substitui o "cache: gradle" do setup-java. Aquele so restaura
+      # dependencias e, com a chave inalterada, nunca regrava o cache; este
+      # guarda tambem o build cache de tarefas entre execucoes. So a main
+      # escreve: PR nao envenena o cache que todo mundo usa.
+      - name: Configura Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: android
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Instala dependencias
         run: npm ci
@@ -248,11 +300,16 @@ jobs:
             -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
+      # Uma ABI so. Este job responde "o app ainda compila?", e o C++ aqui vem
+      # todo do codegen do React Native — nao ha codigo nosso que possa quebrar
+      # em uma arquitetura e passar em outra. As quatro ABIs continuam no
+      # android-apk.yml, que e quem gera APK para instalar.
       - name: Gera build Android debug
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --build-cache \
+            -PreactNativeArchitectures=arm64-v8a
 
   secrets:
     name: Verifica arquivos sensiveis
