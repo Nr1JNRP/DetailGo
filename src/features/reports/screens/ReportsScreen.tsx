@@ -236,9 +236,6 @@ export default function ReportsScreen() {
 
           <View style={styles.cartao}>
             <Text style={styles.cartaoTitulo}>Movimento por dia</Text>
-            <Text style={styles.cartaoSubtitulo}>
-              {'O dia vazio vale tanto quanto o cheio: é onde cabe uma promoção.'}
-            </Text>
             <BarrasProporcionais
               testID="barras-dias"
               barras={dias.map(d => ({
