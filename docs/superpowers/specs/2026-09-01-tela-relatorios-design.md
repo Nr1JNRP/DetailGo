@@ -26,12 +26,39 @@ A tela responde, em ordem, do mais imediato ao mais analítico:
    inteiro; é o que resolve o truncamento.
 4. **O que mais rende** — os mesmos serviços ordenados por faturamento, com uma
    frase comparando com o volume.
-5. **Veículos atendidos** — barras por categoria, com moto em faixa própria.
-6. **Melhores clientes** — pódio de três, com visitas e total gasto.
+5. **Movimento por dia** — a semana inteira, em ordem cronológica.
+6. **Horários mais procurados** — da primeira à última hora atendida.
+7. **Veículos atendidos** — barras por categoria, com moto em faixa própria.
+8. **Quem voltou** — quantos clientes do mês já eram clientes antes dele.
+9. **Melhores clientes** — pódio de três, com visitas e total gasto.
+10. **Clientes sumidos** — quem parou de voltar, contado de hoje.
 
-Continuam de fora: no-show e cancelamentos, movimento por dia da semana,
-retenção. A tela é uma pilha de cartões independentes e recebe mais quando o
-dono quiser.
+Os cartões ficam em quatro seções: o mês, Serviços, Agenda e Clientes.
+
+Continuam de fora: no-show e cancelamentos. A tela é uma pilha de cartões
+independentes e recebe mais quando o dono quiser.
+
+### Dois cartões que não pertencem ao mês
+
+"Quem voltou" e "Clientes sumidos" precisam de histórico anterior ao mês que a
+tela está mostrando. "Recorrente" só significa alguma coisa em relação ao que
+veio antes, e "há 40 dias sem voltar" só se conta a partir de hoje — se contasse
+a partir do fim do mês escolhido, o número mudaria a cada seta e não diria nada.
+
+Por isso existe uma segunda consulta, dos últimos doze meses, buscada uma vez e
+independente da navegação por mês. Uma falha nela esvazia esses dois cartões e
+deixa o resto do relatório de pé.
+
+"Clientes sumidos" é o cartão mais acionável da tela: é a lista de quem ligar. O
+corte é 45 dias, escolhido pelo dono.
+
+### Dia da semana e horário em ordem cronológica
+
+Os dois são os únicos gráficos que não ordenam do maior para o menor. Ordenados
+por volume, respondem qual é o dia cheio — mas escondem o formato da semana, e o
+formato é onde está o buraco. Terça de manhã vazia é o que vira promoção de
+terça. Pela mesma razão, dia e hora sem movimento aparecem com zero em vez de
+sumir.
 
 ### Por que "O que mais rende" existe
 
@@ -61,13 +88,17 @@ por mês não é enfeite: no dia 2 do mês o relatório do mês atual está quas
 vazio, e sem as setas a tela nasce inútil em boa parte do tempo. A seta de
 avançar some no mês corrente — não há futuro para olhar.
 
-Cabeçalho com o mês e o total de serviços concluídos. Abaixo, barras
-horizontais ordenadas da maior para a menor, cada uma com o nome do serviço, a
-quantidade e quanto rendeu.
+Abaixo do seletor vêm os cartões, na ordem descrita no Escopo, separados pelos
+títulos de seção. O cartão de clientes sumidos é o último e o único que não
+responde ao seletor.
 
 ### Dados
 
-Uma consulta em `shops/{shopId}/appointments`:
+Duas consultas em `shops/{shopId}/appointments`, ambas servidas pelo índice
+composto `status ASC + startAtMs ASC` de escopo COLLECTION, que já existe no
+projeto.
+
+A do mês, refeita a cada troca de seta:
 
 ```
 where status == 'done'
@@ -76,18 +107,23 @@ where startAtMs <  inicioDoMesSeguinte
 orderBy startAtMs
 ```
 
-Servida pelo índice composto `status ASC + startAtMs ASC` de escopo COLLECTION,
-que já existe no projeto.
+A do histórico de clientes, buscada uma vez:
 
-A agregação acontece no cliente. Uma estética faz dezenas a poucas centenas de
-serviços por mês; trazer isso e somar em memória é mais simples e mais barato
-que manter contadores agregados, e não corre o risco de o agregado divergir do
-histórico real.
+```
+where status == 'done'
+where startAtMs >= hoje menos 12 meses
+orderBy startAtMs
+```
+
+As duas têm teto de 2000 documentos. A agregação acontece no cliente: uma
+estética faz dezenas a poucas centenas de serviços por mês, e somar em memória é
+mais simples e mais barato que manter contadores agregados — sem o risco de o
+agregado divergir do histórico real.
 
 ### Separação
 
-Uma consulta alimenta a tela inteira. Cada cartão vem de uma função pura sobre a
-mesma lista de agendamentos, testável sem Firestore e sem React:
+Cada cartão vem de uma função pura sobre as listas buscadas, testável sem
+Firestore e sem React:
 
 - `domain/serviceReport.ts` — `agruparPorServico`, `ordenarPorFaturamento` e
   `insightDeFaturamento` (a frase do cartão 4).
@@ -98,8 +134,11 @@ mesma lista de agendamentos, testável sem Firestore e sem React:
 - `domain/periodo.ts` — limites e navegação de mês.
 - `domain/paleta.ts` — tons derivados da cor primária do tema.
 - `domain/valorCurto.ts` — dinheiro sem centavos, para os cartões estreitos.
-- `data/reportsRepo.ts` — a consulta. Só busca.
-- `components/` — `RoscaDeServicos` e `BarrasProporcionais`. Só desenham.
+- `domain/agenda.ts` — `agruparPorDiaDaSemana` e `agruparPorHorario`.
+- `domain/recorrencia.ts` — `calcularRecorrencia` e `clientesSumidos`.
+- `data/reportsRepo.ts` — as duas consultas. Só busca.
+- `components/` — `RoscaDeServicos`, `BarrasProporcionais`, `PodioDeClientes` e
+  `CartaoDeSumidos`. Só desenham.
 - `screens/ReportsScreen.tsx` — monta os cartões. Não calcula nada.
 
 ### Estado vazio

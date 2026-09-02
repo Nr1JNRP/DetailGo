@@ -42,8 +42,35 @@ export async function buscarConcluidosDoMes(
     limit(TETO),
   );
 
-  const snap = await getDocs(consulta);
+  return normalizar(await getDocs(consulta));
+}
 
+/**
+ * Agendamentos concluídos desde uma data, para as contas de cliente.
+ *
+ * Existe separada da consulta do mês porque recorrência e cliente sumido não
+ * são perguntas sobre o mês que a tela mostra: "já era cliente antes?" precisa
+ * do que veio antes, e "há quantos dias sumiu?" se conta a partir de hoje. Não
+ * anda com as setas de mês, e por isso é buscada uma vez só.
+ */
+export async function buscarHistoricoDeClientes(
+  shopId: string,
+  desdeMs: number,
+): Promise<AdminAppointment[]> {
+  const db = getFirestore();
+
+  const consulta = query(
+    collection(db, 'shops', shopId, 'appointments'),
+    where('status', '==', 'done'),
+    where('startAtMs', '>=', desdeMs),
+    orderBy('startAtMs'),
+    limit(TETO),
+  );
+
+  return normalizar(await getDocs(consulta));
+}
+
+function normalizar(snap: { docs: QDoc[] }): AdminAppointment[] {
   return snap.docs
     .map((d: QDoc) => normalizeAdminAppointmentFromGlobal(d))
     .filter(Boolean) as AdminAppointment[];

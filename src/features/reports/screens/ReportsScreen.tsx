@@ -18,13 +18,17 @@ import { formatUtils } from '@shared/utils/format.utils';
 import { useShop } from '@features/shops';
 import type { AdminAppointment } from '@features/admin';
 import BarrasProporcionais from '../components/BarrasProporcionais';
+import CartaoDeSumidos from '../components/CartaoDeSumidos';
+import PodioDeClientes from '../components/PodioDeClientes';
 import RoscaDeServicos from '../components/RoscaDeServicos';
-import { buscarConcluidosDoMes } from '../data/reportsRepo';
-import { destaquesDoMes, type Destaque } from '../domain/destaques';
+import { buscarConcluidosDoMes, buscarHistoricoDeClientes } from '../data/reportsRepo';
+import { agruparPorDiaDaSemana, agruparPorHorario } from '../domain/agenda';
 import { rankearClientes } from '../domain/clientes';
+import { destaquesDoMes, type Destaque } from '../domain/destaques';
+import { calcularRecorrencia, clientesSumidos } from '../domain/recorrencia';
 import { resumoDoMes } from '../domain/resumo';
-import { agruparPorVeiculo } from '../domain/veiculos';
 import { valorCurto } from '../domain/valorCurto';
+import { agruparPorVeiculo } from '../domain/veiculos';
 import {
   ehMesCorrente,
   limitesDoMes,
@@ -41,6 +45,12 @@ import {
   totalDeServicos,
 } from '../domain/serviceReport';
 
+/** Cliente que não volta há mais que isso entra na lista de sumidos. */
+const DIAS_PARA_SUMIR = 45;
+
+/** Janela do histórico que alimenta recorrência e sumidos. */
+const MESES_DE_HISTORICO = 12;
+
 export default function ReportsScreen() {
   const { colors: D, isLight } = useAppTheme();
   const styles = useMemo(() => createStyles(D), [D]);
@@ -50,34 +60,70 @@ export default function ReportsScreen() {
 
   const [periodo, setPeriodo] = useState<Periodo>(() => periodoAtual());
   const [agendamentos, setAgendamentos] = useState<AdminAppointment[]>([]);
+  const [historico, setHistorico] = useState<AdminAppointment[]>([]);
   const [carregando, setCarregando] = useState(true);
+
+  const limites = useMemo(() => limitesDoMes(periodo), [periodo]);
 
   const carregar = useCallback(async () => {
     if (!shopId) return;
     setCarregando(true);
     try {
-      setAgendamentos(await buscarConcluidosDoMes(shopId, limitesDoMes(periodo)));
+      setAgendamentos(await buscarConcluidosDoMes(shopId, limites));
     } catch {
       setAgendamentos([]);
       showError('Não foi possível carregar o relatório.');
     } finally {
       setCarregando(false);
     }
-  }, [periodo, shopId, showError]);
+  }, [limites, shopId, showError]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
 
-  // Tudo derivado dos mesmos agendamentos: uma consulta só alimenta a tela
-  // inteira, e cada número vem de uma função pura testada à parte.
+  // O histórico não anda com as setas de mês: recorrência e cliente sumido
+  // olham para trás e para hoje, não para o mês na tela. Buscado uma vez, e uma
+  // falha aqui só esvazia esses dois cartões — o resto do relatório continua.
+  useEffect(() => {
+    if (!shopId) return;
+    let ativo = true;
+
+    const desde = new Date();
+    desde.setMonth(desde.getMonth() - MESES_DE_HISTORICO);
+
+    buscarHistoricoDeClientes(shopId, desde.getTime())
+      .then(dados => {
+        if (ativo) setHistorico(dados);
+      })
+      .catch(() => {
+        if (ativo) setHistorico([]);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [shopId]);
+
+  // Tudo derivado das mesmas listas: cada número vem de uma função pura testada
+  // à parte, e a tela só monta os cartões.
   const servicos = useMemo(() => agruparPorServico(agendamentos), [agendamentos]);
   const resumo = useMemo(() => resumoDoMes(agendamentos), [agendamentos]);
   const destaques = useMemo(() => destaquesDoMes(agendamentos), [agendamentos]);
   const veiculos = useMemo(() => agruparPorVeiculo(agendamentos), [agendamentos]);
   const clientes = useMemo(() => rankearClientes(agendamentos), [agendamentos]);
+  const dias = useMemo(() => agruparPorDiaDaSemana(agendamentos), [agendamentos]);
+  const horarios = useMemo(() => agruparPorHorario(agendamentos), [agendamentos]);
   const porFaturamento = useMemo(() => ordenarPorFaturamento(servicos), [servicos]);
   const insight = useMemo(() => insightDeFaturamento(servicos), [servicos]);
+  const recorrencia = useMemo(
+    () => calcularRecorrencia(agendamentos, historico, limites.inicioMs),
+    [agendamentos, historico, limites.inicioMs],
+  );
+  const sumidos = useMemo(
+    () => clientesSumidos(historico, Date.now(), DIAS_PARA_SUMIR),
+    [historico],
+  );
   const total = totalDeServicos(servicos);
 
   const rotulo = rotuloDoPeriodo(periodo);
@@ -137,7 +183,7 @@ export default function ReportsScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.conteudo}>
-          <View style={styles.resumo}>
+          <View style={styles.resumo} testID="resumo">
             <Numero rotulo="Serviços" valor={String(resumo.servicos)} styles={styles} />
             <Numero
               rotulo="Faturamento"
@@ -166,6 +212,8 @@ export default function ReportsScreen() {
             />
           </View>
 
+          <Text style={styles.secao}>Serviços</Text>
+
           <View style={styles.cartao}>
             <Text style={styles.cartaoTitulo}>Serviços realizados</Text>
             <RoscaDeServicos linhas={servicos} total={total} />
@@ -184,6 +232,35 @@ export default function ReportsScreen() {
             />
           </View>
 
+          <Text style={styles.secao}>Agenda</Text>
+
+          <View style={styles.cartao}>
+            <Text style={styles.cartaoTitulo}>Movimento por dia</Text>
+            <Text style={styles.cartaoSubtitulo}>
+              {'O dia vazio vale tanto quanto o cheio: é onde cabe uma promoção.'}
+            </Text>
+            <BarrasProporcionais
+              testID="barras-dias"
+              barras={dias.map(d => ({
+                rotulo: d.rotulo,
+                valor: d.quantidade,
+                texto: String(d.quantidade),
+              }))}
+            />
+          </View>
+
+          <View style={styles.cartao}>
+            <Text style={styles.cartaoTitulo}>Horários mais procurados</Text>
+            <BarrasProporcionais
+              testID="barras-horarios"
+              barras={horarios.map(h => ({
+                rotulo: h.rotulo,
+                valor: h.quantidade,
+                texto: String(h.quantidade),
+              }))}
+            />
+          </View>
+
           <View style={styles.cartao}>
             <Text style={styles.cartaoTitulo}>Veículos atendidos</Text>
             <BarrasProporcionais
@@ -196,25 +273,34 @@ export default function ReportsScreen() {
             />
           </View>
 
+          <Text style={styles.secao}>Clientes</Text>
+
+          <View style={styles.cartao} testID="recorrencia">
+            <Text style={styles.cartaoTitulo}>Quem voltou</Text>
+            <Text style={styles.cartaoSubtitulo}>
+              {recorrencia.recorrentes === 0
+                ? `Todos os clientes de ${rotulo} vieram pela primeira vez.`
+                : `${recorrencia.recorrentes} de ${recorrencia.clientes} clientes de ${rotulo} já eram seus antes do mês.`}
+            </Text>
+            <BarrasProporcionais
+              testID="barras-recorrencia"
+              barras={[
+                {
+                  rotulo: 'Já eram clientes',
+                  valor: recorrencia.recorrentes,
+                  texto: String(recorrencia.recorrentes),
+                },
+                { rotulo: 'Novos', valor: recorrencia.novos, texto: String(recorrencia.novos) },
+              ]}
+            />
+          </View>
+
           <View style={styles.cartao}>
             <Text style={styles.cartaoTitulo}>Melhores clientes</Text>
-            {clientes.map((c, i) => (
-              <View key={c.clienteId} style={styles.cliente}>
-                <View style={[styles.posicao, i === 0 && styles.posicaoLider]}>
-                  <Text style={[styles.posicaoTexto, i === 0 && styles.posicaoTextoLider]}>
-                    {i + 1}
-                  </Text>
-                </View>
-                <Text style={styles.clienteNome} numberOfLines={1}>
-                  {c.nome}
-                </Text>
-                <Text style={styles.clienteVisitas}>
-                  {c.visitas === 1 ? '1 visita' : `${c.visitas} visitas`}
-                </Text>
-                <Text style={styles.clienteTotal}>{formatUtils.currency(c.total)}</Text>
-              </View>
-            ))}
+            <PodioDeClientes clientes={clientes} testID="podio" />
           </View>
+
+          <CartaoDeSumidos sumidos={sumidos} diasLimite={DIAS_PARA_SUMIR} />
         </ScrollView>
       )}
     </SafeAreaView>
@@ -329,6 +415,15 @@ function createStyles(D: AppColors) {
     },
     conteudo: { padding: spacing.lg, paddingTop: 0, gap: spacing.sm },
 
+    secao: {
+      color: D.ink3,
+      fontFamily: T.family.bold,
+      fontSize: T.size.caption,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginTop: spacing.sm,
+    },
+
     resumo: { flexDirection: 'row', gap: spacing.xs },
     numero: {
       flex: 1,
@@ -394,41 +489,6 @@ function createStyles(D: AppColors) {
       fontSize: T.size.secondary,
       lineHeight: T.lineHeight.secondary,
       marginTop: -spacing.xs,
-    },
-
-    cliente: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    posicao: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: D.surface,
-    },
-    posicaoLider: { backgroundColor: D.primary },
-    posicaoTexto: {
-      color: D.ink2,
-      fontFamily: T.family.bold,
-      fontSize: T.size.caption,
-    },
-    posicaoTextoLider: { color: D.onPrimary },
-    clienteNome: {
-      flex: 1,
-      color: D.ink,
-      fontFamily: T.family.medium,
-      fontSize: T.size.secondary,
-    },
-    clienteVisitas: {
-      color: D.ink2,
-      fontFamily: T.family.regular,
-      fontSize: T.size.caption,
-    },
-    clienteTotal: {
-      color: D.ink,
-      fontFamily: T.family.bold,
-      fontSize: T.size.secondary,
-      minWidth: 68,
-      textAlign: 'right',
     },
   });
 }

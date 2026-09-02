@@ -12,8 +12,10 @@ const mockShop = { shopId: 'shop-1' as string | null };
 jest.mock('@features/shops', () => ({ useShop: () => mockShop }));
 
 const mockBuscar = jest.fn();
+const mockHistorico = jest.fn();
 jest.mock('../data/reportsRepo', () => ({
   buscarConcluidosDoMes: (...args: unknown[]) => mockBuscar(...args),
+  buscarHistoricoDeClientes: (...args: unknown[]) => mockHistorico(...args),
 }));
 
 // A rosca vira um marcador que expõe o que foi mandado desenhar. O que este
@@ -80,6 +82,7 @@ describe('ReportsScreen', () => {
     jest.setSystemTime(new Date(2026, 8, 15, 10, 0, 0));
     mockShop.shopId = 'shop-1';
     mockBuscar.mockResolvedValue(mesTipico());
+    mockHistorico.mockResolvedValue(mesTipico());
   });
 
   afterEach(() => {
@@ -136,9 +139,11 @@ describe('ReportsScreen', () => {
     it('mostra serviços, faturamento e ticket médio', async () => {
       render(<ReportsScreen />);
 
-      expect(await screen.findByText('4')).toBeTruthy();
-      expect(screen.getByText('R$ 620')).toBeTruthy();
-      expect(screen.getByText('R$ 155')).toBeTruthy();
+      const resumo = within(await screen.findByTestId('resumo'));
+
+      expect(resumo.getByText('4')).toBeTruthy();
+      expect(resumo.getByText('R$ 620')).toBeTruthy();
+      expect(resumo.getByText('R$ 155')).toBeTruthy();
     });
   });
 
@@ -250,6 +255,104 @@ describe('ReportsScreen', () => {
       render(<ReportsScreen />);
 
       expect(await screen.findByText('1 visita')).toBeTruthy();
+    });
+  });
+
+  describe('agenda', () => {
+    it('mostra a semana inteira, inclusive os dias vazios', async () => {
+      render(<ReportsScreen />);
+
+      const barras = within(await screen.findByTestId('barras-dias'));
+
+      expect(barras.getByText('Segunda')).toBeTruthy();
+      expect(barras.getByText('Domingo')).toBeTruthy();
+    });
+
+    it('mostra as horas atendidas', async () => {
+      render(<ReportsScreen />);
+
+      const barras = within(await screen.findByTestId('barras-horarios'));
+
+      expect(barras.getByText('09h')).toBeTruthy();
+    });
+  });
+
+  describe('clientes', () => {
+    // Recorrente e sumido olham para fora do mês, por isso vêm da consulta de
+    // histórico e não da consulta do mês.
+    it('busca o histórico de clientes separado do mês', async () => {
+      render(<ReportsScreen />);
+
+      await waitFor(() => expect(mockHistorico).toHaveBeenCalledTimes(1));
+      expect(mockHistorico.mock.calls[0][0]).toBe('shop-1');
+    });
+
+    it('não rebusca o histórico ao trocar de mês', async () => {
+      render(<ReportsScreen />);
+      await screen.findByText('Setembro');
+
+      fireEvent.press(screen.getByTestId('mes-anterior'));
+      await screen.findByText('Agosto');
+
+      expect(mockHistorico).toHaveBeenCalledTimes(1);
+    });
+
+    it('conta como recorrente quem já vinha antes do mês', async () => {
+      mockHistorico.mockResolvedValue([
+        agendamento({ customerUid: 'c1', customerName: 'Ana Souza' }),
+        { ...agendamento({ customerUid: 'c1' }), startAtMs: new Date(2026, 6, 10).getTime() },
+      ]);
+
+      render(<ReportsScreen />);
+
+      expect(
+        await screen.findByText('1 de 2 clientes de Setembro já eram seus antes do mês.'),
+      ).toBeTruthy();
+    });
+
+    it('diz quando todos vieram pela primeira vez', async () => {
+      mockHistorico.mockResolvedValue(mesTipico());
+
+      render(<ReportsScreen />);
+
+      expect(
+        await screen.findByText('Todos os clientes de Setembro vieram pela primeira vez.'),
+      ).toBeTruthy();
+    });
+
+    it('lista quem sumiu há mais de 45 dias, contado de hoje', async () => {
+      mockHistorico.mockResolvedValue([
+        {
+          ...agendamento({ customerUid: 'c9', customerName: 'Pedro Rocha' }),
+          startAtMs: new Date(2026, 6, 1).getTime(),
+        },
+      ]);
+
+      render(<ReportsScreen />);
+
+      const cartao = within(await screen.findByTestId('clientes-sumidos'));
+      expect(cartao.getByText('Pedro Rocha')).toBeTruthy();
+      expect(cartao.getByText('76d')).toBeTruthy();
+    });
+
+    it('comemora quando ninguém sumiu', async () => {
+      render(<ReportsScreen />);
+
+      const cartao = within(await screen.findByTestId('clientes-sumidos'));
+      expect(
+        cartao.getByText('Ninguém sumiu. Todos os seus clientes voltaram dentro do prazo.'),
+      ).toBeTruthy();
+    });
+
+    // Uma falha no histórico não pode derrubar o relatório do mês.
+    it('mantém o resto da tela quando o histórico falha', async () => {
+      mockHistorico.mockRejectedValue(new Error('sem rede'));
+
+      render(<ReportsScreen />);
+
+      expect(await screen.findByTestId('rosca')).toBeTruthy();
+      expect(screen.getByTestId('clientes-sumidos')).toBeTruthy();
+      expect(mockShowError).not.toHaveBeenCalled();
     });
   });
 

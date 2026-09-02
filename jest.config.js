@@ -23,13 +23,13 @@ module.exports = {
   // Ratchet: o piso só sobe. Deixamos ~1 ponto de folga sobre a cobertura real
   // para o CI não quebrar por variação mínima — mas não mais que isso, senão
   // dá para remover teste sem ninguém notar.
-  // Cobertura em 02/09/2026: 76.82 stmts · 69.13 branch · 77.84 func · 77.76 lines
+  // Cobertura em 02/09/2026: 77.52 stmts · 69.46 branch · 78.54 func · 78.39 lines
   coverageThreshold: {
     global: {
-      statements: 76,
+      statements: 77,
       branches: 69,
-      functions: 77,
-      lines: 77,
+      functions: 78,
+      lines: 78,
     },
   },
 };

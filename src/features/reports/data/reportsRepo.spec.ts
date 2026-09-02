@@ -16,7 +16,7 @@ jest.mock('@features/admin', () => ({
   normalizeAdminAppointmentFromGlobal: (d: unknown) => mockNormalizar(d),
 }));
 
-import { buscarConcluidosDoMes } from './reportsRepo';
+import { buscarConcluidosDoMes, buscarHistoricoDeClientes } from './reportsRepo';
 
 const LIMITES = {
   inicioMs: new Date(2026, 7, 1).getTime(),
@@ -88,5 +88,41 @@ describe('buscarConcluidosDoMes', () => {
     mockGetDocs.mockRejectedValue(new Error('permission-denied'));
 
     await expect(buscarConcluidosDoMes('shop-1', LIMITES)).rejects.toThrow('permission-denied');
+  });
+});
+
+describe('buscarHistoricoDeClientes', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetDocs.mockResolvedValue({ docs: [] });
+  });
+
+  // Sem teto superior de propósito: recorrência e cliente sumido precisam de
+  // tudo desde a data pedida até hoje.
+  it('filtra por concluídos a partir da data, sem limite superior', async () => {
+    await buscarHistoricoDeClientes('shop-1', LIMITES.inicioMs);
+
+    const wheres = consultaFeita().clausulas.filter(c => c.tipo === 'where');
+
+    expect(wheres).toEqual([
+      { tipo: 'where', campo: 'status', op: '==', valor: 'done' },
+      { tipo: 'where', campo: 'startAtMs', op: '>=', valor: LIMITES.inicioMs },
+    ]);
+  });
+
+  it('usa a mesma coleção e o mesmo teto', async () => {
+    await buscarHistoricoDeClientes('shop-1', LIMITES.inicioMs);
+
+    expect(consultaFeita().ref.caminho).toEqual(['shops', 'shop-1', 'appointments']);
+    expect(consultaFeita().clausulas).toContainEqual({ tipo: 'limit', n: 2000 });
+  });
+
+  it('descarta documento que o normalizador rejeita', async () => {
+    mockGetDocs.mockResolvedValue({ docs: ['bom', 'ruim'] });
+    mockNormalizar.mockImplementation(d => (d === 'bom' ? { id: 'bom' } : null));
+
+    await expect(buscarHistoricoDeClientes('shop-1', LIMITES.inicioMs)).resolves.toEqual([
+      { id: 'bom' },
+    ]);
   });
 });
