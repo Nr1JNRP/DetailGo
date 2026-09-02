@@ -50,3 +50,43 @@ export function agruparPorServico(agendamentos: AdminAppointment[]): LinhaDeServ
 export function totalDeServicos(linhas: LinhaDeServico[]): number {
   return linhas.reduce((soma, l) => soma + l.quantidade, 0);
 }
+
+/** Os mesmos serviços, agora do que mais rende ao que menos rende. */
+export function ordenarPorFaturamento(linhas: LinhaDeServico[]): LinhaDeServico[] {
+  return [...linhas].sort(
+    (a, b) =>
+      b.faturamento - a.faturamento ||
+      b.quantidade - a.quantidade ||
+      a.servico.localeCompare(b.servico, 'pt-BR'),
+  );
+}
+
+function porcentagem(parte: number, todo: number): number {
+  return Math.round((parte / todo) * 100);
+}
+
+/**
+ * A frase que explica por que existem dois gráficos de serviço.
+ *
+ * O serviço que mais ocupa a agenda quase nunca é o que mais paga as contas, e
+ * essa diferença é a decisão de negócio escondida nos dados. Quando os dois são
+ * o mesmo serviço, ou quando não há o que comparar, devolve null e a tela
+ * simplesmente não mostra frase nenhuma — inventar um texto para todo caso seria
+ * ruído.
+ */
+export function insightDeFaturamento(linhas: LinhaDeServico[]): string | null {
+  if (linhas.length < 2) return null;
+
+  const totalQuantidade = totalDeServicos(linhas);
+  const totalFaturamento = linhas.reduce((soma, l) => soma + l.faturamento, 0);
+  if (totalQuantidade === 0 || totalFaturamento === 0) return null;
+
+  const maisFeito = linhas[0];
+  const queMaisRende = ordenarPorFaturamento(linhas)[0];
+  if (maisFeito.servico === queMaisRende.servico) return null;
+
+  const fatiaDoTrabalho = porcentagem(queMaisRende.quantidade, totalQuantidade);
+  const fatiaDoDinheiro = porcentagem(queMaisRende.faturamento, totalFaturamento);
+
+  return `O ${queMaisRende.servico} é ${fatiaDoTrabalho}% do que você faz e traz ${fatiaDoDinheiro}% do faturamento.`;
+}

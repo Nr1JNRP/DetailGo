@@ -1,6 +1,11 @@
 import type { AdminAppointment } from '@features/admin';
 
-import { agruparPorServico, totalDeServicos } from './serviceReport';
+import {
+  agruparPorServico,
+  insightDeFaturamento,
+  ordenarPorFaturamento,
+  totalDeServicos,
+} from './serviceReport';
 
 function agendamento(over: Partial<AdminAppointment> = {}): AdminAppointment {
   return {
@@ -109,5 +114,84 @@ describe('totalDeServicos', () => {
 
   it('é zero sem linhas', () => {
     expect(totalDeServicos([])).toBe(0);
+  });
+});
+
+describe('ordenarPorFaturamento', () => {
+  it('põe na frente quem mais rende, mesmo fazendo menos', () => {
+    const linhas = agruparPorServico([
+      agendamento({ serviceLabel: 'Lavagem', price: 90 }),
+      agendamento({ serviceLabel: 'Lavagem', price: 90 }),
+      agendamento({ serviceLabel: 'Lavagem', price: 90 }),
+      agendamento({ serviceLabel: 'Polimento', price: 350 }),
+    ]);
+
+    expect(linhas.map(l => l.servico)).toEqual(['Lavagem', 'Polimento']);
+    expect(ordenarPorFaturamento(linhas).map(l => l.servico)).toEqual(['Polimento', 'Lavagem']);
+  });
+
+  it('não altera a lista recebida', () => {
+    const linhas = agruparPorServico([
+      agendamento({ serviceLabel: 'Lavagem', price: 90 }),
+      agendamento({ serviceLabel: 'Polimento', price: 350 }),
+    ]);
+    const antes = linhas.map(l => l.servico);
+
+    ordenarPorFaturamento(linhas);
+
+    expect(linhas.map(l => l.servico)).toEqual(antes);
+  });
+
+  it('desempata pela quantidade e depois pelo nome', () => {
+    const linhas = agruparPorServico([
+      agendamento({ serviceLabel: 'Zeta', price: 100 }),
+      agendamento({ serviceLabel: 'Alfa', price: 100 }),
+    ]);
+
+    expect(ordenarPorFaturamento(linhas).map(l => l.servico)).toEqual(['Alfa', 'Zeta']);
+  });
+});
+
+describe('insightDeFaturamento', () => {
+  // A frase existe justamente porque o serviço que enche a agenda quase nunca
+  // é o que paga as contas.
+  it('compara o mais feito com o que mais rende', () => {
+    const linhas = agruparPorServico([
+      ...Array.from({ length: 3 }, () => agendamento({ serviceLabel: 'Lavagem', price: 100 })),
+      agendamento({ serviceLabel: 'Polimento', price: 700 }),
+    ]);
+
+    expect(insightDeFaturamento(linhas)).toBe(
+      'O Polimento é 25% do que você faz e traz 70% do faturamento.',
+    );
+  });
+
+  it('cala a boca quando o mais feito também é o que mais rende', () => {
+    const linhas = agruparPorServico([
+      agendamento({ serviceLabel: 'Lavagem', price: 500 }),
+      agendamento({ serviceLabel: 'Lavagem', price: 500 }),
+      agendamento({ serviceLabel: 'Cera', price: 50 }),
+    ]);
+
+    expect(insightDeFaturamento(linhas)).toBeNull();
+  });
+
+  it('cala a boca quando só existe um serviço', () => {
+    const linhas = agruparPorServico([agendamento({ serviceLabel: 'Lavagem' })]);
+
+    expect(insightDeFaturamento(linhas)).toBeNull();
+  });
+
+  it('cala a boca sem serviço nenhum', () => {
+    expect(insightDeFaturamento([])).toBeNull();
+  });
+
+  it('não divide por zero quando nada tem preço', () => {
+    const linhas = agruparPorServico([
+      agendamento({ serviceLabel: 'Lavagem', price: null }),
+      agendamento({ serviceLabel: 'Cera', price: null }),
+    ]);
+
+    expect(insightDeFaturamento(linhas)).toBeNull();
   });
 });

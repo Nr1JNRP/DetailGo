@@ -12,43 +12,65 @@ const mockShop = { shopId: 'shop-1' as string | null };
 jest.mock('@features/shops', () => ({ useShop: () => mockShop }));
 
 const mockBuscar = jest.fn();
+const mockHistorico = jest.fn();
 jest.mock('../data/reportsRepo', () => ({
   buscarConcluidosDoMes: (...args: unknown[]) => mockBuscar(...args),
+  buscarHistoricoDeClientes: (...args: unknown[]) => mockHistorico(...args),
 }));
 
-// O gráfico vira um marcador que expõe os rótulos das barras: o que este teste
-// verifica é QUAIS barras a tela manda desenhar, não como a lib as pinta.
+// A rosca vira um marcador que expõe o que foi mandado desenhar. O que este
+// teste verifica é quais fatias a tela pede, não como a lib as pinta.
 jest.mock('react-native-gifted-charts', () => {
   const ReactLocal = require('react');
   const { Text } = require('react-native');
   return {
-    BarChart: ({ data }: { data: { label: string; value: number }[] }) =>
-      ReactLocal.createElement(
-        Text,
-        { testID: 'grafico' },
-        data.map(d => `${d.label}:${d.value}`).join('|'),
-      ),
+    PieChart: ({ data }: { data: { value: number }[] }) =>
+      ReactLocal.createElement(Text, { testID: 'rosca' }, data.map(d => d.value).join('|')),
   };
 });
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react-native';
 
 import ReportsScreen from './ReportsScreen';
 import type { AdminAppointment } from '@features/admin';
 
-function agendamento(servico: string, preco: number | null = 80): AdminAppointment {
+type Opcoes = Partial<
+  Pick<
+    AdminAppointment,
+    'serviceLabel' | 'price' | 'customerUid' | 'customerName' | 'vehicleType' | 'carCategory'
+  >
+>;
+
+function agendamento(o: Opcoes = {}): AdminAppointment {
   return {
     id: Math.random().toString(36).slice(2),
     customerUid: 'c1',
-    customerName: 'Cliente',
+    customerName: 'Ana Souza',
     vehicleType: 'Carro',
-    carCategory: 'Hatch',
-    serviceLabel: servico,
-    price: preco,
-    startAtMs: Date.now(),
+    carCategory: 'SUV',
+    serviceLabel: 'Lavagem Técnica',
+    price: 90,
+    startAtMs: new Date(2026, 8, 10, 9, 0, 0).getTime(),
     status: 'done',
+    ...o,
   };
+}
+
+/** Três lavagens de R$ 90 e um polimento de R$ 350, dois clientes. */
+function mesTipico(): AdminAppointment[] {
+  return [
+    agendamento({ customerUid: 'c1', customerName: 'Ana Souza' }),
+    agendamento({ customerUid: 'c1', customerName: 'Ana Souza' }),
+    agendamento({ customerUid: 'c2', customerName: 'Carlos Lima' }),
+    agendamento({
+      serviceLabel: 'Polimento Comercial',
+      price: 350,
+      customerUid: 'c2',
+      customerName: 'Carlos Lima',
+      carCategory: 'Sedan',
+    }),
+  ];
 }
 
 describe('ReportsScreen', () => {
@@ -57,142 +79,329 @@ describe('ReportsScreen', () => {
     jest.useFakeTimers({
       doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask', 'performance'],
     });
-    // 15/09/2026: um dia qualquer no meio do mês, longe da virada.
     jest.setSystemTime(new Date(2026, 8, 15, 10, 0, 0));
     mockShop.shopId = 'shop-1';
-    mockBuscar.mockResolvedValue([
-      agendamento('Lavagem', 80),
-      agendamento('Lavagem', 80),
-      agendamento('Polimento', 300),
-    ]);
+    mockBuscar.mockResolvedValue(mesTipico());
+    mockHistorico.mockResolvedValue(mesTipico());
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  it('abre no mês corrente', async () => {
-    render(<ReportsScreen />);
+  describe('período', () => {
+    it('abre no mês corrente e busca o período dele', async () => {
+      render(<ReportsScreen />);
 
-    expect(await screen.findByText('Setembro')).toBeTruthy();
-  });
-
-  it('busca os concluídos do mês da loja', async () => {
-    render(<ReportsScreen />);
-
-    await waitFor(() =>
+      expect(await screen.findByText('Setembro')).toBeTruthy();
       expect(mockBuscar).toHaveBeenCalledWith('shop-1', {
         inicioMs: new Date(2026, 8, 1).getTime(),
         fimMs: new Date(2026, 9, 1).getTime(),
-      }),
-    );
+      });
+    });
+
+    it('volta um mês pela seta e busca o período novo', async () => {
+      render(<ReportsScreen />);
+      await screen.findByText('Setembro');
+
+      fireEvent.press(screen.getByTestId('mes-anterior'));
+
+      expect(await screen.findByText('Agosto')).toBeTruthy();
+      await waitFor(() =>
+        expect(mockBuscar).toHaveBeenLastCalledWith('shop-1', {
+          inicioMs: new Date(2026, 7, 1).getTime(),
+          fimMs: new Date(2026, 8, 1).getTime(),
+        }),
+      );
+    });
+
+    // Não existe futuro para relatar.
+    it('não oferece avançar no mês corrente', async () => {
+      render(<ReportsScreen />);
+      await screen.findByText('Setembro');
+
+      expect(screen.queryByTestId('mes-seguinte')).toBeNull();
+    });
+
+    it('oferece avançar depois de voltar', async () => {
+      render(<ReportsScreen />);
+      await screen.findByText('Setembro');
+
+      fireEvent.press(screen.getByTestId('mes-anterior'));
+      await screen.findByText('Agosto');
+      fireEvent.press(screen.getByTestId('mes-seguinte'));
+
+      expect(await screen.findByText('Setembro')).toBeTruthy();
+    });
   });
 
-  it('desenha as barras do mais feito ao menos feito', async () => {
-    render(<ReportsScreen />);
+  describe('resumo', () => {
+    it('mostra serviços, faturamento e ticket médio', async () => {
+      render(<ReportsScreen />);
 
-    expect(await screen.findByTestId('grafico')).toHaveTextContent('Lavagem:2|Polimento:1');
+      const resumo = within(await screen.findByTestId('resumo'));
+
+      expect(resumo.getByText('4')).toBeTruthy();
+      expect(resumo.getByText('R$ 620')).toBeTruthy();
+      expect(resumo.getByText('R$ 155')).toBeTruthy();
+    });
   });
 
-  it('mostra o total de serviços do mês', async () => {
-    render(<ReportsScreen />);
+  describe('destaques', () => {
+    it('responde as três perguntas do dono', async () => {
+      render(<ReportsScreen />);
 
-    expect(await screen.findByText('3 serviços')).toBeTruthy();
+      const destaques = within(await screen.findByTestId('destaques'));
+
+      expect(destaques.getByText('Serviço campeão')).toBeTruthy();
+      expect(destaques.getByText('Lavagem Técnica')).toBeTruthy();
+
+      expect(destaques.getByText('Veículo mais atendido')).toBeTruthy();
+      expect(destaques.getByText('SUV')).toBeTruthy();
+
+      expect(destaques.getByText('Cliente do mês')).toBeTruthy();
+      expect(destaques.getByText('Carlos Lima')).toBeTruthy();
+    });
   });
 
-  it('usa o singular quando o mês teve um serviço só', async () => {
-    mockBuscar.mockResolvedValue([agendamento('Lavagem')]);
+  describe('serviços realizados', () => {
+    it('desenha uma fatia por serviço, do maior ao menor', async () => {
+      render(<ReportsScreen />);
 
-    render(<ReportsScreen />);
+      expect(await screen.findByTestId('rosca')).toHaveTextContent('3|1');
+    });
 
-    expect(await screen.findByText('1 serviço')).toBeTruthy();
+    it('mostra o nome inteiro e a porcentagem na legenda', async () => {
+      render(<ReportsScreen />);
+
+      await screen.findByTestId('rosca');
+      expect(screen.getByText('75%')).toBeTruthy();
+      expect(screen.getByText('25%')).toBeTruthy();
+    });
   });
 
-  it('lista o detalhe com quantidade e faturamento', async () => {
-    render(<ReportsScreen />);
+  describe('o que mais rende', () => {
+    // O serviço que enche a agenda não é o que paga as contas: 1 polimento
+    // rende mais que 3 lavagens.
+    it('ordena por faturamento, não por quantidade', async () => {
+      render(<ReportsScreen />);
 
-    expect(await screen.findByText('Polimento')).toBeTruthy();
-    expect(screen.getByText('2x')).toBeTruthy();
-    expect(screen.getByText('R$ 160,00')).toBeTruthy();
-    expect(screen.getByText('R$ 300,00')).toBeTruthy();
+      const barras = within(await screen.findByTestId('barras-faturamento'));
+
+      expect(barras.getByText('R$ 350,00')).toBeTruthy();
+      expect(barras.getByText('R$ 270,00')).toBeTruthy();
+    });
+
+    it('explica a diferença em uma frase', async () => {
+      render(<ReportsScreen />);
+
+      expect(
+        await screen.findByText(
+          'O Polimento Comercial é 25% do que você faz e traz 56% do faturamento.',
+        ),
+      ).toBeTruthy();
+    });
+
+    it('não mostra frase quando o mais feito também é o que mais rende', async () => {
+      mockBuscar.mockResolvedValue([
+        agendamento({ serviceLabel: 'Lavagem', price: 500 }),
+        agendamento({ serviceLabel: 'Lavagem', price: 500 }),
+        agendamento({ serviceLabel: 'Cera', price: 20 }),
+      ]);
+
+      render(<ReportsScreen />);
+
+      await screen.findByTestId('barras-faturamento');
+      expect(screen.queryByText(/traz .* do faturamento/)).toBeNull();
+    });
   });
 
-  it('volta um mês pela seta e busca o período novo', async () => {
-    render(<ReportsScreen />);
-    await screen.findByText('Setembro');
+  describe('veículos', () => {
+    it('lista os veículos atendidos', async () => {
+      render(<ReportsScreen />);
 
-    fireEvent.press(screen.getByTestId('mes-anterior'));
+      const barras = within(await screen.findByTestId('barras-veiculos'));
 
-    expect(await screen.findByText('Agosto')).toBeTruthy();
-    await waitFor(() =>
-      expect(mockBuscar).toHaveBeenLastCalledWith('shop-1', {
-        inicioMs: new Date(2026, 7, 1).getTime(),
-        fimMs: new Date(2026, 8, 1).getTime(),
-      }),
-    );
+      expect(barras.getByText('SUV')).toBeTruthy();
+      expect(barras.getByText('Sedan')).toBeTruthy();
+    });
+
+    it('mostra moto como faixa própria', async () => {
+      mockBuscar.mockResolvedValue([
+        agendamento({ vehicleType: 'Moto', carCategory: null }),
+        agendamento({ vehicleType: 'Carro', carCategory: 'SUV' }),
+      ]);
+
+      render(<ReportsScreen />);
+
+      const barras = within(await screen.findByTestId('barras-veiculos'));
+      expect(barras.getByText('Moto')).toBeTruthy();
+    });
   });
 
-  // Não existe futuro para relatar: no mês corrente a seta de avançar some.
-  it('não oferece avançar no mês corrente', async () => {
-    render(<ReportsScreen />);
-    await screen.findByText('Setembro');
+  describe('melhores clientes', () => {
+    it('mostra o pódio com visitas e total gasto', async () => {
+      render(<ReportsScreen />);
 
-    expect(screen.queryByTestId('mes-seguinte')).toBeNull();
+      expect(await screen.findByText('Melhores clientes')).toBeTruthy();
+      expect(screen.getByText('R$ 440,00')).toBeTruthy();
+      expect(screen.getByText('R$ 180,00')).toBeTruthy();
+      expect(screen.getAllByText('2 visitas')).toHaveLength(2);
+    });
+
+    it('usa singular para quem veio uma vez', async () => {
+      mockBuscar.mockResolvedValue([agendamento()]);
+
+      render(<ReportsScreen />);
+
+      expect(await screen.findByText('1 visita')).toBeTruthy();
+    });
   });
 
-  it('oferece avançar depois de voltar', async () => {
-    render(<ReportsScreen />);
-    await screen.findByText('Setembro');
+  describe('agenda', () => {
+    it('mostra a semana inteira, inclusive os dias vazios', async () => {
+      render(<ReportsScreen />);
 
-    fireEvent.press(screen.getByTestId('mes-anterior'));
-    await screen.findByText('Agosto');
+      const barras = within(await screen.findByTestId('barras-dias'));
 
-    fireEvent.press(screen.getByTestId('mes-seguinte'));
+      expect(barras.getByText('Segunda')).toBeTruthy();
+      expect(barras.getByText('Domingo')).toBeTruthy();
+    });
 
-    expect(await screen.findByText('Setembro')).toBeTruthy();
+    it('mostra as horas atendidas', async () => {
+      render(<ReportsScreen />);
+
+      const barras = within(await screen.findByTestId('barras-horarios'));
+
+      expect(barras.getByText('09h')).toBeTruthy();
+    });
   });
 
-  // `done` é marcado à mão pelo dono. Um gráfico em branco pareceria app
-  // quebrado; o texto diz o que fazer.
-  it('explica o vazio em vez de mostrar gráfico em branco', async () => {
-    mockBuscar.mockResolvedValue([]);
+  describe('clientes', () => {
+    // Recorrente e sumido olham para fora do mês, por isso vêm da consulta de
+    // histórico e não da consulta do mês.
+    it('busca o histórico de clientes separado do mês', async () => {
+      render(<ReportsScreen />);
 
-    render(<ReportsScreen />);
+      await waitFor(() => expect(mockHistorico).toHaveBeenCalledTimes(1));
+      expect(mockHistorico.mock.calls[0][0]).toBe('shop-1');
+    });
 
-    expect(await screen.findByText('Nenhum serviço concluído em Setembro')).toBeTruthy();
-    expect(
-      screen.getByText(
-        'O relatório conta os agendamentos que você marcou como concluídos no painel.',
-      ),
-    ).toBeTruthy();
-    expect(screen.queryByTestId('grafico')).toBeNull();
+    it('não rebusca o histórico ao trocar de mês', async () => {
+      render(<ReportsScreen />);
+      await screen.findByText('Setembro');
+
+      fireEvent.press(screen.getByTestId('mes-anterior'));
+      await screen.findByText('Agosto');
+
+      expect(mockHistorico).toHaveBeenCalledTimes(1);
+    });
+
+    it('conta como recorrente quem já vinha antes do mês', async () => {
+      mockHistorico.mockResolvedValue([
+        agendamento({ customerUid: 'c1', customerName: 'Ana Souza' }),
+        { ...agendamento({ customerUid: 'c1' }), startAtMs: new Date(2026, 6, 10).getTime() },
+      ]);
+
+      render(<ReportsScreen />);
+
+      expect(
+        await screen.findByText(
+          '1 de 2 clientes de Setembro já tinham feito serviço com você antes do mês.',
+        ),
+      ).toBeTruthy();
+    });
+
+    it('diz quando todos vieram pela primeira vez', async () => {
+      mockHistorico.mockResolvedValue(mesTipico());
+
+      render(<ReportsScreen />);
+
+      expect(
+        await screen.findByText('Todos os clientes de Setembro vieram pela primeira vez.'),
+      ).toBeTruthy();
+    });
+
+    it('lista quem sumiu há mais de 45 dias, contado de hoje', async () => {
+      mockHistorico.mockResolvedValue([
+        {
+          ...agendamento({ customerUid: 'c9', customerName: 'Pedro Rocha' }),
+          startAtMs: new Date(2026, 6, 1).getTime(),
+        },
+      ]);
+
+      render(<ReportsScreen />);
+
+      const cartao = within(await screen.findByTestId('clientes-sumidos'));
+      expect(cartao.getByText('Pedro Rocha')).toBeTruthy();
+      expect(cartao.getByText('76d')).toBeTruthy();
+    });
+
+    it('comemora quando ninguém sumiu', async () => {
+      render(<ReportsScreen />);
+
+      const cartao = within(await screen.findByTestId('clientes-sumidos'));
+      expect(
+        cartao.getByText('Ninguém sumiu. Todos os seus clientes voltaram dentro do prazo.'),
+      ).toBeTruthy();
+    });
+
+    // Uma falha no histórico não pode derrubar o relatório do mês.
+    it('mantém o resto da tela quando o histórico falha', async () => {
+      mockHistorico.mockRejectedValue(new Error('sem rede'));
+
+      render(<ReportsScreen />);
+
+      expect(await screen.findByTestId('rosca')).toBeTruthy();
+      expect(screen.getByTestId('clientes-sumidos')).toBeTruthy();
+      expect(mockShowError).not.toHaveBeenCalled();
+    });
   });
 
-  it('avisa quando a consulta falha e não deixa dado velho na tela', async () => {
-    mockBuscar.mockRejectedValue(new Error('sem rede'));
+  describe('estados', () => {
+    // `done` é marcado à mão pelo dono. Um gráfico em branco pareceria app
+    // quebrado; o texto diz o que fazer.
+    it('explica o mês vazio em vez de desenhar nada', async () => {
+      mockBuscar.mockResolvedValue([]);
 
-    render(<ReportsScreen />);
+      render(<ReportsScreen />);
 
-    await waitFor(() =>
-      expect(mockShowError).toHaveBeenCalledWith('Não foi possível carregar o relatório.'),
-    );
-    expect(screen.queryByTestId('grafico')).toBeNull();
-  });
+      expect(await screen.findByText('Nenhum serviço concluído em Setembro')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'O relatório conta os agendamentos que você marcou como concluídos no painel.',
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByTestId('rosca')).toBeNull();
+      expect(screen.queryByTestId('destaques')).toBeNull();
+    });
 
-  it('não busca nada sem shopId', async () => {
-    mockShop.shopId = null;
+    it('avisa quando a consulta falha e não deixa dado velho na tela', async () => {
+      mockBuscar.mockRejectedValue(new Error('sem rede'));
 
-    render(<ReportsScreen />);
+      render(<ReportsScreen />);
 
-    await waitFor(() => expect(mockBuscar).not.toHaveBeenCalled());
-  });
+      await waitFor(() =>
+        expect(mockShowError).toHaveBeenCalledWith('Não foi possível carregar o relatório.'),
+      );
+      expect(screen.queryByTestId('rosca')).toBeNull();
+    });
 
-  it('volta ao tocar na seta do topo', async () => {
-    render(<ReportsScreen />);
-    await screen.findByText('Setembro');
+    it('não busca nada sem shopId', async () => {
+      mockShop.shopId = null;
 
-    fireEvent.press(screen.getByTestId('voltar'));
+      render(<ReportsScreen />);
 
-    expect(mockGoBack).toHaveBeenCalled();
+      await waitFor(() => expect(mockBuscar).not.toHaveBeenCalled());
+    });
+
+    it('volta ao tocar na seta do topo', async () => {
+      render(<ReportsScreen />);
+      await screen.findByText('Setembro');
+
+      fireEvent.press(screen.getByTestId('voltar'));
+
+      expect(mockGoBack).toHaveBeenCalled();
+    });
   });
 });
