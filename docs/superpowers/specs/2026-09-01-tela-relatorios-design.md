@@ -11,11 +11,38 @@ catálogo sem ninguém pedir.
 
 ## Escopo
 
-Um gráfico: serviços concluídos no mês, do mais feito ao menos feito.
+> **Revisado em 02/09/2026.** A primeira versão entregou um gráfico de barras
+> verticais com o nome do serviço truncado no eixo, mais uma lista de números.
+> O dono achou pobre, e com razão: barra vertical não comporta nome de serviço,
+> e uma lista de quantidades não é análise. Esta seção descreve o que a tela é
+> agora; o restante do documento continua valendo.
 
-Ficaram de fora, propostas e adiadas: resumo com faturamento e ticket médio,
-no-show e cancelamentos, movimento por dia da semana, retenção de clientes.
-Entram depois se o dono quiser — a tela é construída para receber mais cartões.
+A tela responde, em ordem, do mais imediato ao mais analítico:
+
+1. **Resumo** — serviços, faturamento e ticket médio do mês.
+2. **Destaques** — serviço campeão, veículo mais atendido e cliente do mês, cada
+   um como uma frase com o vencedor, não como gráfico.
+3. **Serviços realizados** — rosca com legenda ao lado. O nome vai na legenda
+   inteiro; é o que resolve o truncamento.
+4. **O que mais rende** — os mesmos serviços ordenados por faturamento, com uma
+   frase comparando com o volume.
+5. **Veículos atendidos** — barras por categoria, com moto em faixa própria.
+6. **Melhores clientes** — pódio de três, com visitas e total gasto.
+
+Continuam de fora: no-show e cancelamentos, movimento por dia da semana,
+retenção. A tela é uma pilha de cartões independentes e recebe mais quando o
+dono quiser.
+
+### Por que "O que mais rende" existe
+
+É o cartão que justifica a tela. O serviço que mais ocupa a agenda quase nunca é
+o que mais paga as contas, e essa diferença é decisão de negócio: onde subir
+preço, o que divulgar, o que talvez não compense. Na massa de agosto a Lavagem é
+43% do volume e 25% do faturamento; o Polimento é 11% do volume e 25% do
+faturamento.
+
+A frase só aparece quando os dois são serviços diferentes. Quando coincidem, não
+há o que dizer e a tela não diz nada — texto para todo caso vira ruído.
 
 ## Como funciona
 
@@ -59,13 +86,21 @@ histórico real.
 
 ### Separação
 
-- `reports/domain/serviceReport.ts` — `agruparPorServico(agendamentos)`, função
-  pura. Recebe agendamentos, devolve a lista ordenada com nome, quantidade e
-  faturamento. Todas as decisões sobre dado incompleto moram aqui, e todas são
-  testáveis sem Firestore e sem React.
-- `reports/domain/periodo.ts` — `limitesDoMes(ano, mes)` e o rótulo do mês.
-- `reports/data/reportsRepo.ts` — a consulta ao Firestore. Só busca.
-- `reports/screens/ReportsScreen.tsx` — só desenha.
+Uma consulta alimenta a tela inteira. Cada cartão vem de uma função pura sobre a
+mesma lista de agendamentos, testável sem Firestore e sem React:
+
+- `domain/serviceReport.ts` — `agruparPorServico`, `ordenarPorFaturamento` e
+  `insightDeFaturamento` (a frase do cartão 4).
+- `domain/veiculos.ts` — `agruparPorVeiculo`, com moto em faixa própria.
+- `domain/clientes.ts` — `rankearClientes`, agrupando por uid.
+- `domain/resumo.ts` — os três números do topo.
+- `domain/destaques.ts` — compõe os três acima e devolve os campeões.
+- `domain/periodo.ts` — limites e navegação de mês.
+- `domain/paleta.ts` — tons derivados da cor primária do tema.
+- `domain/valorCurto.ts` — dinheiro sem centavos, para os cartões estreitos.
+- `data/reportsRepo.ts` — a consulta. Só busca.
+- `components/` — `RoscaDeServicos` e `BarrasProporcionais`. Só desenham.
+- `screens/ReportsScreen.tsx` — monta os cartões. Não calcula nada.
 
 ### Estado vazio
 
