@@ -190,7 +190,27 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
+
+      # Substitui o "cache: gradle" do setup-java. Aquele so restaura
+      # dependencias e, com a chave inalterada, nunca regrava o cache; este
+      # guarda tambem o build cache de tarefas entre execucoes. So a main
+      # escreve: PR nao envenena o cache que todo mundo usa.
+      - name: Configura Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: android
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      # O C++ gerado pelo codegen do React Native e o item mais caro do build,
+      # e ele e recompilado por ABI. A chave e o que determina esse C++:
+      # dependencias, versao do NDK e configuracao do Gradle.
+      - name: Cache do build nativo
+        uses: actions/cache@v4
+        with:
+          path: |
+            android/app/.cxx
+            android/app/build/intermediates/cxx
+          key: cxx-${{ runner.os }}-${{ hashFiles('package-lock.json', 'android/**/*.gradle', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}
 
       - name: Instala dependencias
         run: npm ci
@@ -248,11 +268,16 @@ jobs:
             -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
+      # Uma ABI so. Este job responde "o app ainda compila?", e o C++ aqui vem
+      # todo do codegen do React Native — nao ha codigo nosso que possa quebrar
+      # em uma arquitetura e passar em outra. As quatro ABIs continuam no
+      # android-apk.yml, que e quem gera APK para instalar.
       - name: Gera build Android debug
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --build-cache \
+            -PreactNativeArchitectures=arm64-v8a
 
   secrets:
     name: Verifica arquivos sensiveis
