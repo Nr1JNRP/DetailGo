@@ -276,7 +276,7 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --build-cache \
+          ./gradlew assembleDebug --no-daemon --build-cache \
             -PreactNativeArchitectures=arm64-v8a
 
   secrets:
