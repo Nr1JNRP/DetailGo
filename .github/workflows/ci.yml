@@ -108,6 +108,43 @@ jobs:
       - name: Executa testes com cobertura
         run: npm run test:cov -- --runInBand --watchAll=false
 
+  # O build debug do Android nao empacota o JavaScript — o app busca o codigo do
+  # Metro em tempo de execucao. So o release empacota, e por isso uma quebra no
+  # empacotador passava por toda a esteira sem ninguem ver: foi assim que o
+  # override do image-size derrubou o release sem o CI notar. Este job passa o
+  # empacotador do jeito que o release passa e joga o resultado fora.
+  bundle:
+    name: Empacota o JavaScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Configura Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instala dependencias
+        run: npm ci
+
+      # Sem keystore, sem google-services.json e sem Gradle: so o empacotador.
+      # Responde "o app consegue ser empacotado?", nao "o app funciona?".
+      - name: Gera o bundle de release
+        run: |
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output "$RUNNER_TEMP/index.android.bundle" \
+            --assets-dest "$RUNNER_TEMP/assets"
+
   functions-tests:
     name: Testes das Cloud Functions
     runs-on: ubuntu-latest
