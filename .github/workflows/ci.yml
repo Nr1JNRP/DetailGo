@@ -120,10 +120,12 @@ jobs:
           persist-credentials: false
           submodules: false
 
+      # Mesma versao do runtime das Cloud Functions (engines.node), para o
+      # teste rodar onde o codigo vai rodar.
       - name: Configura Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Instala dependencias das functions
         working-directory: functions
