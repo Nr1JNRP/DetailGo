@@ -2,7 +2,16 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Calendar, CreditCard, History, LogOut, Settings, Store, User } from 'lucide-react-native';
+import {
+  Calendar,
+  ChartColumn,
+  CreditCard,
+  History,
+  LogOut,
+  Settings,
+  Store,
+  User,
+} from 'lucide-react-native';
 import { getAuth, signOut } from '@react-native-firebase/auth';
 
 import { typography as T, useAppTheme, type AppColors } from '@shared/theme';
@@ -126,6 +135,12 @@ export default function AdminDrawer({ visible, slideAnim, onClose }: Props) {
             icon={<History size={18} color={D.primary} />}
             label="Histórico"
             onPress={() => navigate('AdminHistory')}
+          />
+          <DrawerItem
+            styles={styles}
+            icon={<ChartColumn size={18} color={D.primary} />}
+            label="Relatórios"
+            onPress={() => navigate('Reports')}
           />
           <DrawerItem
             styles={styles}

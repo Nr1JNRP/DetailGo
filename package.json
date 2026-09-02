@@ -46,6 +46,7 @@
     "react-native": "0.81.4",
     "react-native-bootsplash": "^6.3.12",
     "react-native-device-info": "^15.0.2",
+    "react-native-gifted-charts": "^1.4.78",
     "react-native-image-picker": "^8.2.1",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-maps": "^1.27.2",

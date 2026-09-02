@@ -1,8 +1,10 @@
 module.exports = {
   preset: 'react-native',
   setupFiles: ['<rootDir>/jest.setup.js'],
+  // gifted-charts-core vem junto com react-native-gifted-charts e é publicado
+  // em ESM, mas o nome não casa com o padrão react-native-*.
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-.*|@react-native-firebase|@testing-library)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-.*|@react-native-firebase|@testing-library|gifted-charts-core)/)',
   ],
   modulePathIgnorePatterns: ['<rootDir>/.claude/worktrees'],
   testPathIgnorePatterns: ['<rootDir>/.claude/worktrees', '<rootDir>/firestore-tests'],
@@ -21,11 +23,11 @@ module.exports = {
   // Ratchet: o piso só sobe. Deixamos ~1 ponto de folga sobre a cobertura real
   // para o CI não quebrar por variação mínima — mas não mais que isso, senão
   // dá para remover teste sem ninguém notar.
-  // Cobertura em 27/08/2026: 74.54 stmts · 66.92 branch · 75.78 func · 75.56 lines
+  // Cobertura em 01/09/2026: 75.82 stmts · 68.30 branch · 76.64 func · 76.81 lines
   coverageThreshold: {
     global: {
       statements: 75,
-      branches: 67,
+      branches: 68,
       functions: 76,
       lines: 76,
     },
