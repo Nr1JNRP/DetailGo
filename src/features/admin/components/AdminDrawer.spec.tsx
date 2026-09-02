@@ -110,6 +110,7 @@ describe('AdminDrawer', () => {
   it.each([
     ['Agendamentos', 'AdminDashboard'],
     ['Histórico', 'AdminHistory'],
+    ['Relatórios', 'Reports'],
     ['Gerenciar loja', 'AdminManage'],
     ['Perfil', 'AdminProfile'],
     ['Assinatura', 'SubscriptionDetail'],
@@ -122,18 +123,19 @@ describe('AdminDrawer', () => {
     expect(mockNavigate).toHaveBeenCalledWith(rota);
   });
 
-  // A ordem é pedida: Assinatura entra logo depois de Perfil, e Sair continua
-  // por último, separado pelo divisor.
+  // A ordem é pedida: Relatórios depois de Histórico, Assinatura depois de
+  // Perfil, e Sair por último, separado pelo divisor.
   it('lista os itens na ordem combinada', () => {
     renderDrawer();
 
     const rotulos = screen
-      .getAllByText(/^(Agendamentos|Histórico|Gerenciar loja|Perfil|Assinatura|Sair)$/)
+      .getAllByText(/^(Agendamentos|Histórico|Relatórios|Gerenciar loja|Perfil|Assinatura|Sair)$/)
       .map(no => no.props.children);
 
     expect(rotulos).toEqual([
       'Agendamentos',
       'Histórico',
+      'Relatórios',
       'Gerenciar loja',
       'Perfil',
       'Assinatura',

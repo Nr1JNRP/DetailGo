@@ -48,6 +48,7 @@ jest.mock('@features/notifications', () => ({
   CustomerNotificationsScreen: mockStub('tela-notifications'),
 }));
 jest.mock('@features/profile', () => ({ ProfileScreen: mockStub('tela-profile') }));
+jest.mock('@features/reports', () => ({ ReportsScreen: mockStub('tela-reports') }));
 
 import { render, screen } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
