@@ -52,6 +52,12 @@ export async function buscarConcluidosDoMes(
  * são perguntas sobre o mês que a tela mostra: "já era cliente antes?" precisa
  * do que veio antes, e "há quantos dias sumiu?" se conta a partir de hoje. Não
  * anda com as setas de mês, e por isso é buscada uma vez só.
+ *
+ * Ordem DECRESCENTE, ao contrário da consulta do mês. Quando a loja passar do
+ * teto, é o corte que decide o que sobra: crescente guardaria os mais antigos e
+ * jogaria fora os atendimentos recentes, e aí todo cliente ativo apareceria como
+ * sumido. Decrescente guarda os mais recentes, que é o que "última visita"
+ * precisa. Servida pelo índice status ASC + startAtMs DESC.
  */
 export async function buscarHistoricoDeClientes(
   shopId: string,
@@ -63,7 +69,7 @@ export async function buscarHistoricoDeClientes(
     collection(db, 'shops', shopId, 'appointments'),
     where('status', '==', 'done'),
     where('startAtMs', '>=', desdeMs),
-    orderBy('startAtMs'),
+    orderBy('startAtMs', 'desc'),
     limit(TETO),
   );
 

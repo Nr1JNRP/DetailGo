@@ -306,7 +306,9 @@ describe('ReportsScreen', () => {
       render(<ReportsScreen />);
 
       expect(
-        await screen.findByText('1 de 2 clientes de Setembro já eram seus antes do mês.'),
+        await screen.findByText(
+          '1 de 2 clientes de Setembro já tinham feito serviço com você antes do mês.',
+        ),
       ).toBeTruthy();
     });
 

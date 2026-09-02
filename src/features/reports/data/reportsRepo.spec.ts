@@ -6,7 +6,7 @@ jest.mock('@react-native-firebase/firestore', () => ({
   collection: (_db: unknown, ...caminho: string[]) => ({ tipo: 'collection', caminho }),
   query: (ref: unknown, ...clausulas: unknown[]) => ({ ref, clausulas }),
   where: (campo: string, op: string, valor: unknown) => ({ tipo: 'where', campo, op, valor }),
-  orderBy: (campo: string) => ({ tipo: 'orderBy', campo }),
+  orderBy: (campo: string, direcao?: string) => ({ tipo: 'orderBy', campo, direcao }),
   limit: (n: number) => ({ tipo: 'limit', n }),
   getDocs: (...args: unknown[]) => mockGetDocs(...args),
 }));
@@ -61,7 +61,7 @@ describe('buscarConcluidosDoMes', () => {
 
     const clausulas = consultaFeita().clausulas;
 
-    expect(clausulas).toContainEqual({ tipo: 'orderBy', campo: 'startAtMs' });
+    expect(clausulas).toContainEqual({ tipo: 'orderBy', campo: 'startAtMs', direcao: undefined });
     expect(clausulas).toContainEqual({ tipo: 'limit', n: 2000 });
   });
 
@@ -124,5 +124,36 @@ describe('buscarHistoricoDeClientes', () => {
     await expect(buscarHistoricoDeClientes('shop-1', LIMITES.inicioMs)).resolves.toEqual([
       { id: 'bom' },
     ]);
+  });
+});
+
+describe('ordem do histórico', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetDocs.mockResolvedValue({ docs: [] });
+  });
+
+  // O teto corta a consulta, e é a ordem que decide o que sobra. Crescente
+  // guardaria os atendimentos mais ANTIGOS e jogaria fora os recentes — numa
+  // loja grande, todo cliente ativo apareceria como sumido.
+  it('busca do mais recente para o mais antigo', async () => {
+    await buscarHistoricoDeClientes('shop-1', LIMITES.inicioMs);
+
+    expect(consultaFeita().clausulas).toContainEqual({
+      tipo: 'orderBy',
+      campo: 'startAtMs',
+      direcao: 'desc',
+    });
+  });
+
+  // A do mês não tem esse problema: ela já é limitada pelo intervalo do mês.
+  it('mantém a consulta do mês em ordem crescente', async () => {
+    await buscarConcluidosDoMes('shop-1', LIMITES);
+
+    expect(consultaFeita().clausulas).toContainEqual({
+      tipo: 'orderBy',
+      campo: 'startAtMs',
+      direcao: undefined,
+    });
   });
 });

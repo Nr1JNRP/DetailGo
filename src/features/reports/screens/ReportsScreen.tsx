@@ -280,7 +280,7 @@ export default function ReportsScreen() {
             <Text style={styles.cartaoSubtitulo}>
               {recorrencia.recorrentes === 0
                 ? `Todos os clientes de ${rotulo} vieram pela primeira vez.`
-                : `${recorrencia.recorrentes} de ${recorrencia.clientes} clientes de ${rotulo} já eram seus antes do mês.`}
+                : `${recorrencia.recorrentes} de ${recorrencia.clientes} clientes de ${rotulo} já tinham feito serviço com você antes do mês.`}
             </Text>
             <BarrasProporcionais
               testID="barras-recorrencia"

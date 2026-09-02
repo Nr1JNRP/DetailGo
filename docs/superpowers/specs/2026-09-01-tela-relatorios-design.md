@@ -112,13 +112,21 @@ A do histórico de clientes, buscada uma vez:
 ```
 where status == 'done'
 where startAtMs >= hoje menos 12 meses
-orderBy startAtMs
+orderBy startAtMs DESC
 ```
 
-As duas têm teto de 2000 documentos. A agregação acontece no cliente: uma
-estética faz dezenas a poucas centenas de serviços por mês, e somar em memória é
-mais simples e mais barato que manter contadores agregados — sem o risco de o
-agregado divergir do histórico real.
+As duas têm teto de 2000 documentos, e é por isso que a segunda vai em ordem
+decrescente: quando o teto cortar, é a ordem que decide o que sobra. Crescente
+guardaria os atendimentos mais antigos e descartaria os recentes — numa loja com
+mais de 2000 serviços no ano, todo cliente ativo apareceria como sumido. A do
+mês não corre esse risco porque já está limitada pelo intervalo do mês.
+
+A segunda é servida pelo índice `status ASC + startAtMs DESC`, o mesmo que o
+Histórico do dono usa.
+
+A agregação acontece no cliente: uma estética faz dezenas a poucas centenas de
+serviços por mês, e somar em memória é mais simples e mais barato que manter
+contadores agregados — sem o risco de o agregado divergir do histórico real.
 
 ### Separação
 
@@ -164,6 +172,26 @@ muda — mas surpreende, então está escrito aqui.
 **Só `done` conta.** "Realizado" é o que foi concluído. Cancelado e no-show não
 são serviço prestado, e misturá-los inflaria o número que o dono usa para
 decidir.
+
+**A identidade do cliente é o `customerUid`, nunca o nome.** Dois clientes
+homônimos são duas pessoas e contam separado; um cliente que trocou o nome no
+perfil continua sendo o mesmo. O nome é só um rótulo copiado para exibir. O
+efeito visível é que dois homônimos aparecem como duas linhas iguais no pódio, e
+isso está certo.
+
+O caso inverso não tem solução aqui: a mesma pessoa com duas contas no app vira
+dois clientes, e o relatório subestima a recorrência. Resolver exigiria casar
+contas por telefone ou documento, que é decisão de produto e não de relatório.
+
+**"Já era cliente" significa "já fez serviço nesta loja".** Não é cadastro no
+app. A consulta lê `shops/{shopId}/appointments`, então alguém que se cadastrou
+no DetailGo e nunca foi atendido aqui não aparece em lugar nenhum deste
+relatório.
+
+**A janela de 12 meses é definição, não limitação.** Quem sumiu há mais de um ano
+não é candidato a ligação de retorno, e quem volta depois de um ano se comporta
+como cliente novo. Alargar a janela traria mais dados para piorar os dois
+números.
 
 **`react-native-gifted-charts` para desenhar.** Roda sobre `react-native-svg` e
 `react-native-linear-gradient`, ambos já instalados: nenhum módulo nativo novo,
