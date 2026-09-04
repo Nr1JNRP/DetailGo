@@ -100,6 +100,10 @@
     "fast-xml-parser": "^5.7.0",
     "sharp": "^0.35.3",
     "uuid": "^11.1.1",
-    "image-size": "^1.2.1"
+    "image-size": "^1.2.1",
+    "@xmldom/xmldom": "^0.9.12",
+    "browserslist": "^4.28.9",
+    "fast-uri": "^3.1.6",
+    "qs": "^6.16.0"
   }
 }
